@@ -41,8 +41,9 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ## 外部技能与降级（软依赖）
 
-- **流程图**：优先调用社区 mermaid 技能；未装则直接手写 Mermaid 代码块，
-  并在该处留一行提示「mermaid 技能未安装，已手写」。
+- **流程图**：手写 Mermaid 代码块，并用 `npx -y @mermaid-js/mermaid-cli -i x.mmd -o x.svg`
+  逐张渲染校验通过（EXIT=0）再写入文档，避免盲写语法错误；校验后删除临时文件。
+  若 mmdc 不可用（无 Node/网络），降级为仅手写并留一行提示「mermaid 未校验，已手写」。
 - **界面原型**：优先调用 `ui-ux-pro-max` 生成 HTML 原型存入 `output/prototypes/`；
   未装则手写 HTML/线框示意，并留一行提示。
 
