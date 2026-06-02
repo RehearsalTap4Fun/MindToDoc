@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown（技能与模板）、Mermaid（流程图）、HTML/Tailwind（原型，经 ui-ux-pro-max）。
 
-**适配说明:** 本项目产出为 markdown 散文，非可执行代码；当前目录非 git 仓库。故"测试"= spec 定义的最小样例跑通验证；"提交"步骤跳过，仅标注若日后 init 仓库的提交点。
+**适配说明:** 本项目产出为 markdown 散文，非可执行代码；当前目录已接入 git。故"测试"= spec 定义的最小样例跑通验证；协作开发时每次开展新工作前先 `git pull --ff-only`，每次完成有效改动后提交 git。
 
 ---
 
