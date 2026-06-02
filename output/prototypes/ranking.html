@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>排名界面原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
+  <header class="p-3 bg-slate-800 font-bold text-center">排名</header>
+  <nav class="flex text-xs border-b border-white/10">
+    <button class="flex-1 py-2 text-amber-300 border-b-2 border-amber-400">赛季积分</button>
+    <button class="flex-1 py-2 text-white/50">赛季进球</button>
+    <button class="flex-1 py-2 text-white/50">竞猜命中</button>
+    <button class="flex-1 py-2 text-white/50">竞猜收益</button>
+  </nav>
+  <div class="px-3 py-2 text-[11px] text-white/40">第2赛季 · 按大关卡独立结算 · 名次段位发奖</div>
+  <main class="flex-1 overflow-auto px-3 space-y-1.5">
+    <div class="flex items-center gap-3 bg-amber-400/20 rounded-lg p-2.5">
+      <span class="w-6 text-center font-black text-amber-300">1</span>
+      <div class="w-8 h-8 rounded-full bg-white/15"></div>
+      <span class="flex-1 text-sm">球星·阿强</span>
+      <span class="text-sm text-amber-300">38</span>
+    </div>
+    <div class="flex items-center gap-3 bg-white/5 rounded-lg p-2.5">
+      <span class="w-6 text-center font-bold text-white/70">2</span>
+      <div class="w-8 h-8 rounded-full bg-white/15"></div>
+      <span class="flex-1 text-sm">球星·小李</span>
+      <span class="text-sm">35</span>
+    </div>
+    <div class="flex items-center gap-3 bg-white/5 rounded-lg p-2.5">
+      <span class="w-6 text-center font-bold text-white/70">3</span>
+      <div class="w-8 h-8 rounded-full bg-white/15"></div>
+      <span class="flex-1 text-sm">球星·阿伟</span>
+      <span class="text-sm">33</span>
+    </div>
+    <div class="text-center text-white/30 text-xs py-2">···</div>
+  </main>
+  <footer class="p-3 bg-slate-800">
+    <div class="flex items-center gap-3 bg-emerald-600/20 rounded-lg p-2.5">
+      <span class="w-6 text-center font-bold text-emerald-300">87</span>
+      <div class="w-8 h-8 rounded-full bg-white/15"></div>
+      <span class="flex-1 text-sm">我（球星·玩家名）</span>
+      <span class="text-sm text-emerald-300">14</span>
+    </div>
+    <div class="text-[11px] text-white/40 mt-1.5 text-center">当前段位奖励：11-100名 · 外观+局外道具</div>
+  </footer>
+</body>
+</html>

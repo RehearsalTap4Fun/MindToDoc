@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BP / 兑换商店 / 礼包 原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
+  <nav class="flex text-sm border-b border-white/10">
+    <button class="flex-1 py-2 text-amber-300 border-b-2 border-amber-400">BP通行证</button>
+    <button class="flex-1 py-2 text-white/50">兑换商店</button>
+    <button class="flex-1 py-2 text-white/50">礼包</button>
+  </nav>
+
+  <!-- BP 双轨 -->
+  <section class="p-3">
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-sm">活跃度 Lv.12 <span class="text-white/40 text-xs">(每日任务获得)</span></span>
+      <button class="px-3 py-1 rounded-lg bg-amber-400 text-slate-900 text-xs font-bold">解锁付费轨</button>
+    </div>
+    <div class="grid grid-cols-4 gap-2 text-center text-[11px]">
+      <div class="text-white/40 self-center">免费轨</div>
+      <div class="bg-emerald-600/30 rounded p-2">外观</div>
+      <div class="bg-emerald-600/30 rounded p-2">道具</div>
+      <div class="bg-white/5 rounded p-2">金币</div>
+      <div class="text-amber-300 self-center">付费轨</div>
+      <div class="bg-amber-500/20 rounded p-2">外观+</div>
+      <div class="bg-amber-500/20 rounded p-2">道具+</div>
+      <div class="bg-amber-500/20 rounded p-2 opacity-50">🔒</div>
+    </div>
+  </section>
+
+  <!-- 兑换商店（竞猜币） -->
+  <section class="p-3 border-t border-white/10">
+    <div class="text-sm mb-2">兑换商店 <span class="text-white/40 text-xs">🪙竞猜币 · 限购 · 周期刷新</span></div>
+    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+      <div class="bg-white/5 rounded-lg p-2"><div class="h-10 bg-white/10 rounded mb-1"></div>局外道具A<div class="text-amber-300">🪙100</div><div class="text-[10px] text-white/40">限购 2/3</div></div>
+      <div class="bg-white/5 rounded-lg p-2"><div class="h-10 bg-white/10 rounded mb-1"></div>局外道具B<div class="text-amber-300">🪙200</div><div class="text-[10px] text-white/40">限购 0/1</div></div>
+      <div class="bg-white/5 rounded-lg p-2"><div class="h-10 bg-white/10 rounded mb-1"></div>外观券<div class="text-amber-300">🪙500</div><div class="text-[10px] text-white/40">限购 1/1</div></div>
+    </div>
+  </section>
+
+  <!-- 礼包 -->
+  <section class="p-3 border-t border-white/10">
+    <div class="text-sm mb-2">礼包 <span class="text-white/40 text-xs">限时 · 限购</span></div>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between items-center bg-white/5 rounded-lg p-2"><span>每日免费礼包<br/><span class="text-[11px] text-white/40">金币+竞猜币</span></span><button class="px-3 py-1 rounded bg-emerald-500 text-xs">免费领</button></div>
+      <div class="flex justify-between items-center bg-amber-500/10 rounded-lg p-2"><span>豪华充值礼包<br/><span class="text-[11px] text-white/40">金币+道具+竞猜币</span></span><button class="px-3 py-1 rounded bg-amber-400 text-slate-900 text-xs font-bold">¥30</button></div>
+    </div>
+  </section>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>球星养成面板原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
+  <!-- 顶部货币栏 -->
+  <header class="flex justify-between items-center p-3 text-sm bg-slate-800">
+    <span>🟡 金币 12,400</span>
+    <span>🎫 门票 5/10</span>
+    <span>🪙 竞猜币 320</span>
+  </header>
+
+  <!-- 主角卡 -->
+  <section class="p-4 flex gap-3 items-center bg-gradient-to-r from-emerald-800 to-slate-800">
+    <div class="w-16 h-20 bg-white/10 rounded-lg flex items-center justify-center text-white/40 text-xs">立绘</div>
+    <div class="flex-1">
+      <div class="font-bold text-lg">球星·玩家名</div>
+      <div class="text-xs text-white/60 mt-0.5">🇧🇷 巴西 · ⭐⭐⭐ 三星俱乐部</div>
+      <div class="text-xs text-amber-300 mt-1">合同待遇：完赛+100 进球+30 助攻+20</div>
+    </div>
+  </section>
+
+  <!-- 三条养成等级线 -->
+  <main class="flex-1 p-4 space-y-3">
+    <div class="bg-white/5 rounded-xl p-3">
+      <div class="flex justify-between"><span class="font-bold text-sky-300">知名度 Lv.8</span><span class="text-xs text-white/50">比赛数据 + 生活升级获得</span></div>
+      <div class="h-2 bg-white/10 rounded mt-2"><div class="h-2 bg-sky-400 rounded w-3/5"></div></div>
+      <div class="text-xs text-white/50 mt-1">升级解锁更高待遇 / 更高星级球队</div>
+    </div>
+    <div class="bg-white/5 rounded-xl p-3">
+      <div class="flex justify-between"><span class="font-bold text-emerald-300">训练 Lv.5</span><span class="text-xs text-white/50">训练关卡获得训练星</span></div>
+      <div class="h-2 bg-white/10 rounded mt-2"><div class="h-2 bg-emerald-400 rounded w-2/5"></div></div>
+      <div class="text-xs text-white/50 mt-1">升级提升主角评分 / 更高星级球队</div>
+    </div>
+    <div class="bg-white/5 rounded-xl p-3">
+      <div class="flex justify-between items-center">
+        <span class="font-bold text-amber-300">生活 Lv.3</span>
+        <button class="px-3 py-1 rounded-lg bg-amber-400 text-slate-900 text-xs font-bold">花金币升级</button>
+      </div>
+      <div class="text-xs text-white/50 mt-2">全局buff：门票恢复↑ 门票上限↑ 免费回溯↑ 比赛奖励↑</div>
+    </div>
+  </main>
+
+  <!-- 入口 -->
+  <footer class="p-3 grid grid-cols-2 gap-2 bg-slate-800">
+    <button class="py-2 rounded-lg bg-white/10 text-sm">训练关卡 ›</button>
+    <button class="py-2 rounded-lg bg-white/10 text-sm">查看合同 ›</button>
+  </footer>
+</body>
+</html>

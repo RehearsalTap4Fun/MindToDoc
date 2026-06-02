@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>积分赛联赛界面原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
+  <!-- 顶部：当前大关卡(联赛轮次) + 门票 -->
+  <header class="p-3 flex justify-between items-center bg-slate-800">
+    <div>
+      <div class="font-bold">第 2 赛季联赛</div>
+      <div class="text-xs text-white/50">赛季目标：联赛榜进前 100 · 进球≥8</div>
+    </div>
+    <span class="text-sm">🎫 5/10</span>
+  </header>
+
+  <!-- 小关卡进度（顺序解锁） -->
+  <main class="flex-1 p-4">
+    <div class="text-xs text-white/50 mb-2">小关卡（顺序解锁）</div>
+    <div class="space-y-2">
+      <div class="flex items-center gap-3 bg-emerald-600/30 rounded-lg p-3"><span class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs">✓</span><span class="flex-1">第1轮 vs 红狮</span><span class="text-xs text-emerald-300">胜 2/3</span></div>
+      <div class="flex items-center gap-3 bg-emerald-600/30 rounded-lg p-3"><span class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs">✓</span><span class="flex-1">第2轮 vs 蓝鹰</span><span class="text-xs text-emerald-300">胜 3/3</span></div>
+      <div class="flex items-center gap-3 bg-amber-500/20 ring-2 ring-amber-400 rounded-lg p-3"><span class="w-7 h-7 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-xs">▶</span><span class="flex-1 font-bold">第3轮 vs 黑豹</span><span class="text-xs text-amber-300">消耗1门票</span></div>
+      <div class="flex items-center gap-3 bg-white/5 rounded-lg p-3 opacity-50"><span class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs">🔒</span><span class="flex-1">第4轮 vs 银狼</span></div>
+    </div>
+  </main>
+
+  <!-- 底部：累计积分 + 排名入口 -->
+  <footer class="p-3 bg-slate-800 flex justify-between items-center">
+    <span class="text-sm">累计切片胜利 <b class="text-amber-300">14</b> 分</span>
+    <button class="px-4 py-2 rounded-lg bg-emerald-500 text-sm font-bold">全服排名 ›</button>
+  </footer>
+</body>
+</html>

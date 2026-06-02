@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>竞猜界面原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
+  <header class="p-3 bg-slate-800 flex justify-between items-center">
+    <span class="font-bold">淘汰赛竞猜</span>
+    <span class="text-sm">🪙 竞猜币 320</span>
+  </header>
+  <main class="flex-1 p-4 space-y-3">
+    <div class="text-xs text-white/50">8强 · 下注截止 比赛结算前</div>
+    <div class="bg-white/5 rounded-xl p-4">
+      <div class="text-xs text-white/40 mb-2">对阵 #3（明确对手后开放）</div>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="rounded-lg bg-emerald-600/30 ring-2 ring-emerald-400 p-3 text-center">
+          <div class="font-bold">烈焰队</div>
+          <div class="text-xs text-emerald-300 mt-1">赔率 1.85</div>
+          <div class="text-[10px] text-amber-300 mt-0.5">含我的队伍</div>
+        </button>
+        <button class="rounded-lg bg-white/10 p-3 text-center">
+          <div class="font-bold">苍狼队</div>
+          <div class="text-xs text-white/60 mt-1">赔率 2.10</div>
+        </button>
+      </div>
+      <div class="flex items-center gap-2 mt-3">
+        <input type="number" value="50" class="flex-1 bg-slate-700 rounded-lg px-3 py-2 text-sm" />
+        <button class="px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-bold text-sm">下注</button>
+      </div>
+      <div class="text-[11px] text-white/40 mt-1">选择晋级方 · 猜中得 投注×赔率 竞猜币</div>
+    </div>
+    <div class="bg-emerald-600/10 rounded-xl p-3 flex justify-between items-center">
+      <span class="text-sm">对阵 #1 命中</span>
+      <span class="text-emerald-300 text-sm">+92 🪙</span>
+    </div>
+  </main>
+  <footer class="p-3 bg-slate-800 flex justify-between text-xs">
+    <span>每日免费竞猜币已领</span>
+    <button class="text-amber-300">竞猜排名 ›</button>
+  </footer>
+</body>
+</html>

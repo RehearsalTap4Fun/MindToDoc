@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>关卡结算界面原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
+  <!-- 顶部进度条：切片完成情况 -->
+  <header class="p-3">
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs text-white/60 mr-1">切片</span>
+      <span class="w-7 h-2 rounded bg-emerald-400"></span>
+      <span class="w-7 h-2 rounded bg-emerald-400"></span>
+      <span class="w-7 h-2 rounded bg-red-400"></span>
+      <span class="text-xs text-white/60 ml-1">2胜/3</span>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+    <!-- 胜平负大字 -->
+    <div class="text-center">
+      <div class="text-5xl font-black text-amber-400">胜利</div>
+      <div class="text-sm text-white/60 mt-1">关卡结算</div>
+    </div>
+
+    <!-- 奖励列表 -->
+    <div class="w-full space-y-2">
+      <div class="flex justify-between bg-white/5 rounded-lg px-4 py-2"><span>完赛奖励</span><span class="text-amber-300">+100 金币</span></div>
+      <div class="flex justify-between bg-white/5 rounded-lg px-4 py-2"><span>进球奖励 x2</span><span class="text-amber-300">+60 金币</span></div>
+      <div class="flex justify-between bg-white/5 rounded-lg px-4 py-2"><span>助攻奖励 x1</span><span class="text-amber-300">+20 金币</span></div>
+      <div class="flex justify-between bg-white/5 rounded-lg px-4 py-2"><span>知名度</span><span class="text-sky-300">+15</span></div>
+    </div>
+  </main>
+
+  <!-- 排名结算入口 -->
+  <footer class="p-4">
+    <button class="w-full py-3 rounded-xl bg-emerald-500 font-bold">查看积分排名 ›</button>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>切片操作界面原型</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-700 text-white min-h-screen max-w-sm mx-auto flex flex-col relative overflow-hidden">
+  <!-- 球场纹理 -->
+  <div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,#15803d_0px,#15803d_40px,#166534_40px,#166534_80px)] opacity-60"></div>
+
+  <!-- 顶部 HUD -->
+  <header class="relative z-10 flex items-center justify-between p-3 text-sm">
+    <span>切片 <b>2/3</b> · 进攻</span>
+    <span class="px-2 py-0.5 rounded bg-black/30">模式：划线 (本关锁定)</span>
+  </header>
+
+  <!-- 球场操作区 -->
+  <main class="relative z-10 flex-1">
+    <!-- 球门 -->
+    <div class="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-12 border-2 border-white/80 rounded-b"></div>
+    <!-- 门将 -->
+    <div class="absolute top-9 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-yellow-400"></div>
+    <!-- 可操作夹角扇形提示 -->
+    <div class="absolute bottom-28 left-1/2 -translate-x-1/2 w-48 h-32 border-x-2 border-dashed border-white/30"></div>
+    <!-- 辅助线：预测完整轨迹+落点 -->
+    <svg class="absolute inset-0 w-full h-full pointer-events-none">
+      <path d="M 180 460 Q 120 200 200 90" stroke="#fde047" stroke-width="3" stroke-dasharray="6 6" fill="none"/>
+      <circle cx="200" cy="90" r="6" fill="#fde047"/>
+    </svg>
+    <!-- 控球球员 + 足球 -->
+    <div class="absolute bottom-24 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-white text-green-700 text-xs flex items-center justify-center font-bold">⚽</div>
+  </main>
+
+  <!-- 底部道具栏 -->
+  <footer class="relative z-10 p-3 flex items-center justify-between bg-black/30">
+    <div class="flex gap-2">
+      <span class="px-2 py-1 rounded bg-white/15 text-xs">🔊 哨子</span>
+      <span class="px-2 py-1 rounded bg-white/15 text-xs">↩ 回溯 x2</span>
+      <span class="px-2 py-1 rounded bg-emerald-500 text-xs">🎯 瞄准 ON</span>
+    </div>
+    <span class="text-xs text-white/60">拖拽划线确定落点与弧度</span>
+  </footer>
+</body>
+</html>
