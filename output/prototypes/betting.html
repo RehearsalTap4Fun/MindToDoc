@@ -9,7 +9,7 @@
 <body class="bg-slate-900 text-white min-h-screen max-w-sm mx-auto flex flex-col">
   <header class="p-3 bg-slate-800 flex justify-between items-center">
     <span class="font-bold">淘汰赛竞猜</span>
-    <span class="text-sm">🪙 竞猜币 320</span>
+    <span class="text-sm">🪙 320 · 今日 3/8</span>
   </header>
   <main class="flex-1 p-4 space-y-3">
     <div class="text-xs text-white/50">8强 · 下注截止 比赛结算前</div>
@@ -30,7 +30,18 @@
         <input type="number" value="50" class="flex-1 bg-slate-700 rounded-lg px-3 py-2 text-sm" />
         <button class="px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-bold text-sm">下注</button>
       </div>
-      <div class="text-[11px] text-white/40 mt-1">选择晋级方 · 猜中得 投注×赔率 竞猜币</div>
+      <div class="text-[11px] text-white/40 mt-1">选择晋级方 · 猜中得 投注×赔率 · 猜错退 80%</div>
+    </div>
+    <!-- 已下注（窗口期内可改/取消） -->
+    <div class="bg-white/5 rounded-xl p-3">
+      <div class="flex justify-between items-center">
+        <span class="text-sm">对阵 #2 已下注 烈焰队 · 50🪙</span>
+        <span class="text-[10px] text-white/40">窗口期内</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <button class="py-1.5 rounded-lg bg-white/10 text-xs">修改下注</button>
+        <button class="py-1.5 rounded-lg bg-red-500/30 text-xs">取消(全退)</button>
+      </div>
     </div>
     <div class="bg-emerald-600/10 rounded-xl p-3 flex justify-between items-center">
       <span class="text-sm">对阵 #1 命中</span>
