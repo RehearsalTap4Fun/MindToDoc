@@ -1,0 +1,167 @@
+[
+  {
+    "id": "SFX_BALL_RELEASE",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-724dd4628cb145eda492911a",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_BALL_RELEASE_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_BALL_RELEASE_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_BALL_RELEASE_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_BALL_RELEASE_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_KICK",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-319ceb62e99342cbb81ec08f",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_KICK_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_KICK_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_KICK_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_KICK_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_MODE_LOCK",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-8d6b3baedff54ad49b86e530",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_MODE_LOCK_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_MODE_LOCK_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_MODE_LOCK_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_MODE_LOCK_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_REWARD_POP",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-e9e4fd063d7b4ad58149b2db",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_REWARD_POP_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_REWARD_POP_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_REWARD_POP_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_REWARD_POP_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_SLICE_ENTER",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-d4bd3fb568414d4a9b824648",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_ENTER_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_ENTER_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_ENTER_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_ENTER_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_SLICE_SUCCESS",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-6a18c5744bb64ca7bc98dab9",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_SUCCESS_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_SUCCESS_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_SUCCESS_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_SLICE_SUCCESS_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_CLICK",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-e2b9b23ae1b243ad9dc2e72e",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_CLICK_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_CLICK_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_CLICK_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_CLICK_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_NEGATIVE",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-a48f64c24f9945a6be59e9b2",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_NEGATIVE_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_NEGATIVE_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_NEGATIVE_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_NEGATIVE_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_PAUSE_CLOSE",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-768194e777ad402e857e6853",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_CLOSE_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_CLOSE_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_CLOSE_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_CLOSE_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_PAUSE_OPEN",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-2cfceee2f05c4c089c091c9d",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_OPEN_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_OPEN_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_OPEN_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_PAUSE_OPEN_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_POPUP_CLOSE",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-0a0cfe486c8b44f19ec05143",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_CLOSE_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_CLOSE_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_CLOSE_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_CLOSE_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_POPUP_OPEN",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-a38f5b4d4d3140d7867225a6",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_OPEN_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_OPEN_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_OPEN_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_POPUP_OPEN_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_SELECT",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-93154cc2e41a440799289ef9",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_SELECT_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_SELECT_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_SELECT_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_SELECT_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_TOGGLE_OFF",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-a5b12ff4d8ae40f39eb33b36",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_OFF_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_OFF_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_OFF_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_OFF_v04.mp3"
+    ]
+  },
+  {
+    "id": "SFX_UI_TOGGLE_ON",
+    "status": "success",
+    "job_id": "workflow-elevenlabs_generator-b37dbf49e98b406e9d4979b2",
+    "files": [
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_ON_v01.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_ON_v02.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_ON_v03.mp3",
+      "C:\\Project\\MindToDoc\\docs\\audio\\generated\\sfx\\SFX_UI_TOGGLE_ON_v04.mp3"
+    ]
+  }
+]

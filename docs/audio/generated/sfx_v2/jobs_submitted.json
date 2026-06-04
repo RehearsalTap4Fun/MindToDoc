@@ -1,0 +1,77 @@
+[
+  {
+    "id": "SFX_UI_CLICK",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-1ae3ed04babc49d8a74067c4"
+  },
+  {
+    "id": "SFX_UI_SELECT",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-2fbedfbdde8d4379b0fd6356"
+  },
+  {
+    "id": "SFX_UI_POPUP_OPEN",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-5c84c8dd7eb3477e9eac15e3"
+  },
+  {
+    "id": "SFX_UI_POPUP_CLOSE",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-6c7ef20d6cfc494cbd77856d"
+  },
+  {
+    "id": "SFX_UI_TOGGLE_ON",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-952d83639a984240a730f4c6"
+  },
+  {
+    "id": "SFX_UI_TOGGLE_OFF",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-5caff515c3a243fa92fc8111"
+  },
+  {
+    "id": "SFX_UI_NEGATIVE",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-d970c78da85845c4994425b5"
+  },
+  {
+    "id": "SFX_UI_PAUSE_OPEN",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-b3d6052911a84ee1b9cf4134"
+  },
+  {
+    "id": "SFX_UI_PAUSE_CLOSE",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-079b972a461243cab7066cf3"
+  },
+  {
+    "id": "SFX_REWARD_POP",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-b7f3c0ce6ab447d8a7f2f7b8"
+  },
+  {
+    "id": "SFX_SLICE_ENTER",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-b9a789a01fa242389f719b92"
+  },
+  {
+    "id": "SFX_MODE_LOCK",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-8104662255984f75bce475e5"
+  },
+  {
+    "id": "SFX_BALL_RELEASE",
+    "duration": 0.5,
+    "job_id": "workflow-elevenlabs_generator-842dce74b1ed454f9b26585b"
+  },
+  {
+    "id": "SFX_KICK",
+    "duration": 1,
+    "job_id": "workflow-elevenlabs_generator-2e5bda53d6e7476fadf45caf"
+  },
+  {
+    "id": "SFX_SLICE_SUCCESS",
+    "duration": 1,
+    "job_id": "workflow-elevenlabs_generator-35336065cf9c467590237865"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__dingtalk-docs__update_document",
+      "mcp__dingtalk-docs__insert_document_block",
+      "mcp__dingtalk-docs__create_document"
+    ]
+  }
+}
