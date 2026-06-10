@@ -1,0 +1,555 @@
+{
+  "grays": {
+    "enable_pc_darkmode": true,
+    "dingdoc-selector-pc-share-to-conv-upgrade-v3": true,
+    "enable_new_workspace_page_factory": true,
+    "side_collapsed_memoized": true,
+    "suit_nav_bar_new": true,
+    "mobile_home_enable_dd_mobile_pull_to_refresh": true,
+    "mobile_home_enable_pull_to_refresh": true,
+    "enable_user_quick_access": false,
+    "dingdoc-selector-mobile-save-to-space-upgrade-v3": true,
+    "dingdoc-selector-pc-dingcloud-transfer-upgrade-v3": true,
+    "enable_dark_mode_v2": true,
+    "dingdoc-selector-mobile-dingcloud-transfer-upgrade-v3": true,
+    "enable_new_star_entry": true,
+    "dingdoc-selector-v3": true,
+    "mainsite_share_unread_chat_file": true,
+    "mainsite_right_click": true,
+    "enable_sheet_ssr_iframe": true,
+    "dingdoc-selector-pc-save-to-space-upgrade-v3": true,
+    "enable_mobile_space_detail_server_content": true,
+    "enable_word_ssr_iframe": true,
+    "mainsite_enable_intelligent_global": true,
+    "mainsite_mobile_home_page_banner": false,
+    "mobile_routes_v2": true,
+    "mainsite_new_collapse_trigger": true,
+    "enable_notice_clear_frontend": true,
+    "lwp_upgrade_service": true,
+    "enable_notale_ssr_iframe": true,
+    "enable_mobile_mpa": true,
+    "enable_mobile_doc_template_center": true,
+    "enable_doc_global_org": true,
+    "recent_share_more_menu_abtest": false,
+    "enable_garden": true,
+    "dingdoc-selector-mobile-share-to-conv-upgrade-v3": true,
+    "dentry_selector_prefetch_data": true,
+    "mainsite_mobile_new_tree": true,
+    "use_portal_new_structure_common": true,
+    "enable_notice_number_frontend": false,
+    "mainsite_star_rename_to_fav": true,
+    "dingdoc-selector-pc-universal-upgrade-v3": true,
+    "enable_side_navigation_doc_ai_helper": false,
+    "enable_pc_notice_tab": true,
+    "mainsite_enable_intelligent_summary_common": true,
+    "enable_box_selection": true,
+    "mainsite_reactive": true,
+    "enable_star_unified_frontend": true
+  },
+  "userPersonalSettingInfo": {
+    "appearance": "light",
+    "msgBoxOrgFilterMode": "current",
+    "recentOrgFilterMode": "current",
+    "wikiTocIconMode": "default"
+  },
+  "userInfo": {
+    "uid": "154617771",
+    "loginType": 0,
+    "isVisitor": false,
+    "name": "蒋镇宇"
+  },
+  "graysStrict": {
+    "mainsite_share_tree_crowd": true,
+    "mobile_enable_new_transfer_task_upload": true,
+    "mainsite_enable_create_file_v2": true,
+    "enable_portal_new_framework_create_only": true,
+    "mainsite_disable_commonly_used_space_list": false,
+    "enable_team_home_entry_common": false,
+    "enable_wiki_and_drive_fusion_version_two": false,
+    "mobile_enable_create_file_v2": true,
+    "mainsite_universal_navigation_portal": false,
+    "mainsite_enable_ai_tag": false,
+    "mainsite_reactive_secondary": true,
+    "mainsite_enable_org_filter_mode": false,
+    "mainsite_portal_tree_store_refactor": true,
+    "mainsite_new_notice_pc": true,
+    "mainsite_right_click_create": true,
+    "mainsite_new_star_list": true,
+    "mainsite_navigation_share": false,
+    "mainsite_tree_store_refactor": true,
+    "mainsite_tile_mode": false,
+    "dingdoc_selector_v4_conv_space": true,
+    "mainsite_tool_box_entry": true,
+    "mainsite_tree_data_refresh": false,
+    "mainsite_enable_wiki_automate": false,
+    "mainsite_share_tree": true,
+    "enable_mobile_short_location": true,
+    "mainsite_team_frontend": false,
+    "enable_split_view_open_local_file": true,
+    "mainsite_new_navigation": false,
+    "dp_wiki_fusion": true,
+    "enable_portal_split_view_open_alidoc": true,
+    "mainsite_share_tree_crowd_mobile": true,
+    "mainsite_new_notice_mobile": true,
+    "enable_doc_portal_mobile_red_dot_frontend": true,
+    "mainsite_team_open_apply": false,
+    "enable_transparent_query_default": true,
+    "enable_portal_new_framework": true
+  },
+  "data": {
+    "driveSpaceId": "2684468172",
+    "spaceId": "r9xmyDRvNKYk3XEO",
+    "corpId": "ding055f194a57d1af67",
+    "resourceCorpId": "ding055f194a57d1af67",
+    "driveDentryId": "223590751125",
+    "noteUpgradeGuideFlag": false,
+    "nodeId": "9xmyV0LJoR96qGEO"
+  },
+  "dentryInfo": {
+    "data": {
+      "dentryKey": "6me5zq9lVHW2yK32",
+      "extension": "adoc",
+      "spaceUuid": "1oam4SqMwlP7B18K",
+      "contentUpdatedTime": 1780899914989,
+      "hasChildren": true,
+      "spaceProfile": {
+        "rootDentryUuid": "Qnp9zOoBVBZDzd6DhrLP5b9KV1DK0g6l",
+        "driveSpaceId": "2684468172",
+        "updatedTime": 1780957829483,
+        "icon": "Re:https://img.alicdn.com/imgextra/i4/O1CN01mDqDll1XzIVhTS6Wr_!!6000000002994-2-tps-140-140.png",
+        "name": "K1",
+        "createdTime": 1747017918529,
+        "description": "K1项目文档",
+        "id": "r9xmyDRvNKYk3XEO",
+        "type": 1
+      },
+      "icon": {},
+      "positionCursor": "pos:32768.0",
+      "bizSceneCode": 1,
+      "finalizeInfo": {
+        "enableFinalize": true
+      },
+      "orgId": "6774171",
+      "dentryId": "9xmyV0LJoR96qGEO",
+      "driveSpaceId": "2684468172",
+      "spaceId": "r9xmyDRvNKYk3XEO",
+      "parentDentryId": "9xmyVV82kRw81GEO",
+      "dentryStatistic": {
+        "childrenCount": 3
+      },
+      "driveDentryId": "223590751125",
+      "ancestorList": [
+        {
+          "dentryKey": "pA2M3V3vEiA4XP04",
+          "spaceUuid": "1oam4SqMwlP7B18K",
+          "hasChildren": true,
+          "positionCursor": "pos:18432.0",
+          "finalizeInfo": {
+            "enableFinalize": false
+          },
+          "orgId": "6774171",
+          "dentryId": "9xmy0jb6xnAWoXEO",
+          "driveSpaceId": "2684468172",
+          "spaceId": "r9xmyDRvNKYk3XEO",
+          "parentDentryId": "JaYr98zn2zLxnd6W",
+          "dentryStatistic": {
+            "childrenCount": 15
+          },
+          "driveDentryId": "179217996207",
+          "createdTime": 1747018054000,
+          "isInTrash": false,
+          "updatedTime": 1747018063000,
+          "creator": {
+            "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+            "uid": "141616377",
+            "name": "Felix 薛峰"
+          },
+          "thumbnail": "",
+          "corpId": "ding055f194a57d1af67",
+          "illegal": false,
+          "url": {},
+          "depth": 1,
+          "dentryType": "folder",
+          "dentryUuid": "mExel2BLV549Xda9IbmPpPB6Wgk9rpMq",
+          "name": "策划文档",
+          "updator": {
+            "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+            "uid": "141616377",
+            "name": "Felix 薛峰"
+          },
+          "driveSceneType": "orgBizMeta"
+        },
+        {
+          "dentryKey": "Rb7Q2GWn7tQAKjEA",
+          "spaceUuid": "1oam4SqMwlP7B18K",
+          "hasChildren": true,
+          "positionCursor": "pos:5632.0",
+          "finalizeInfo": {
+            "enableFinalize": false
+          },
+          "orgId": "6774171",
+          "dentryId": "9xmy0OAlY2AR3XEO",
+          "driveSpaceId": "2684468172",
+          "spaceId": "r9xmyDRvNKYk3XEO",
+          "parentDentryId": "9xmy0jb6xnAWoXEO",
+          "dentryStatistic": {
+            "childrenCount": 40
+          },
+          "driveDentryId": "186686416293",
+          "createdTime": 1752477844000,
+          "isInTrash": false,
+          "updatedTime": 1752477849000,
+          "creator": {
+            "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+            "uid": "141616377",
+            "name": "Felix 薛峰"
+          },
+          "thumbnail": "",
+          "corpId": "ding055f194a57d1af67",
+          "illegal": false,
+          "url": {},
+          "depth": 2,
+          "dentryType": "folder",
+          "dentryUuid": "YMyQA2dXW79g36ngI61lb5X6JzlwrZgb",
+          "name": "活动",
+          "updator": {
+            "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+            "uid": "141616377",
+            "name": "Felix 薛峰"
+          },
+          "driveSceneType": "orgBizMeta"
+        },
+        {
+          "dentryKey": "6njY5N935H9G25QG",
+          "spaceUuid": "1oam4SqMwlP7B18K",
+          "hasChildren": true,
+          "positionCursor": "pos:-2359288.0",
+          "finalizeInfo": {
+            "enableFinalize": false
+          },
+          "orgId": "6774171",
+          "dentryId": "9xmyVV82kRw81GEO",
+          "driveSpaceId": "2684468172",
+          "spaceId": "r9xmyDRvNKYk3XEO",
+          "parentDentryId": "9xmy0OAlY2AR3XEO",
+          "dentryStatistic": {
+            "childrenCount": 4
+          },
+          "driveDentryId": "223150101816",
+          "createdTime": 1780049677000,
+          "isInTrash": false,
+          "updatedTime": 1780049688000,
+          "creator": {
+            "avatorMediaId": "@lADPD26eQD6fHOXNAe7NAbA",
+            "uid": "154617771",
+            "name": "蒋镇宇"
+          },
+          "thumbnail": "",
+          "corpId": "ding055f194a57d1af67",
+          "illegal": false,
+          "url": {},
+          "depth": 3,
+          "dentryType": "folder",
+          "dentryUuid": "dpYLaezmVNLROXARIGNjA46j8rMqPxX6",
+          "name": "2026世界杯活动",
+          "updator": {
+            "avatorMediaId": "@lADPD26eQD6fHOXNAe7NAbA",
+            "uid": "154617771",
+            "name": "蒋镇宇"
+          },
+          "driveSceneType": "orgBizMeta"
+        }
+      ],
+      "createdTime": 1780407593000,
+      "contentType": "alidoc",
+      "isInTrash": false,
+      "updatedTime": 1780899915000,
+      "creator": {
+        "avatorMediaId": "@lADPD26eQD6fHOXNAe7NAbA",
+        "uid": "154617771",
+        "name": "蒋镇宇"
+      },
+      "thumbnail": "$iwElAqNqcGcDAQTRAmwF0QHABrBZNtPOmDCgwwn7GIr7cc0ABwAIAAmqZGluZ3BhblBpYwoACwA",
+      "corpId": "ding055f194a57d1af67",
+      "shareScopeInfo": {
+        "scope": 0
+      },
+      "docKey": "meonarbjvG31jqXx",
+      "securityInfo": {
+        "forbiddenCopy": {
+          "name": "forbiddenCopy",
+          "isInherit": true,
+          "value": false
+        },
+        "forbiddenSpread": {
+          "name": "forbiddenSpread",
+          "isInherit": true,
+          "value": false
+        },
+        "watermark": {
+          "name": "watermark",
+          "isInherit": true,
+          "value": true
+        },
+        "watermarkContent": {
+          "density": "moderate",
+          "enableRealmWatermark": false,
+          "rotation": -30,
+          "transparency": 0,
+          "fontSize": 70,
+          "text": "成都创人所爱科技股份有限公司 蒋镇宇 | 6765"
+        }
+      },
+      "illegal": false,
+      "url": {
+        "pcChildAppPreviewUrl": "https://alidocs.dingtalk.com/note/preview?dt_editor_toolbar=true&biz_ver=10&docId=meonarbjvG31jqXx&docType=doc&dontjump=true&utm_scene=team_space&platform=pc&mainsiteOrigin=mainsite&showCommentPanel=false&from=dingnote&dd_user_keyboard=false&dd_full_screen=true&workspaceId=r9xmyDRvNKYk3XEO&docKey=meonarbjvG31jqXx&dentryKey=6me5zq9lVHW2yK32#preview=true",
+        "mobileChildAppUrl": "https://alidocs.dingtalk.com/h5/d?dt_editor_toolbar=true&biz_ver=10&showCommentPanel=false&docId=meonarbjvG31jqXx&from=dingnote&dd_user_keyboard=false&dd_full_screen=true&dontjump=true&utm_scene=team_space&mainsiteOrigin=mainsite&workspaceId=r9xmyDRvNKYk3XEO&docKey=meonarbjvG31jqXx&dentryKey=6me5zq9lVHW2yK32&type=d#/edit?dentryKey=6me5zq9lVHW2yK32",
+        "pcChildAppUrl": "https://alidocs.dingtalk.com/note/edit?dt_editor_toolbar=true&biz_ver=10&docId=meonarbjvG31jqXx&docType=doc&dontjump=true&utm_scene=team_space&platform=pc&mainsiteOrigin=mainsite&showCommentPanel=false&from=dingnote&dd_user_keyboard=false&dd_full_screen=true&workspaceId=r9xmyDRvNKYk3XEO&docKey=meonarbjvG31jqXx&dentryKey=6me5zq9lVHW2yK32#preview=false"
+      },
+      "driveParentDentryId": "223150101816",
+      "depth": 4,
+      "dentryType": "file",
+      "fileSize": 218255223,
+      "dentryUuid": "amweZ92PV6vDZdmDCKwo2Ev4VxEKBD6p",
+      "name": "2026世界杯主题活动-开发文档.adoc",
+      "updator": {
+        "avatorMediaId": "@lQDPD2ouJkeJgLXNA0PNA0OwybmiIugJqhsHLejqDpjdAA",
+        "uid": "284552797",
+        "name": "何森"
+      },
+      "parentDentryUuid": "dpYLaezmVNLROXARIGNjA46j8rMqPxX6",
+      "visitorRelatedInfo": {
+        "collaboratorRoleId": "4000",
+        "roleId": "4000",
+        "roles": [
+          {
+            "code": "4000"
+          }
+        ],
+        "dentryActions": [
+          "DOWNLOAD_ATTACHMENT",
+          "COPY_DENTRY",
+          "SAVE_AS_TEMPLATE",
+          "GET_DENTRY_MEMBER",
+          "EXPORT",
+          "MANAGE_DENTRY_MEMBER",
+          "DELETE_DENTRY",
+          "IMPORT",
+          "CHANGE_PERMISSION_MODE",
+          "PUBLIC_SHARE",
+          "IMPORT_FOLDER",
+          "LINK_SHARE",
+          "LIST_CHILD",
+          "SAVE_AS",
+          "TEMPORARY_SHARE_NODE",
+          "RECYCLE_DENTRY",
+          "UPLOAD_ATTACHMENT",
+          "EXPORT_CLOUD",
+          "GET_DENTRY",
+          "EDIT",
+          "DOWNLOAD_AS",
+          "MANAGE_SECURITY_SETTING",
+          "MOVE_DENTRY",
+          "RENAME_DENTRY",
+          "EXPORT_IMAGE",
+          "CREATE_CHILD",
+          "CONTENT_COPY",
+          "SAVE_AS_QUICK_LINK",
+          "RECOVER_DENTRY",
+          "PREVIEW",
+          "CLOUD_PRINT"
+        ],
+        "hasForbidden": false
+      },
+      "driveSceneType": "orgBizMeta"
+    }
+  },
+  "dentryLaunchInfo": {
+    "data": {
+      "contentMode": "LINK",
+      "launchInfo": {
+        "extra": {},
+        "launchUrl": "https://alidocs.dingtalk.com/note/edit?dentryKey=6me5zq9lVHW2yK32&docId=meonarbjvG31jqXx&docType=doc&workspaceId=r9xmyDRvNKYk3XEO#preview=false",
+        "supportOnlinePreview": true
+      }
+    }
+  },
+  "myOrgs": [
+    {
+      "corpId": "ding055f194a57d1af67",
+      "isMainOrg": true,
+      "name": "成都创人所爱科技股份有限公司",
+      "logo": "@lALOHYG2K80CgM0CgA",
+      "orgId": 6774171
+    },
+    {
+      "corpId": "ding46465556ddd24e7eee0f45d8e4f7c288",
+      "isMainOrg": false,
+      "name": "成都创人所爱科技股份有限公司的合作伙伴",
+      "orgId": 583395075
+    }
+  ],
+  "teamOpenApplyInfo": {
+    "openApplyStatus": 0
+  },
+  "from": "node",
+  "spaceInfo": {
+    "data": {
+      "openCustomHomepage": false,
+      "rootDentryUuid": "Qnp9zOoBVBZDzd6DhrLP5b9KV1DK0g6l",
+      "spaceUuid": "1oam4SqMwlP7B18K",
+      "contentUpdatedTime": 1780969209543,
+      "icon": "Re:https://img.alicdn.com/imgextra/i4/O1CN01mDqDll1XzIVhTS6Wr_!!6000000002994-2-tps-140-140.png",
+      "description": "K1项目文档",
+      "type": 1,
+      "iconStruct": "{\"type\":\"recommend\",\"value\":\"https://img.alicdn.com/imgextra/i4/O1CN01mDqDll1XzIVhTS6Wr_!!6000000002994-2-tps-140-140.png\"}",
+      "orgId": "6774171",
+      "cover": "https://img.alicdn.com/imgextra/i4/O1CN01kDPaFL21MlfNSVyT2_!!6000000006971-2-tps-4160-2080.png",
+      "driveSpaceId": "2684468172",
+      "driveDentryId": "179217515753",
+      "createdTime": 1747017918529,
+      "fileQuota": 570227609,
+      "id": "r9xmyDRvNKYk3XEO",
+      "owner": {
+        "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+        "uid": "141616377",
+        "name": "Felix 薛峰"
+      },
+      "updatedTime": 1780957829483,
+      "creator": {
+        "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+        "uid": "141616377",
+        "name": "Felix 薛峰"
+      },
+      "contentUpdater": {
+        "avatorMediaId": "@lQDPM5f2dRXuNIPNAmbNAmawtuGT4z_LLFcJPuuqw8LLAA",
+        "uid": "81626085",
+        "name": "张自勉"
+      },
+      "corpId": "ding055f194a57d1af67",
+      "alidocsQuota": 6937011516,
+      "shareScopeInfo": {
+        "supportedWebOpenFileNames": [
+          "文档",
+          "表格",
+          "脑图",
+          "多维表",
+          "白板",
+          "上传的文件"
+        ],
+        "supportedWebOpenFileTypes": [
+          0,
+          1,
+          2,
+          6,
+          7,
+          9,
+          999
+        ],
+        "todoSupportedWebOpenFileNames": [
+          "自定义链接",
+          "快捷方式"
+        ],
+        "scope": 0,
+        "todoSupportedWebOpenFileTypes": [
+          997,
+          998
+        ]
+      },
+      "securityInfo": {
+        "forbiddenCopy": {
+          "name": "forbiddenCopy",
+          "isInherit": false,
+          "value": false
+        },
+        "watermark": {
+          "name": "watermark",
+          "isInherit": false,
+          "value": true
+        },
+        "watermarkContent": {
+          "density": "moderate",
+          "enableRealmWatermark": false,
+          "rotation": -30,
+          "transparency": 0,
+          "fontSize": 70,
+          "text": "成都创人所爱科技股份有限公司 蒋镇宇 | 6765"
+        }
+      },
+      "usedQuota": 7507239125,
+      "name": "K1",
+      "updator": {
+        "avatorMediaId": "@lADPDhmOsN199tXNATfNAR8",
+        "uid": "141616377",
+        "name": "Felix 薛峰"
+      },
+      "maxQuota": 16106127360,
+      "subType": 0,
+      "visitorRelatedInfo": {
+        "collaboratorRoleId": "3000",
+        "spaceActions": [
+          "USE_SPACE_TEMPLATE",
+          "GET_SPACE",
+          "GET_SPACE_TEMPLATE",
+          "LINK_SHARE",
+          "GET_SPACE_MEMBER"
+        ],
+        "relatedMarks": [],
+        "roleId": "3000",
+        "roles": [
+          {
+            "code": "3000"
+          }
+        ],
+        "dentryActions": [
+          "COPY_DENTRY",
+          "GET_DENTRY_MEMBER",
+          "GET_DENTRY",
+          "MANAGE_DENTRY_MEMBER",
+          "DELETE_DENTRY",
+          "MANAGE_SECURITY_SETTING",
+          "UPLOAD_FOLDER",
+          "MOVE_DENTRY",
+          "RENAME_DENTRY",
+          "IMPORT",
+          "CREATE_CHILD",
+          "IMPORT_FOLDER",
+          "LINK_SHARE",
+          "SAVE_AS_QUICK_LINK",
+          "UPLOAD",
+          "LIST_CHILD",
+          "SAVE_AS",
+          "TEMPORARY_SHARE_NODE",
+          "RECYCLE_DENTRY",
+          "RECOVER_DENTRY",
+          "PREVIEW"
+        ]
+      },
+      "status": 0
+    }
+  },
+  "myOrgsWithPersonalOrg": [
+    {
+      "corpId": "ding055f194a57d1af67",
+      "isMainOrg": true,
+      "name": "成都创人所爱科技股份有限公司",
+      "logo": "@lALOHYG2K80CgM0CgA",
+      "orgId": 6774171
+    },
+    {
+      "corpId": "ding46465556ddd24e7eee0f45d8e4f7c288",
+      "isMainOrg": false,
+      "name": "成都创人所爱科技股份有限公司的合作伙伴",
+      "orgId": 583395075
+    },
+    {
+      "corpId": "ding066cf84d4142487da39a90f97fcb1e09",
+      "isPersonalOrg": true,
+      "personalOrgOwnerNick": "蒋镇宇",
+      "isMainOrg": false,
+      "name": "蒋镇宇",
+      "logo": "@lADPD26eQD6fHOXNAe7NAbA",
+      "orgId": 858767456
+    }
+  ]
+}

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026世界杯主题活动-开发文档.adoc</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; 
+                      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; 
+                   padding: 2rem; text-align: center; }
+        .header h1 { font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .content { padding: 2rem 3rem; }
+        .content p { margin-bottom: 1rem; font-size: 1rem; line-height: 1.8; }
+        .table-container { margin: 1.5rem 0; overflow-x: auto; }
+        .doc-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: white; 
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .doc-table td { border: 1px solid #ddd; padding: 0.75rem; font-size: 0.95rem; }
+        .doc-table tr:hover { background-color: #f5f5f5; }
+        .image-container { margin: 1.5rem 0; text-align: center; }
+        .image-container img { max-width: 100%; height: auto; border-radius: 8px; 
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .code-block { margin: 1.5rem 0; border-radius: 8px; overflow: hidden; background: #282c34; 
+                       box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .code-header { background: #21252b; padding: 0.5rem 1rem; display: flex; 
+                        justify-content: space-between; align-items: center; }
+        .code-language { color: #61dafb; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; }
+        .code-copy { background: #61dafb; color: #282c34; border: none; padding: 0.25rem 0.75rem; 
+                      border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        .code-copy:hover { background: #4fa8c5; }
+        .code-block pre { margin: 0; padding: 1rem; overflow-x: auto; background: #282c34; }
+        .code-block code { font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.9rem; 
+                            line-height: 1.6; color: #abb2bf; display: block; white-space: pre; }
+        .footer { text-align: center; padding: 1.5rem; background: #f8f9fa; color: #666; 
+                   font-size: 0.85rem; border-top: 1px solid #e9ecef; }
+    </style>
+    <script>
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ 已复制';
+                button.style.background = '#52c41a';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#61dafb';
+                }, 2000);
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>2026世界杯主题活动-开发文档.adoc</h1>
+            <div class="meta">钉钉文档内容解析</div>
+        </div>
+        <div class="content">
+<p>目标平台：移动端（iOS / Android，竖屏单手操作） | 参考对标：足球生涯养成 + 切片休闲操作类 | 生成日期：2026-06-01</p>
+<p><span style="font-weight: bold">一句话定位</span>：世界杯期间上线的限时主题活动，以「足球切片小游戏 + 球星生涯养成 + 配套活动」三层结构，借赛事热点提升活跃与付费，并验证划线/弹弓两种操作模式。</p>
+<p><span style="font-weight: bold">核心玩法</span>：以"切片"为最小单位完成单次足球操作（进攻/任意球/点球/角球/界外球/守门），多个切片组成一个关卡；外层是球星生涯养成（知名度/生活三条等级线 + 合同）；再外层是积分赛、淘汰赛、竞猜、排名、BP、商店等配套活动。</p>
+<p><span style="font-weight: bold">参考游戏对标</span>：足球生涯养成类（签约、试训、赛季目标）+ 切片式休闲操作（单次进攻/守门手动操作）。竞猜赔率参考内部"X1 竞猜系统"（资料缺失，见待确认）。</p>
+<p><span style="font-weight: bold">目标平台</span>：移动端，竖屏单手操作，作为主游戏内的限时活动模块。</p>
+<p><span style="font-weight: bold">玩法循环</span>：创角签约 → 进入积分赛关卡 → 消耗门票 → 逐切片手动操作（划线/弹弓）→ 切片成功/失败（失败可回溯）→ 关卡结算（胜平负/进球/助攻奖励）→ 积分排名 → 养成提升（知名度/生活）→ 解锁更高星级球队/新合同 → 中后期开放淘汰赛与竞猜 → 配套活动（排名/BP/商店）消耗产出。</p>
+<p><span style="font-weight: bold">全局规则</span>：<br></p>
+<p>切片是最小操作单元；关卡由多切片组成；胜平负由关卡配置（通常按进球数/切片数比例）判定。</p>
+<p>积分赛单次消耗<span style="font-weight: bold">门票</span>，门票有上限与恢复速度（受生活等级 buff 影响）。</p>
+<p>操作模式（划线/弹弓）两种均需开发。<span style="font-weight: bold">正式关卡：首个非守门切片选定模式后，整关锁定不可更改；守门切片强制划线，不占用也不改变锁定</span>。<span style="font-weight: bold">试训为唯一例外，每个切片可自主切换以触发对应教学</span>。失败回溯后沿用本关已锁定模式。</p>
+<p>局内道具：哨子（+1 非守门切片，默认生效）、回溯（切片失败重来，有免费次数）、瞄准/辅助线（默认生效）。</p>
+<p>积分排名规则与真实足球不同：仅按切片胜利数量计分，非胜3平1负0。</p>
+<p><span style="font-weight: bold">数值框架</span>：门票上限/恢复速度、各等级经验曲线、合同待遇、AI 难度档位、竞猜赔率公式等均为待配置数值；本文档在各系统数据表中<span style="font-weight: bold">预留字段并标注 TODO</span>，不预设具体数值（见各系统）。</p>
+<p>首次进入活动的一次性流程，结束后进入活动主界面。</p>
+<p><span style="font-weight: bold">开场视频：</span>timeline或者视频，展示球星经典射门（参考游戏是C罗世界杯任意球）</p>
+<p><span style="font-weight: bold">选角</span>：固定 <span style="font-weight: bold">4 个角色，仅外观差异、无数值差异</span>，后续可修改。选角界面点选角色 → 拉近镜头 → 显示战力 → 弹出<span style="font-weight: bold">国籍选择</span>弹窗，可随时返回重选。</p>
+<p><span style="font-weight: bold">国籍</span>：仅影响<span style="font-weight: bold">首次签约时系统提供的球队选项</span>（决定球队所属地区），不影响角色属性、外观或其他系统。</p>
+<p><span style="font-weight: bold">试训</span>：固定包含<span style="font-weight: bold">进攻、任意球、点球</span>三类切片教学，<span style="font-weight: bold">顺序执行</span>。试训是操作模式锁定规则的<span style="font-weight: bold">唯一例外</span>——每个切片玩家可自主切换划线/弹弓两种操作模式，并触发对应模式的教学（操作细节见 [3.2 切片操作核心]）。</p>
+<p><span style="font-weight: bold">首次签约</span>：试训完成后收到球队合同，进入选择球队。默认提供 <span style="font-weight: bold">1 个 1 星球队</span>，并按国籍<span style="font-weight: bold">动态生成 2 个对应地区球队</span>；三者<span style="font-weight: bold">仅名字与国籍区别</span>，星级同为 1 星。小游戏不要求输入名字，默认用玩家名。</p>
+<p><span style="font-weight: bold">签约亮相</span>：确认签约后展示亮相动画（独立模块「签约亮相」并入此处），进入活动主界面，强引导指向第一关。</p>
+<p>第一关还有一个队友游标和滑动视角的教学</p>
+<p>第一关本身的新手引导归属 [3.3 基础关卡]（未通关重进会重复触发），签约亮相这段仅负责到"进入主界面 + 强引导指向第一关"。</p>
+<p>选择角色/选择国籍</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top"></td></tr>
+    </table>
+</div>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0dcd51abbf18a2441d0f7d4bb1afd367c0649f73d353abc4e7d843e2a9e0e8f7bd19aef371f2e06e19193c71527e532719" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d31f29b0acb1fb198fcb5bf31c1c9c69ae216b235acfe4de68cfea74dabb4adbb809850c5e7b60f13dad5d1f45aafcfef" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: middle">图中元素</td><td style="vertical-align: middle">规则说明</td></tr><tr><td style="vertical-align: middle">4 个低模球员站在球场中央</td><td style="vertical-align: middle">固定 4 角色，仅外观差异；点击角色后应进入选中态/拉近镜头。</td></tr><tr><td style="vertical-align: middle">底部蓝色按钮/提示“请选择你的角色”</td><td style="vertical-align: middle">未选择时作为提示；选中角色后应切换为确认/下一步态，或自动弹出国籍选择。</td></tr><tr><td style="vertical-align: middle">球场、教学楼、球门背景</td><td style="vertical-align: middle">仅表现，不参与逻辑；可作为创角场景背景资源。</td></tr><tr><td style="vertical-align: middle">当前角色被拉近到屏幕中央</td><td style="vertical-align: middle">表示已选角色；背景仍显示其他角色，不能误认为可同时选多人。</td></tr><tr><td style="vertical-align: middle">国旗网格：中、德、巴、葡、阿、比、西、波、瑞、法等</td><td style="vertical-align: middle">国籍为单选；选中后高亮；国籍只影响首签球队池。</td></tr><tr><td style="vertical-align: middle">底部左侧蓝色 X、右侧金色确认按钮</td><td style="vertical-align: middle">X 返回选角；确认写入国籍并进入试训。未选国籍时确认应置灰。</td></tr>
+    </table>
+</div>
+<p>试训关卡（划线/弹弓）</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0ddc5cfdda5a854934d236350e396f1c6f31888e62c1bcafb6e950ffa84d7dd6c95bd435bcc7dc3fdb96acb99e3d501891" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0dba9fef7b5000fed44b19e4e22063a06c202e273327f0d5826e303beba415af7f4baa7648467408482001bf5811685465" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d462d76bc051cda5c56fed0931a5a7e691ac7d626f015b43255857c261ff94496661370edbfbf2a65fbdebb9800ed8edc" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d1ace3178a4e9505aff0a41f96dd562561e3ce22432b0d5c243c30a8177b85363d67cc648a6178480e85d360a626adb01" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: middle">图中元素</td><td style="vertical-align: middle">规则说明</td></tr><tr><td style="vertical-align: middle">右上角暂停按钮</td><td style="vertical-align: middle">试训和正式局内均需有暂停入口；暂停不影响试训进度。</td></tr><tr><td style="vertical-align: middle">巨型白色手势 + 白色轨迹线</td><td style="vertical-align: middle">划线模式教学：玩家按手势绘制球路，系统展示预测轨迹。</td></tr><tr><td style="vertical-align: middle">黄色扇形/夹角线</td><td style="vertical-align: middle">表示可操作角度范围；超出范围应被限制或修正。</td></tr><tr><td style="vertical-align: middle">虚线目标区域、绿色箭头、训练小门/目标框</td><td style="vertical-align: middle">表示命中目标；目标区域和箭头应来自切片配置。</td></tr><tr><td style="vertical-align: middle">底部蓝色教学文案框</td><td style="vertical-align: middle">图中有“通过拖动来选择踢球方向和力量”“将球踢进白色线框内，力量控制在65%左右”等文案；按切片步骤配置。</td></tr><tr><td style="vertical-align: middle">力量百分比，如 49%、65%</td><td style="vertical-align: middle">弹弓/力度教学需要实时显示力量值；教学目标可要求落在指定范围。</td></tr><tr><td style="vertical-align: middle">人墙、门将、目标点</td><td style="vertical-align: middle">任意球/点球/进攻教学按切片类型摆位；试训中允许每个切片独立教学，不锁整关模式。</td></tr>
+    </table>
+</div>
+<p>初始合同（积分赛中联赛完成合同流程相同）</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d1812c44eb844829b75b378410e119f1a067a8fc226ef72e3a3f6777ae2c042e6a3f853eb4578a94e42ed9939d860e5ba" alt="训练完成.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0dd2a47a113d102b8c44b79f3a4749604de57956fad5b26ac4595af12ae18caa2ddb96b6d72f42d54011f60c813171523b" alt="选择队伍.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>弹窗标题“我的合同”。<br>规则:首签或完成一轮联赛后可弹出新合同。<br>球队信息:国旗、队名“阿根廷神鹰-10”、队名 QKuakua、星级、队徽。<br>规则:球队信息由合同配置生成。<br>待遇表:周薪 10、进球 5、助攻 5、名气 20。<br>规则:待遇数值由 contract 表配置,不由前端计算。<br>球队目标:球队在联赛中获得前 12 名。<br>规则:赛季目标需配置 type/threshold/settle_at;排名类目标应等赛季排名结算。<br>奖励:金币 84。<br>规则:奖励可能为签约即时奖励或目标奖励,需与合同字段区分。<br>底部“取消”和“确认”按钮。<br>规则:确认后写入玩家合同状态;取消后如何处理新合同需要服务端状态支持。</td></tr>
+    </table>
+</div>
+<p>签约（可以没有）与主界面</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d620925421bdb98981e68e5d773c009f218a05d88835f6e0a9bed559f3875cccda9695eb53499efa757d1d95789509b59" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>顶部资源栏:门票 80/250、钻石 1,520、金币 54,200、活动道具 2/10。<br>规则:资源栏统一读取玩家资产;门票上限和恢复速度受生活等级 buff 影响。<br>中央球员主形象,穿蓝色球衣,脚边有足球。<br>规则:展示当前球员外观和活动身份;外观只影响展示,不直接影响关卡判定。<br>黑色数据条:评分 10、进球 16、助攻 10。<br>规则:评分来自养成数据;进球和助攻来自比赛结算累计。<br>黄色按钮“下一场比赛”和下方黄色按钮“开始游戏”。<br>规则:主行动进入战前页或当前已解锁关卡;开始类按钮需要防连点。<br>右侧星形入口“职业生涯”。<br>规则:可作为球员生涯、养成或合同相关入口;具体落点需要与功能导航定义一致。<br>底部导航:商店、排行、开始游戏、赛程、收藏。<br>规则:按原图显示为五个入口;各入口跳转关系需在客户端路由中配置。</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">角色配置表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">character_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">角色ID</td><td style="vertical-align: top">1–4</td></tr><tr><td style="vertical-align: top">appearance_key</td><td style="vertical-align: top">string</td><td style="vertical-align: top">外观资源键</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">display_power</td><td style="vertical-align: top">int</td><td style="vertical-align: top">展示用战力（仅表现，无数值差异）</td><td style="vertical-align: top">≥0，TODO 数值</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">国籍配置表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">nationality_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">国籍ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">name</td><td style="vertical-align: top">string</td><td style="vertical-align: top">国籍名称</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">region</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">所属地区（决定首签球队选项）</td><td style="vertical-align: top">枚举，TODO 列表</td></tr><tr><td style="vertical-align: top">team_pool</td><td style="vertical-align: top">int 数组</td><td style="vertical-align: top">该国籍可动态生成的球队池ID</td><td style="vertical-align: top">引用 team_config</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">试训配置表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">step_index</td><td style="vertical-align: top">int</td><td style="vertical-align: top">试训步骤序号</td><td style="vertical-align: top">1–3</td></tr><tr><td style="vertical-align: top">slice_type</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">切片类型</td><td style="vertical-align: top">attack/free_kick/penalty</td></tr><tr><td style="vertical-align: top">forced_order</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">是否强制顺序</td><td style="vertical-align: top">true</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">玩家创角存档 </span><span style="font-weight: bold">（创角相关字段）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">player_name</td><td style="vertical-align: top">string</td><td style="vertical-align: top">玩家名（默认即角色名）</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">character_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">选定角色</td><td style="vertical-align: top">1–4</td></tr><tr><td style="vertical-align: top">nationality_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">选定国籍</td><td style="vertical-align: top">引用 nationality_config</td></tr><tr><td style="vertical-align: top">signed_team_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">首签球队</td><td style="vertical-align: top">引用 team_config</td></tr><tr><td style="vertical-align: top">tutorial_done</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">是否完成新手引导</td><td style="vertical-align: top">默认 false</td></tr>
+    </table>
+</div>
+<p>单次足球操作的核心引擎，被所有关卡切片调用。</p>
+<p><span style="font-weight: bold">操作模式</span>：<br></p>
+<p><span style="font-weight: bold">划线</span>：忽略力度和高度，玩家确定落点和弧度，系统做自动轨迹修正。</p>
+<p><span style="font-weight: bold">弹弓</span>：忽略高度和弧度，玩家确定方向和力度。</p>
+<p><span style="font-weight: bold">守门切片只能用划线</span>（强制，不触发锁定、也不受锁定影响）；其余切片（进攻/任意球/点球/角球/界外球）的模式由<span style="font-weight: bold">本关第一个非守门切片选定后锁定整关</span>，关卡内不可更改，失败回溯后仍沿用锁定模式。</p>
+<p><span style="font-weight: bold">唯一例外是试训</span>（[3.1]）：试训每个切片可单独切换模式，不锁定，用于教学两种操作。</p>
+<p><span style="font-weight: bold">6 类切片核心参数</span>（见数据表）：进攻、任意球、点球、角球、界外球、守门。</p>
+<p><span style="font-weight: bold">成功/失败判定</span>：<br></p>
+<p>非守门切片：玩家操作结果（落点/方向/力度）与切片参数（门将权重、可操作夹角等）做命中计算。<span style="font-weight: bold">失败 = 被门将扑出，或被对方球员出球并踢出界外</span>；否则进球/推进视为成功。</p>
+<p>守门切片：有<span style="font-weight: bold">反应时间</span>，<span style="font-weight: bold">超时失败</span>；判断扑救方向错误失败。</p>
+<p><span style="font-weight: bold">瞄准辅助线</span>：默认生效。划线与弹弓两种模式下，辅助线均<span style="font-weight: bold">准确标出足球完整运行轨迹与落点</span>。</p>
+<p><span style="font-weight: bold">操作时间</span>：仅守门切片有反应时间限制；其余切片等待操作时<span style="font-weight: bold">纯暂停、无时间限制</span>。</p>
+<p><span style="font-weight: bold">局内道具</span>：<br></p>
+<p><span style="font-weight: bold">哨子</span>：增加 1 次非守门切片，默认生效。</p>
+<p><span style="font-weight: bold">回溯</span>：切片失败时可选使用，<span style="font-weight: bold">将场景重置到该切片最初状态</span>（足球与所有球员位置从配置初始位置重新加载）；有免费次数，携带道具时优先用免费次数。</p>
+<p><span style="font-weight: bold">瞄准</span>：提供辅助线，默认生效。</p>
+<p><span style="font-weight: bold">震动反馈（手机震动模块）</span></p>
+<p><span style="font-weight: bold">覆盖范围</span>：仅在<span style="font-weight: bold">关键结果</span>与<span style="font-weight: bold">核心操作</span>两类离散事件触发，操作等待过程（蓄力拖动、划线绘制中）<span style="font-weight: bold">不持续震动</span>，与「等待操作纯暂停、无时间限制」规则不冲突。 </p>
+<p> 核心操作：<span style="font-weight: bold">落点锁定</span>、<span style="font-weight: bold">释放出脚</span>。 </p>
+<p> 关键结果：<span style="font-weight: bold">进球</span>、<span style="font-weight: bold">被门将扑出</span>、<span style="font-weight: bold">踢出界外</span>、<span style="font-weight: bold">守门失败</span>、<span style="font-weight: bold">守门扑救成功</span>、<span style="font-weight: bold">击中门框</span>、<span style="font-weight: bold">头球击球。</span></p>
+<p><span style="font-weight: bold">分级与图案</span>：震动由<span style="font-weight: bold">强度档（轻/中/重 </span><span style="font-weight: bold">）× 图案（短促/双击/连续 </span><span style="font-weight: bold">）</span> 两个维度组合表达，不同事件映射不同组合（见数据表 ）；例如进球=重+双击、被扑出=中+短促、回溯重置=轻+连续</p>
+<p><span style="font-weight: bold">全局开关</span>：设置内提供「震动」总开关，<span style="font-weight: bold">新玩家默认开启</span>；关闭时所有事件<span style="font-weight: bold">静默跳过</span>，不影响任何切片判定</p>
+<p><span style="font-weight: bold">配置归属</span>：震动配置独立于切片三层摆位（），统一挂在<span style="font-weight: bold">全局事件→震动映射表</span> ，按事件类型生效，策划改一处即全局生效，与切片摆位解耦。</p>
+<p><span style="font-weight: bold">关系</span>：被 [3.3 基础关卡] 的每个切片调用；道具携带与库存见 [3.4 球星养成] 与局外道具系统。</p>
+<p><span style="font-weight: bold">操作模式枚举 </span>：（划线）/ （弹弓）</p>
+<p>切片配置采用<span style="font-weight: bold">三层 + 两个正交模块</span>，兼顾配置便捷（preset 复用）、扩展性（加数据不加列）与趣味性（机制/目标可插拔）。</p>
+<div class="code-block">
+    <div class="code-header">
+        <span class="code-language">plaintext</span>
+        <button class="code-copy" onclick="copyCode(this)" title="复制代码">📋 复制</button>
+    </div>
+    <pre><code class="language-plaintext">L1 slice_type_def   类型固有规则(只读, 程序定)
+L2 slice_preset     可复用摆位预设(策划90%引用)
+L3 slice_instance   关卡里的一个切片 = preset + override + 目标 + 机制
+       ├─ objectives  目标/胜负判定(正交)
+       └─ modifiers   玩法机制(正交, 可插拔, 数据驱动)</code></pre>
+</div>
+<p><span style="font-weight: bold">叠加优先级（必须固定）</span>：；后者覆盖前者，modifiers 最后生效。</p>
+<p><span style="font-weight: bold">L1 切片类型定义 </span><span style="font-weight: bold">（只读，程序定，新增类型加一行不动下游）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">slice_type</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">切片类型</td><td style="vertical-align: top">attack/free_kick/penalty/corner/throw_in/goalkeep</td></tr><tr><td style="vertical-align: top">allowed_modes</td><td style="vertical-align: top">enum 数组</td><td style="vertical-align: top">允许的操作模式</td><td style="vertical-align: top">守门=仅 draw_line；其余=draw_line 与 slingshot</td></tr><tr><td style="vertical-align: top">judge_fn</td><td style="vertical-align: top">string</td><td style="vertical-align: top">判定函数键（程序实现）</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">payload_schema</td><td style="vertical-align: top">json</td><td style="vertical-align: top">该类型  字段定义与校验</td><td style="vertical-align: top">见各类型</td></tr><tr><td style="vertical-align: top">default_camera</td><td style="vertical-align: top">json</td><td style="vertical-align: top">默认相机</td><td style="vertical-align: top">-</td></tr>
+    </table>
+</div>
+<p>各类型  字段（preset/instance 的  按此填）：</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">切片类型</td><td style="vertical-align: top">type_payload 字段</td></tr><tr><td style="vertical-align: top">进攻 attack</td><td style="vertical-align: top">默认目的地、门将权重、可操作夹角</td></tr><tr><td style="vertical-align: top">任意球 free_kick</td><td style="vertical-align: top">罚球点位、墙体站位、可操作夹角、门将权重</td></tr><tr><td style="vertical-align: top">点球 penalty</td><td style="vertical-align: top">点球点、门将扑救方向权重、反应时间</td></tr><tr><td style="vertical-align: top">角球 corner</td><td style="vertical-align: top">角球发球位、禁区跑位模板、第一落点权重</td></tr><tr><td style="vertical-align: top">界外球 throw_in</td><td style="vertical-align: top">发球位、接应跑位、二次进攻模板</td></tr><tr><td style="vertical-align: top">守门 goalkeep</td><td style="vertical-align: top">对手射门方向权重、反应时间（超时失败）、判断错误失败</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">L2 摆位预设 </span><span style="font-weight: bold">（可复用、可独立预览的完整摆位，策划资产）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">preset_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">预设ID（被 instance 引用）</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">slice_type</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">所属类型</td><td style="vertical-align: top">引用 slice_type_def</td></tr><tr><td style="vertical-align: top">name</td><td style="vertical-align: top">string</td><td style="vertical-align: top">预设名（如"右路单刀"）</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">tags</td><td style="vertical-align: top">string 数组</td><td style="vertical-align: top">检索标签（side/distance/difficulty…）</td><td style="vertical-align: top">可空</td></tr><tr><td style="vertical-align: top">ball_pos</td><td style="vertical-align: top">vec3</td><td style="vertical-align: top">足球初始位置</td><td style="vertical-align: top">公共摆位</td></tr><tr><td style="vertical-align: top">ball_vector</td><td style="vertical-align: top">vec3</td><td style="vertical-align: top">足球初始向量</td><td style="vertical-align: top">公共摆位</td></tr><tr><td style="vertical-align: top">ball_owner</td><td style="vertical-align: top">int</td><td style="vertical-align: top">初始控球球员索引</td><td style="vertical-align: top">守门可空</td></tr><tr><td style="vertical-align: top">players_init</td><td style="vertical-align: top">json</td><td style="vertical-align: top">双方球员初始位置/朝向列表</td><td style="vertical-align: top">公共摆位</td></tr><tr><td style="vertical-align: top">camera</td><td style="vertical-align: top">json</td><td style="vertical-align: top">默认视角</td><td style="vertical-align: top">instance 可 override</td></tr><tr><td style="vertical-align: top">target_point</td><td style="vertical-align: top">vec3</td><td style="vertical-align: top">默认目标点/落点</td><td style="vertical-align: top">守门可空</td></tr><tr><td style="vertical-align: top">operable_angle</td><td style="vertical-align: top">float</td><td style="vertical-align: top">默认可操作夹角</td><td style="vertical-align: top">非守门</td></tr><tr><td style="vertical-align: top">type_payload</td><td style="vertical-align: top">json</td><td style="vertical-align: top">类型差异参数<span style="font-weight: bold">默认值</span>（按 L1 schema，自包含可预览）</td><td style="vertical-align: top">-</td></tr><tr><td style="vertical-align: top">recommended_modes</td><td style="vertical-align: top">enum 数组</td><td style="vertical-align: top">建议操作模式（仅提示，不强制）</td><td style="vertical-align: top">可空</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">L3 切片实例 </span><span style="font-weight: bold">（一次关卡使用 = 装配单，被 level_config 引用）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">slice_instance_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">实例ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">slice_type</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">引用类型</td><td style="vertical-align: top">slice_type_def</td></tr><tr><td style="vertical-align: top">preset_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">引用摆位预设</td><td style="vertical-align: top">slice_preset，可空=纯手填</td></tr><tr><td style="vertical-align: top">overrides</td><td style="vertical-align: top">json</td><td style="vertical-align: top">覆盖 preset 的局部字段（小改不必新建 preset）</td><td style="vertical-align: top">可空</td></tr><tr><td style="vertical-align: top">type_payload</td><td style="vertical-align: top">json</td><td style="vertical-align: top">覆盖 preset 的类型参数</td><td style="vertical-align: top">可空=用 preset 默认</td></tr><tr><td style="vertical-align: top">objectives</td><td style="vertical-align: top">json 数组</td><td style="vertical-align: top">目标/胜负判定（见下）</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">modifiers</td><td style="vertical-align: top">json 数组</td><td style="vertical-align: top">挂载的玩法机制（见下）</td><td style="vertical-align: top">可空</td></tr><tr><td style="vertical-align: top">ai_override</td><td style="vertical-align: top">json</td><td style="vertical-align: top">实例级 AI 微调（叠在关卡 AI 档之上）</td><td style="vertical-align: top">可空</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">目标定义 </span><span style="font-weight: bold">（正交，决定"这一关要玩家做成什么"）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">objective type</td><td style="vertical-align: top">成功条件</td><td style="vertical-align: top">params</td></tr><tr><td style="vertical-align: top">score</td><td style="vertical-align: top">进球</td><td style="vertical-align: top">-</td></tr><tr><td style="vertical-align: top">pass_to</td><td style="vertical-align: top">传给指定队友（计助攻）</td><td style="vertical-align: top">target</td></tr><tr><td style="vertical-align: top">hit_zone</td><td style="vertical-align: top">命中指定区域</td><td style="vertical-align: top">zone</td></tr><tr><td style="vertical-align: top">keep_possession</td><td style="vertical-align: top">护球不被断</td><td style="vertical-align: top">duration</td></tr><tr><td style="vertical-align: top">survive</td><td style="vertical-align: top">守门撑过反应时间且方向正确</td><td style="vertical-align: top">-</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">机制定义 </span><span style="font-weight: bold">（正交、可插拔，新玩法加一行不动引擎 → 趣味+扩展核心）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">modifier_id</td><td style="vertical-align: top">效果</td><td style="vertical-align: top">params</td></tr><tr><td style="vertical-align: top">wind</td><td style="vertical-align: top">球轨横向偏移</td><td style="vertical-align: top">direction, strength</td></tr><tr><td style="vertical-align: top">moving_keeper</td><td style="vertical-align: top">门将左右移动</td><td style="vertical-align: top">speed, range</td></tr><tr><td style="vertical-align: top">shrink_goal</td><td style="vertical-align: top">球门变窄</td><td style="vertical-align: top">scale</td></tr><tr><td style="vertical-align: top">no_aim_line</td><td style="vertical-align: top">关闭辅助线</td><td style="vertical-align: top">-</td></tr><tr><td style="vertical-align: top">multi_target</td><td style="vertical-align: top">多得分区，分值不同</td><td style="vertical-align: top">zones 数组</td></tr><tr><td style="vertical-align: top">time_pressure</td><td style="vertical-align: top">非守门切片加倒计时</td><td style="vertical-align: top">ms</td></tr><tr><td style="vertical-align: top">combo_required</td><td style="vertical-align: top">须前一切片成功才解锁</td><td style="vertical-align: top">prev_slice</td></tr>
+    </table>
+</div>
+<p>实例示例：右路单刀 preset(33) +  +  + ，即"复用单刀摆位、微调夹角、要求射门、门将会动且无辅助线"。</p>
+<p><span style="font-weight: bold">局内道具表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">item_id</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">道具</td><td style="vertical-align: top">whistle/rewind/aim</td></tr><tr><td style="vertical-align: top">effect</td><td style="vertical-align: top">string</td><td style="vertical-align: top">效果</td><td style="vertical-align: top">哨子+1非守门切片/回溯重置切片/瞄准辅助线</td></tr><tr><td style="vertical-align: top">default_active</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">是否默认生效</td><td style="vertical-align: top">哨子=true,瞄准=true,回溯=false</td></tr><tr><td style="vertical-align: top">free_count</td><td style="vertical-align: top">int</td><td style="vertical-align: top">免费次数（仅回溯）</td><td style="vertical-align: top">≥0，TODO 数值</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">切片运行时状态 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">slice_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">切片实例ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">locked_mode</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">本关锁定的操作模式</td><td style="vertical-align: top">operation_mode</td></tr><tr><td style="vertical-align: top">reaction_time_ms</td><td style="vertical-align: top">int</td><td style="vertical-align: top">反应时间（仅守门/点球）</td><td style="vertical-align: top">≥0，TODO 数值</td></tr><tr><td style="vertical-align: top">result</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">切片结果</td><td style="vertical-align: top">success/fail</td></tr><tr><td style="vertical-align: top">fail_reason</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">失败原因</td><td style="vertical-align: top">saved/out_of_bounds/timeout/wrong_judge</td></tr>
+    </table>
+</div>
+<p>关卡是切片的容器，定义胜负判定、流程编排与结算。被 [3.5 积分赛] 作为轮次内容调用。</p>
+<p><span style="font-weight: bold">关卡结构</span>：一个关卡由多个切片组成（切片类型见 [3.2]）。<span style="font-weight: bold">胜平负由每个关卡单独配置</span>（通常按进球数/切片数比例，如 2/3 胜、1/3 平、0 球负——仅为示例，逐关配置）。</p>
+<p><span style="font-weight: bold">门票消耗与进度（MVP 规则，已定）</span>：<br></p>
+<p><span style="font-weight: bold">进入关卡即扣门票</span>（开始扣，失败也已扣，不在结算时扣）。</p>
+<p><span style="font-weight: bold">中途退出不保存切片进度</span>：重进 = 重新进入、再次扣门票、从第一个切片重来。</p>
+<p><span style="font-weight: bold">奖励幂等</span>：每次进入生成 ，结算奖励按  入账且<span style="font-weight: bold">同一 attempt 只发一次</span>；重复进入是新 attempt、可再次正常结算（不存在"重复领同一份奖励"）。</p>
+<p><span style="font-weight: bold">断线 / 杀进程 / 后台超时</span>：未走到结算的 attempt 一律<span style="font-weight: bold">作废</span>（门票不退、不发奖），重进按新 attempt 处理；不做断线续局。</p>
+<p><span style="font-weight: bold">关卡 AI</span>：预设多套 AI，作为<span style="font-weight: bold">关卡级难度档位</span>，作用到该关各切片的权重参数（门将权重、跑位模板等），控制难度与体验。</p>
+<p><span style="font-weight: bold">助攻机制</span>：玩家扮演球星，场上有系统队友。当<span style="font-weight: bold">主角传球给队友、队友射门成功</span>，计为主角助攻（对应"传球给队友"类切片成功）。</p>
+<p><span style="font-weight: bold">关卡流程</span>：入场展示 → 开球视角 → 切片视角（切换均用黑幕过渡）→ 进入第一个切片停留等待操作 → 每切片成功/失败后进入<span style="font-weight: bold">回放</span>：成功=庆祝动作展示，失败=回溯选择（消耗道具/免费次数或放弃，见 [3.2]）→ 回放需<span style="font-weight: bold">手动点击结束</span>视为该切片完成 → 自动切下一切片 → 所有切片完成=关卡完成 → 依次弹出<span style="font-weight: bold">关卡结算</span>与<span style="font-weight: bold">积分排名结算</span>。→ 如果联赛所有关卡都完成，回到关卡界面后需要衔接联赛关卡推进至下一关的流程</p>
+<p><span style="font-weight: bold">关卡结算</span>：胜平负结果、完赛奖励、进球数奖励、助攻数奖励。</p>
+<p><span style="font-weight: bold">排名结算</span>：与真实足球</p>
+<p>积分规则（胜3平1负0）不同，<span style="font-weight: bold">仅按切片胜利数量算积分</span>。</p>
+<p><span style="font-weight: bold">引导关</span>：第一关为<span style="font-weight: bold">固定脚本</span>引导关；未通关时重进会重复触发引导（S1 创角只负责引导指向第一关，引导关本身属本系统）。</p>
+<p><span style="font-weight: bold">关卡道具</span>：允许携带哨子/回溯/瞄准进入关卡（局内行为见 [3.2]）。</p>
+<p>活动主界面/小关卡战前界面/联赛关卡界面</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>战前标题“地区预选赛 第10/32轮”。<br>规则:标题来自当前 season/level 配置,轮次不可写死。<br>双方球员、队名、星级和名次,中央有 VS。<br>规则:队名、排名、星级只展示服务端下发数据,前端不计算名次。<br>目标条:射门机会 2、胜利 2、平局 1。<br>规则:射门机会对应切片数量;胜利/平局阈值对应 level_config.win_threshold/draw_threshold。<br>三个带加号的道具槽。<br>规则:道具槽支持选择局内道具;空槽点击打开选择或购买流程。<br>黄色“开赛”按钮,按钮内显示活动道具消耗 1。<br>规则:点击后进入关卡,需校验资源、扣门票或对应入场道具,并生成 attempt_id。<br>底部左侧“积分榜”按钮和右侧“赛程”按钮。<br>规则:分别打开排名和赛程弹窗,不改变关卡进度。</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>标题“我的赛季”和一条纵向赛季路线。<br>规则:一个大关卡可对应一轮联赛,路线用于展示当前赛季推进。<br>当前节点显示队徽、队名 QKuakua、星级和角色站位。<br>规则:当前可挑战或当前所在节点需要高亮,并作为默认战前入口。<br>路径上的编号节点 1-9。<br>规则:小关卡顺序解锁;未完成前置节点不能挑战后续节点。<br>节点旁有“职业球员”“白银联赛”等标签。<br>规则:节点标签可展示对手、段位、奖励或阶段信息,具体字段应配置化。<br>地图装饰包含 2026、旗帜、奖杯、地标、树木。<br>规则:主题装饰不参与解锁、排名和奖励计算。</td></tr>
+    </table>
+</div>
+<p>入场表演/开球/切片操作</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d7a936c7509af19e77e28ae51c1f8dc2eef0505925972e197249654a51fa1647fdc31828e4df483b2de4075cc0a5b8a0d" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d068352d17c22774c3c0a94680d15d6742cd37034c89848e1f4f262d36d92ad72f5ab8fc0d8a229c96fd088ea0737c8eb" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde50c8940c98f39a7c7859566366c487bc475b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d7efa0975611b2e3fd88b3216bb12382a9c8d66f398cc9c50fe2995c3288dc3f6b5b302e1aeb0b86d4eb673a7a36f678b" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: middle">图中元素</td><td style="vertical-align: middle">规则说明</td></tr><tr><td style="vertical-align: middle">球队横向入场镜头</td><td style="vertical-align: middle">关卡开场表现，结束后进入开球/切片。</td></tr><tr><td style="vertical-align: middle">俯视中圈开球镜头</td><td style="vertical-align: middle">开球过场，通常不可操作。</td></tr><tr><td style="vertical-align: middle">局内切片：主角脚下黄色光圈、底部手势、黄色方向线</td><td style="vertical-align: middle">表示当前可操作球员和操作起点。</td></tr><tr><td style="vertical-align: middle">绿色箭头 / 白色落点</td><td style="vertical-align: middle">表示推荐目标点或队友跑位目标。</td></tr><tr><td style="vertical-align: middle">右侧圆形相机/视角图标</td><td style="vertical-align: middle">可触发相机说明或视角切换。</td></tr><tr><td style="vertical-align: middle">底部教学文案</td><td style="vertical-align: middle">第一关教学专用；未通关重进应重复。</td></tr>
+    </table>
+</div>
+<p>回溯弹窗/浮标提醒/视角提醒</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d2acc3f23661283c7eb2aa04d817c13f70fabe01fdde983638808c891e3935d9123b2a733f18c6fb0f0c362f501fad3c9" alt="重试.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0df7afc22d8fbdec1229d44dba1af1d365a757be65a9d5eb0800e88c37f6a259091d41adb7f521c606f45cdb6181ce391e" alt="4局内——教学1.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0de72cc7ab6ef2991d0e2604cbafe8a32763a92f0bab66528dd3dea86b575a86a48de4b157d35cf71b6fd088ea0737c8eb" alt="5局内——教学2.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: middle">图中元素</td><td style="vertical-align: middle">规则说明</td></tr><tr><td style="vertical-align: middle">蓝色气泡“这个标志表示在这个方向上有你的队友”</td><td style="vertical-align: middle">队友方向标识教学；点击“明白了”关闭。</td></tr><tr><td style="vertical-align: middle">上半屏左右箭头 + 摄像机图标 + 手势</td><td style="vertical-align: middle">视角滑动教学；提示“在屏幕上半部分左右滑动移动相机”。</td></tr><tr><td style="vertical-align: middle">回溯弹窗“重试”</td><td style="vertical-align: middle">切片失败后出现。</td></tr><tr><td style="vertical-align: middle">圆形回溯按钮 + “免费”</td><td style="vertical-align: middle">免费次数优先；用完后消耗道具或货币。</td></tr><tr><td style="vertical-align: middle">提示“错过这次机会你将无法取得胜利”</td><td style="vertical-align: middle">回溯失败后果文案；应按关卡结果规则动态生成。</td></tr><tr><td style="vertical-align: middle">“倒带以重试”按钮/文字</td><td style="vertical-align: middle">确认回溯后重置到该切片初始状态。</td></tr>
+    </table>
+</div>
+<p>切片完成/关卡结算/排名结算</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>球场回放画面,能看到球门、球员和足球。<br>规则:每个切片成功或失败后进入回放;回放只展示结果,不重新判定。<br>底部进度条:胜利 1/2、平局 0/1。<br>规则:进度按当前关卡切片成功数累计,用于提示距离胜平阈值的状态。<br>左下角蓝色分享图标按钮。<br>规则:图中只体现为分享样式按钮;是否开放社交分享需另行定义。<br>底部中间状态图标:红叉、绿勾、黄色六边形。<br>规则:可表示切片结果或目标进度节点;状态含义需与切片结果枚举对齐。<br>右下角黄色箭头按钮。<br>规则:点击后进入下一切片;若已无下一切片,则进入关卡结算。</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>结算标题“胜利”。<br>规则:胜平负由本关切片成功数和关卡阈值配置决定。<br>奖励行:周薪 10、进球 0、进球 1。<br>规则:奖励分项和数值由关卡结算、合同待遇或奖励配置返回;图中出现两个“进球”文案,需确认是否有一项应为助攻。<br>黄色“确认”按钮。<br>规则:确认后进入排名结算或返回赛季页面,流程顺序应与基础关卡文档一致。<br>半透明遮罩下的比赛场景背景。<br>规则:结算弹窗展示时保留比赛场景作为背景,不影响结算数据。</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>弹窗标题“排名”。<br>规则:展示本轮或当前赛季排名变化,数据由服务端返回。<br>表头 Rank、W、L、D、PTS。<br>规则:当前开发文档定义积分为切片胜利数,不是传统胜 3 平 1 负 0;表头需要与最终规则统一。<br>当前玩家 QKuakua 行有橙色边框高亮。<br>规则:当前玩家行必须高亮,便于识别排名变化。<br>ouou排名列表包含奖牌图标、玩家名、W/L/D/PTS 数值。<br>规则:前三名可使用奖牌视觉,其他名次用数字;数值均应由服务端下发。<br>右上角红色关闭按钮。<br>规则:关闭后返回战前页或赛季路线页,不触发额外领奖。</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">关卡配置表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">level_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">关卡ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">is_tutorial</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">是否引导关（固定脚本）</td><td style="vertical-align: top">默认 false</td></tr><tr><td style="vertical-align: top">slice_list</td><td style="vertical-align: top">int 数组</td><td style="vertical-align: top">组成本关的切片实例ID序列</td><td style="vertical-align: top">引用 slice_instance</td></tr><tr><td style="vertical-align: top">ai_profile_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">关卡AI难度档位</td><td style="vertical-align: top">引用 ai_profile_config</td></tr><tr><td style="vertical-align: top">win_threshold</td><td style="vertical-align: top">int</td><td style="vertical-align: top">胜利所需切片胜利数</td><td style="vertical-align: top">≥0，逐关配置</td></tr><tr><td style="vertical-align: top">draw_threshold</td><td style="vertical-align: top">int</td><td style="vertical-align: top">平局所需切片胜利数</td><td style="vertical-align: top">≥0，逐关配置</td></tr><tr><td style="vertical-align: top">ticket_cost</td><td style="vertical-align: top">int</td><td style="vertical-align: top">进入消耗门票数</td><td style="vertical-align: top">≥1，TODO 数值</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">关卡AI档位表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">ai_profile_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">AI档位ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">difficulty</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">难度等级</td><td style="vertical-align: top">easy/normal/hard… TODO</td></tr><tr><td style="vertical-align: top">param_overrides</td><td style="vertical-align: top">json</td><td style="vertical-align: top">对切片权重参数的覆盖（门将权重/跑位模板等）</td><td style="vertical-align: top">TODO</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">关卡结算结果 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">level_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">关卡ID</td><td style="vertical-align: top">引用 level_config</td></tr><tr><td style="vertical-align: top">attempt_id</td><td style="vertical-align: top">string</td><td style="vertical-align: top">本次进入唯一标识（奖励幂等键）</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">outcome</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">胜平负</td><td style="vertical-align: top">win/draw/lose</td></tr><tr><td style="vertical-align: top">goals</td><td style="vertical-align: top">int</td><td style="vertical-align: top">进球数</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">assists</td><td style="vertical-align: top">int</td><td style="vertical-align: top">助攻数</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">slice_wins</td><td style="vertical-align: top">int</td><td style="vertical-align: top">切片胜利数（用于排名积分）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">rewards</td><td style="vertical-align: top">json</td><td style="vertical-align: top">完赛/进球/助攻奖励明细</td><td style="vertical-align: top">TODO 数值</td></tr>
+    </table>
+</div>
+<p>主角球星的成长核心，由三条等级线和合同体系构成，连接关卡产出与球队升级。</p>
+<p><span style="font-weight: bold">知名度等级</span>：<br></p>
+<p>&nbsp;</p>
+<p>来源：每场比赛的<span style="font-weight: bold">胜负 + 进球 + 助攻数据，并结合当前球队星级</span>共同决定获得量；此外<span style="font-weight: bold">提升生活等级时一次性获得</span>知名度。</p>
+<p>升级效果：</p>
+<p>一次性资源奖励 </p>
+<p>更高合同待遇 </p>
+<p>允许加入更高星级球队</p>
+<p>提升球员评分属性</p>
+<p><span style="font-weight: bold">生活等级</span>：<br></p>
+<p>&nbsp;</p>
+<p>来源：直接花费<span style="font-weight: bold">金币</span>提升。</p>
+<p>升级效果：</p>
+<p>获得全局 buff —— 门票恢复速度、门票上限、免费回溯次数、比赛额外奖励</p>
+<p>一次性获得知名度</p>
+<p>允许加入更高星级球队</p>
+<p>提升球员评分属性</p>
+<p><span style="font-weight: bold">合同体系</span>：<br></p>
+<p>发放时机：<span style="font-weight: bold">每个大关卡（联赛轮次）完成时</span>收到新合同。</p>
+<p>合同等级与收益：由<span style="font-weight: bold">玩家当前各养成等级（知名度/生活）共同决定</span>——养成水平越高，发放的合同球队星级越高、待遇越好。<span style="font-weight: bold">非玩家主动换队，而是赛季末按养成水平自动给对应档次新合同</span>。</p>
+<p>合同内容：球队（含星级）、待遇（完赛/进球/助攻奖励）、球队赛季目标（排名达标、进球数）、赛季目标奖励。</p>
+<p><span style="font-weight: bold">成就体系</span>：</p>
+<p>统计类型：禁区内进球、远射进球、头球进球、任意球进球、点球进球、助攻数</p>
+<p>数据展示：场均进球、射门成功率、任意球成功率、点球成功率、最远进球距离、击中门框次数、最高连胜、最高连续进球场次</p>
+<p><span style="font-weight: bold">货币体系（全局定义，跨系统引用）</span>：<br></p>
+<p><span style="font-weight: bold">金币</span>：养成货币，用于提升生活等级。</p>
+<p><span style="font-weight: bold">门票</span>：用于参加积分赛。</p>
+<p><span style="font-weight: bold">竞猜币</span>：用于参与竞猜和兑换商店。</p>
+<p>知名度等级/生活等级</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>页面标题“知名度”,顶部称号“大师”。<br>规则:知名度页展示当前名气等级和称号。<br>高等级档位显示钻石、金币、门票、合同邀请等奖励。<br>规则:等级奖励应由成长配置表下发。<br>当前高亮档位“专业球员”,奖励下方显示“可能的合同”。<br>规则:当前档位可展示已达成奖励和可签约球队预览。<br>左侧纵向等级轴,包含等级编号与进度 40/150、0/200 等。<br>规则:等级进度展示当前经验和升级所需经验。<br>底部说明:“赢得比赛可以增加名气,更高的名气可受到更好的俱乐部青睐”。<br>规则:文案解释名气与更好合同之间的关系。</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>生活等级纵向奖励轨,显示 Lv.1 到 Lv.5。<br>规则:生活等级使用金币升级,等级越高 buff 越强。<br>当前高亮档位 Lv.3,奖励名为“地球仪”。<br>规则:当前等级应高亮,并展示已解锁或当前档位奖励。<br>档位奖励文案:门票+1、剩余轮次+5、5星俱乐部的邀请等。<br>规则:升级效果包括门票、额外次数、合同邀请等,具体字段需配置化。<br>底部“升级”按钮,消耗金币 100。<br>规则:升级按钮需校验金币余额、等级上限、防重复提交。<br>右下角黑色信息按钮。<br>规则:信息按钮可打开生活等级规则说明。</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top"></td></tr>
+    </table>
+</div>
+<p>合同/成就</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0ddc5cfdda5a854934af641e13fff3e7a5bbfe1675600b76deab30abf408342749317294cade54339d39a518270435b62f" alt="合同.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d96c95a1cb488f6035db5e3d8d045d3d2d7c791a8d27fe272c74db81685beaa672aae0312cff20bcefd706d6f2cad90f6" alt="统计.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d1244a7b4897829ed40b6ca9fb4793affb29840429460d341b11d3ab23b690b58dd20a9d3382b04484b2d1ff9b9dff0a4" alt="徽章说明.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<p><span style="font-weight: bold">货币表 </span><span style="font-weight: bold">（全局）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">currency_id</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">货币类型</td><td style="vertical-align: top">gold/ticket/bet_coin</td></tr><tr><td style="vertical-align: top">usage</td><td style="vertical-align: top">string</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">金币=生活升级；门票=积分赛；竞猜币=竞猜</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">养成等级表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">growth_type</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">养成线</td><td style="vertical-align: top">fame/life</td></tr><tr><td style="vertical-align: top">level</td><td style="vertical-align: top">int</td><td style="vertical-align: top">当前等级</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">exp / star</td><td style="vertical-align: top">int</td><td style="vertical-align: top">当前经验</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">level_up_reward</td><td style="vertical-align: top">json</td><td style="vertical-align: top">升级一次性奖励（生活含知名度）</td><td style="vertical-align: top">TODO 数值</td></tr><tr><td style="vertical-align: top">level_up_effect</td><td style="vertical-align: top">json</td><td style="vertical-align: top">升级效果（待遇/评分/buff/球队星级门槛）</td><td style="vertical-align: top">TODO 数值</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">知名度获取规则 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">from_outcome</td><td style="vertical-align: top">int</td><td style="vertical-align: top">胜/平/负各自知名度</td><td style="vertical-align: top">TODO 数值</td></tr><tr><td style="vertical-align: top">from_goal</td><td style="vertical-align: top">int</td><td style="vertical-align: top">每进球知名度</td><td style="vertical-align: top">TODO 数值</td></tr><tr><td style="vertical-align: top">from_assist</td><td style="vertical-align: top">int</td><td style="vertical-align: top">每助攻知名度</td><td style="vertical-align: top">TODO 数值</td></tr><tr><td style="vertical-align: top">team_star_factor</td><td style="vertical-align: top">float</td><td style="vertical-align: top">球队星级系数</td><td style="vertical-align: top">TODO 数值</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">合同表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">contract_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">合同ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">team_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">球队</td><td style="vertical-align: top">引用 team_config</td></tr><tr><td style="vertical-align: top">team_star</td><td style="vertical-align: top">int</td><td style="vertical-align: top">球队星级</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">pay_finish / pay_goal / pay_assist</td><td style="vertical-align: top">int</td><td style="vertical-align: top">完赛/进球/助攻待遇</td><td style="vertical-align: top">≥0，TODO 数值</td></tr><tr><td style="vertical-align: top">season_goal</td><td style="vertical-align: top">json</td><td style="vertical-align: top">赛季目标：</td><td style="vertical-align: top">TODO 数值</td></tr><tr><td style="vertical-align: top">season_reward</td><td style="vertical-align: top">json</td><td style="vertical-align: top">赛季目标奖励</td><td style="vertical-align: top">TODO 数值</td></tr><tr><td style="vertical-align: top">grant_level_req</td><td style="vertical-align: top">json</td><td style="vertical-align: top">发放该合同所需的养成等级门槛</td><td style="vertical-align: top">TODO 数值</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">球队配置表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">team_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">球队ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">name</td><td style="vertical-align: top">string</td><td style="vertical-align: top">球队名</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">star</td><td style="vertical-align: top">int</td><td style="vertical-align: top">星级</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">region</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">所属地区</td><td style="vertical-align: top">关联 nationality_config</td></tr>
+    </table>
+</div>
+<p>活动主线 PVE 玩法，由基础关卡组织成联赛结构，是养成与合同的主驱动。</p>
+<p><span style="font-weight: bold">结构</span>：分 <span style="font-weight: bold">N 个大关卡</span>，每个大关卡内含<span style="font-weight: bold">多个小关卡</span>。<br></p>
+<p>1 个大关卡 = <span style="font-weight: bold">1 轮联赛</span>；1 个小关卡 = 1 个 [3.3 基础关卡]（对阵一个对手，消耗门票）。</p>
+<p>打完一个大关卡的所有小关卡 = 完成一轮联赛。</p>
+<p><span style="font-weight: bold">解锁</span>：小关卡<span style="font-weight: bold">顺序解锁</span>（通关上一个才解锁下一个）；大关卡随联赛轮次顺序推进。</p>
+<p><span style="font-weight: bold">积分与排名</span>：<br></p>
+<p>积分 = <span style="font-weight: bold">所有小关卡切片胜利数的累计</span>。</p>
+<p>排名 = <span style="font-weight: bold">所有玩家积分横向排名</span>，关卡结算时展示的同联赛大关卡内的排名，外部排行榜是统计全局排名</p>
+<p><span style="font-weight: bold">合同发放</span>：每完成一个大关卡（联赛轮次）<span style="font-weight: bold">固定获得一次新合同</span>，合同等级与收益按玩家当前养成等级决定（见 [3.4]）。</p>
+<p><span style="font-weight: bold">赛季目标结算</span>：<br></p>
+<p><span style="font-weight: bold">绝对类目标（如进球数）</span>：玩家在大关卡内<span style="font-weight: bold">所有小关卡完成时即可判定</span>，达成立即发奖（数据不再受他人影响）。</p>
+<p><span style="font-weight: bold">关系</span>：调用 [3.3] 作为小关卡内容；消耗 [3.4] 门票；触发 [3.4] 合同发放；积分汇入 [3.8] 排名。</p>
+<p>赛程</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>弹窗标题“赛程”,背景显示地区预选赛第10/32轮。<br>规则:赛程来自当前联赛配置和玩家进度。<br>顶部一行对阵 Abin - QKuakua,右侧状态“进行中”。<br>规则:当前轮次可显示进行中状态;状态由关卡进度或服务端赛程状态返回。<br>列表包含第9轮到第15轮等对阵。<br>规则:按轮次顺序展示已完成、当前和未开始对阵。<br>已完成项右侧显示“胜利”或“失败”。<br>规则:胜利/失败由关卡结算写入,前端不按比分自行推断。<br>右上角红色关闭按钮。<br>规则:关闭弹窗回到战前页,不改变当前关卡状态。</td></tr>
+    </table>
+</div>
+<p>积分榜/射手榜/助攻榜</p>
+<p>通用活动排行模块</p>
+<p>合同发放</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="background-color: #E8F2FE; vertical-align: top"></td><td style="background-color: #FFFAE5; vertical-align: top"><span style="font-weight: bold">图中编号说明</span><br>弹窗标题“我的合同”。<br>规则:首签或完成一轮联赛后可弹出新合同。<br>球队信息:国旗、队名“阿根廷神鹰-10”、队名 QKuakua、星级、队徽。<br>规则:球队信息由合同配置生成。<br>待遇表:周薪 10、进球 5、助攻 5、名气 20。<br>规则:待遇数值由 contract 表配置,不由前端计算。<br>球队目标:球队在联赛中获得前 12 名。<br>规则:赛季目标需配置 type/threshold/settle_at;排名类目标应等赛季排名结算。<br>奖励:金币 84。<br>规则:奖励可能为签约即时奖励或目标奖励,需与合同字段区分。<br>底部“取消”和“确认”按钮。<br>规则:确认后写入玩家合同状态;取消后如何处理新合同需要服务端状态支持。</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">大关卡（联赛轮次）表 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">season_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">大关卡/赛季ID</td><td style="vertical-align: top">1–N</td></tr><tr><td style="vertical-align: top">sub_level_ids</td><td style="vertical-align: top">int 数组</td><td style="vertical-align: top">包含的小关卡ID（顺序）</td><td style="vertical-align: top">引用 level_config</td></tr><tr><td style="vertical-align: top">contract_on_finish</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">完成后发放新合同</td><td style="vertical-align: top">默认 true</td></tr><tr><td style="vertical-align: top">unlock_prev_season</td><td style="vertical-align: top">int</td><td style="vertical-align: top">解锁所需前置赛季</td><td style="vertical-align: top">season_id 或 0</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">积分赛进度 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">current_season</td><td style="vertical-align: top">int</td><td style="vertical-align: top">当前大关卡</td><td style="vertical-align: top">1–N</td></tr><tr><td style="vertical-align: top">unlocked_sub_level</td><td style="vertical-align: top">int</td><td style="vertical-align: top">已解锁到的小关卡</td><td style="vertical-align: top">引用 level_config</td></tr><tr><td style="vertical-align: top">total_slice_wins</td><td style="vertical-align: top">int</td><td style="vertical-align: top">累计切片胜利数（=排名积分）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">total_goals</td><td style="vertical-align: top">int</td><td style="vertical-align: top">累计进球（用于赛季目标判定）</td><td style="vertical-align: top">≥0</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">积分赛排名条目 </span><span style="font-weight: bold">（汇入 3.8）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">player_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">玩家ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">score</td><td style="vertical-align: top">int</td><td style="vertical-align: top">累计切片胜利数</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">rank</td><td style="vertical-align: top">int</td><td style="vertical-align: top">全服名次</td><td style="vertical-align: top">≥1</td></tr>
+    </table>
+</div>
+<p>独立活动页签，主题活动<span style="font-weight: bold">中后期开放</span>；积分赛达到第 L 关的玩家可参加。多人组队的 PVP，结果由系统演算，分<span style="font-weight: bold">组队期、海选阶段、单淘汰阶段</span>三阶段。</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">日期</td><td style="vertical-align: top">周几</td><td style="vertical-align: top">阶段</td><td style="vertical-align: top">当日内容</td></tr><tr><td style="vertical-align: top">7.10</td><td style="vertical-align: top">周五</td><td style="vertical-align: top"><span style="font-weight: bold">组队期</span>（横跨 2 天）</td><td style="vertical-align: top">发起/加入组队、命名队名队标、审批</td></tr><tr><td style="vertical-align: top">7.11</td><td style="vertical-align: top">周六</td><td style="vertical-align: top"><span style="font-weight: bold">组队期</span></td><td style="vertical-align: top">同上；当日结束时人数不满由系统球员补位</td></tr><tr><td style="vertical-align: top">7.12</td><td style="vertical-align: top">周日</td><td style="vertical-align: top"><span style="font-weight: bold">海选</span></td><td style="vertical-align: top">1 天内筛出 64 强</td></tr><tr><td style="vertical-align: top">7.13</td><td style="vertical-align: top">周一</td><td style="vertical-align: top">正赛·第 1 轮（<span style="font-weight: bold">64 强</span>）</td><td style="vertical-align: top">备战 → 64 强下注 → 比赛（64→32）</td></tr><tr><td style="vertical-align: top">7.14</td><td style="vertical-align: top">周二</td><td style="vertical-align: top">正赛·第 2 轮（<span style="font-weight: bold">32 强</span>）</td><td style="vertical-align: top">备战 → 32 强下注 → 比赛（32→16）</td></tr><tr><td style="vertical-align: top">7.15</td><td style="vertical-align: top">周三</td><td style="vertical-align: top">正赛·第 3 轮（<span style="font-weight: bold">16 强</span>）</td><td style="vertical-align: top">备战 → 16 强下注 → 比赛（16→8）</td></tr><tr><td style="vertical-align: top">7.16</td><td style="vertical-align: top">周四</td><td style="vertical-align: top">正赛·第 4 轮（<span style="font-weight: bold">8 强</span>）</td><td style="vertical-align: top">备战 → 8 强下注 → 比赛（8→4）</td></tr><tr><td style="vertical-align: top">7.17</td><td style="vertical-align: top">周五</td><td style="vertical-align: top">正赛·第 5 轮（<span style="font-weight: bold">4 强 / 半决赛</span>）</td><td style="vertical-align: top">备战 → 4 强下注 → 比赛（4→2）</td></tr><tr><td style="vertical-align: top">7.18</td><td style="vertical-align: top">周六</td><td style="vertical-align: top">正赛·第 6 轮（<span style="font-weight: bold">决赛</span>）</td><td style="vertical-align: top">备战 → 决赛下注 → 比赛（2→1，决出冠军）</td></tr><tr><td style="vertical-align: top">7.19</td><td style="vertical-align: top">周日</td><td style="vertical-align: top"><span style="font-weight: bold">展示期（还可使用兑换商店）</span></td><td style="vertical-align: top">冠军/名次结算与荣誉展示，无对局</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">开放条件</span>：积分赛进度达到第 L 关（TODO 数值）。</p>
+<p><span style="font-weight: bold">组队期（固定时间）</span>：</p>
+<p>发起者命名球队名与队服（队标）；</p>
+<p>玩家发起组队后，呈现在组队列表中，盟友/好友可申请加入，发起者可通过审批列表统同意或拒绝；</p>
+<p>已经加入队伍的成员，发起者可踢出</p>
+<p>需 1–M名玩家（M=队伍人数上限-1），<span style="font-weight: bold">组队期结束时人数不满的位置由系统球员补位</span>。</p>
+<p><span style="font-weight: bold">海选阶段（固定时间）</span>：参赛队伍可能很多，先海选筛出 <span style="font-weight: bold">64 强</span>。<br></p>
+<p><span style="font-weight: bold">分组</span>：组队期结束后，将全部参赛队伍<span style="font-weight: bold">按评分蛇形均分为 G 组（G=16–32，TODO 配置）</span>，每组队伍数尽量均等。</p>
+<p><span style="font-weight: bold">晋级名额</span>：每组取前  名晋级，（16 组取前 4、32 组取前 2），合计晋级 <span style="font-weight: bold">64 强</span>。</p>
+<p><span style="font-weight: bold">组内赛制</span>：组内队伍两两按演算模型（同下，见 ）对战，按<span style="font-weight: bold">胜场→进球数→总评</span>排出组内名次；允许轮空。</p>
+<p><span style="font-weight: bold">赛程</span>：海选赛仅持续1天，根据组内队伍数量决定轮次，每小时一轮（胜者进入下一轮），直到决出最终K只队伍</p>
+<p><span style="font-weight: bold">限制</span>：海选阶段<span style="font-weight: bold">不开放竞猜</span>（[3.7]）；玩家<span style="font-weight: bold">只能查看自己队伍的对局与本组排名</span>，看不到其他组与全局对阵。</p>
+<p><span style="font-weight: bold">未晋级</span>：海选淘汰的队伍发放安慰奖励（仅道具）。</p>
+<p><span style="font-weight: bold">单淘汰阶段（固定时间，单败淘汰）</span>：</p>
+<p><span style="font-weight: bold">分组</span>：64 强分8组，每组8支队伍进入单败淘汰树（R=6 轮），系统匹配对手，<span style="font-weight: bold">所有比赛同时统一结算</span>，允许轮空。</p>
+<p><span style="font-weight: bold">组内赛制</span>：8组分别决出第一后作为8强，再进行一轮8前淘汰赛，决出4强和冠亚军；</p>
+<p><span style="font-weight: bold">回放</span>：随后生成的<span style="font-weight: bold">模拟切片回放与赛后简报仅供玩家事后观看</span>（类似录像回放），不影响已定结果。</p>
+<p><span style="font-weight: bold">赛程</span>：阶段共六天，前三天分8组进行比赛，每天一轮；后三天仅一组进行比赛，每天一轮</p>
+<p>本阶段<span style="font-weight: bold">开放竞猜</span>（[3.7]）。</p>
+<p><span style="font-weight: bold">演算模型</span>（海选与单淘汰共用，公式先拍、后期数值策划定，完整口径见数据表 ）：<br></p>
+<p>单主角评分 = f(知名度等级, 生活等级)。</p>
+<p>队伍总评 = 队内所有成员评分<span style="font-weight: bold">累加</span>；队内<span style="font-weight: bold">最高评分</span>单独参与运算。</p>
+<p>切片数量 = 由<span style="font-weight: bold">双方各自最高评分</span>决定（双方切片数可不同）。</p>
+<p>每个切片成功期望 = <span style="font-weight: bold">己方总评 /（双方总评之和）</span>；逐切片按期望判定成功，<span style="font-weight: bold">成功切片数即该队进球数 = 最终比分</span>。</p>
+<p><span style="font-weight: bold">双方切片数不同时</span>：各自按自己的切片数累计进球，直接比进球数（不归一化）。</p>
+<p><span style="font-weight: bold">平局破法</span>：先比队伍总评高者胜；总评再相同比最高评分；仍相同按报名先后（更早者胜），保证唯一晋级方。</p>
+<p><span style="font-weight: bold">轮空</span>：直接晋级， = 该队、 记 、 为空，不生成回放。</p>
+<p>系统补位球员评分 = <span style="font-weight: bold">固定常量</span>（TODO 数值）。</p>
+<p><span style="font-weight: bold">名次与奖励</span>：单淘汰树天然产出名次（冠/亚/四强/八强…按出局轮次定档）；按名次发放<span style="font-weight: bold">外观 + 道具</span>；海选淘汰与报名失败安慰奖<span style="font-weight: bold">仅道具</span>。<span style="font-weight: bold">淘汰赛不参与排名</span>（[3.8]）。</p>
+<p><span style="font-weight: bold">关系</span>：消费 [3.4] 养成等级换算评分；单淘汰阶段开放竞猜（见 [3.7]）。</p>
+<p>组队/创建队伍/加入队伍</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d2355b191ed166760cfefe527d6a0ba0be63b113b46a6d6e4c1fccee6c96c75265af2a9ae80f99853084aff8dae747fe9" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d87d498b3247c9b34bc1e9acdbe476bce9551c8d905e682db3a43714ea3d536f9897f8db818264b8b6ecb0ad113d3271a" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d0560abc703ea9c94078718fa1fa54491e6839ff95d7649ad23e0d2df6ebfb73085442f61474f1d8a13195742ac2dcbd3" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<p>队伍管理/审批</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0df3ba4f2c20bcab62c8e51d57f1206bbeae272f22976eca11356dfe1740596d3d6f5c85c79408e8622179a03ef8d91278" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0dee514564bd84d9bcd4763184aa8a40f7ab46e88bfb30133a634b081c0d276e6f3b7e740f9a44286b084aff8dae747fe9" alt="image.png" style="max-width: 325px; height: auto;" loading="lazy" /></div></p>
+<p>海选/淘汰赛/历史比赛/开赛弹窗</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d7c6a0f38d539d23b3ba1f4beb6b9734043b021e9aac2bc732486d747b5e14deefdc290ed7bc0bea2b4881a2db73cc077" alt="image.png" style="max-width: 1196.8541666666665px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: middle">图中元素</td><td style="vertical-align: middle">规则说明</td></tr><tr><td style="vertical-align: middle">顶部阶段轴：组队、海选赛、争霸赛及日期</td><td style="vertical-align: middle">映射为组队期、海选阶段、单淘汰阶段；日期由活动配置下发。</td></tr><tr><td style="vertical-align: middle">底部按钮“加入”“创建/管理队伍”</td><td style="vertical-align: middle">未入队显示加入/创建；已建队后进入管理。</td></tr><tr><td style="vertical-align: middle">编辑球队信息页：队服网格、队名输入、创建/修改按钮</td><td style="vertical-align: middle">创建者选择队服和队名；队名需校验。</td></tr><tr><td style="vertical-align: middle">队伍列表：队伍总评分、成员位 +、确认按钮、人数 1/2</td><td style="vertical-align: middle">加入队伍入口；人数满或非组队期置灰。</td></tr><tr><td style="vertical-align: middle">我的队伍页：我的队伍 4/5、成员卡、踢出按钮、加号空位</td><td style="vertical-align: middle">队长可踢人；组队结束后锁定。</td></tr><tr><td style="vertical-align: middle">入队审批页：申请人卡片、同意/拒绝按钮</td><td style="vertical-align: middle">仅队u长可操作；操作后刷新列表。</td></tr><tr><td style="vertical-align: middle">淘汰赛树/海选图：阶段倒计时、分组下拉、对阵节点、WIN 标识、录像图标</td><td style="vertical-align: middle">展示海选/单淘汰进度；录像仅查看，不影响结果。</td></tr><tr><td style="vertical-align: middle">开赛弹窗 CHAMPIONSHIP GAME、倒计时、Go to view</td><td style="vertical-align: middle">阶段开始通知；可跳转到淘汰赛主界面。</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">淘汰赛配置 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">open_league_level</td><td style="vertical-align: top">int</td><td style="vertical-align: top">开放所需积分赛关卡 L</td><td style="vertical-align: top">≥1，TODO</td></tr><tr><td style="vertical-align: top">team_size_max</td><td style="vertical-align: top">int</td><td style="vertical-align: top">队伍人数上限 M</td><td style="vertical-align: top">≥1，TODO</td></tr><tr><td style="vertical-align: top">qualifier_group_count</td><td style="vertical-align: top">int</td><td style="vertical-align: top">海选分组数 G</td><td style="vertical-align: top">16–32，TODO</td></tr><tr><td style="vertical-align: top">qualify_per_group</td><td style="vertical-align: top">int</td><td style="vertical-align: top">每组晋级名额 K=64/G</td><td style="vertical-align: top">16组=4 / 32组=2</td></tr><tr><td style="vertical-align: top">max_rounds</td><td style="vertical-align: top">int</td><td style="vertical-align: top">单淘汰轮次 R（64强=6 轮）</td><td style="vertical-align: top">默认 6</td></tr><tr><td style="vertical-align: top">team_phase_time / qualifier_phase_time / knockout_phase_time</td><td style="vertical-align: top">datetime</td><td style="vertical-align: top">组队/海选/单淘汰各阶段固定时间</td><td style="vertical-align: top">TODO</td></tr><tr><td style="vertical-align: top">bot_player_rating</td><td style="vertical-align: top">int</td><td style="vertical-align: top">系统补位球员固定评分</td><td style="vertical-align: top">常量，TODO</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">队伍 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">team_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">队伍ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">name / emblem</td><td style="vertical-align: top">string</td><td style="vertical-align: top">队名 / 队标</td><td style="vertical-align: top">非空</td></tr><tr><td style="vertical-align: top">member_ids</td><td style="vertical-align: top">int 数组</td><td style="vertical-align: top">成员玩家ID（不足补 bot）</td><td style="vertical-align: top">长度 ≤ team_size_max</td></tr><tr><td style="vertical-align: top">total_rating</td><td style="vertical-align: top">int</td><td style="vertical-align: top">队伍总评（成员评分累加）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">max_rating</td><td style="vertical-align: top">int</td><td style="vertical-align: top">队内最高评分</td><td style="vertical-align: top">≥0</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">对阵与结果 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">match_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">对阵ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">phase</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">所属阶段</td><td style="vertical-align: top">qualifier（海选）/ knockout（单淘汰）</td></tr><tr><td style="vertical-align: top">group_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">海选组号（仅 qualifier，knockout 为0）</td><td style="vertical-align: top">0 或 1–G</td></tr><tr><td style="vertical-align: top">round</td><td style="vertical-align: top">int</td><td style="vertical-align: top">单淘汰轮次（仅 knockout）</td><td style="vertical-align: top">1–R</td></tr><tr><td style="vertical-align: top">team_a / team_b</td><td style="vertical-align: top">int</td><td style="vertical-align: top">双方队伍</td><td style="vertical-align: top">引用 knockout_team</td></tr><tr><td style="vertical-align: top">slice_count_a / slice_count_b</td><td style="vertical-align: top">int</td><td style="vertical-align: top">各自切片数（由最高评分定，可不同）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">score_a / score_b</td><td style="vertical-align: top">int</td><td style="vertical-align: top">演算比分（=各自成功切片数；轮空记 bye）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">winner</td><td style="vertical-align: top">int</td><td style="vertical-align: top">晋级方（轮空=该队；平局按破法判定）</td><td style="vertical-align: top">team_id</td></tr><tr><td style="vertical-align: top">replay_data</td><td style="vertical-align: top">json</td><td style="vertical-align: top">模拟切片回放+简报数据（仅展示；轮空为空）</td><td style="vertical-align: top">结算时生成</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">海选组排名 </span><span style="font-weight: bold">（每组一套，玩家仅可见己组）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">group_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">组号</td><td style="vertical-align: top">1–G</td></tr><tr><td style="vertical-align: top">team_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">队伍</td><td style="vertical-align: top">引用 knockout_team</td></tr><tr><td style="vertical-align: top">wins</td><td style="vertical-align: top">int</td><td style="vertical-align: top">组内胜场</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">goals</td><td style="vertical-align: top">int</td><td style="vertical-align: top">组内累计进球（破平用）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">group_rank</td><td style="vertical-align: top">int</td><td style="vertical-align: top">组内名次（胜场→进球→总评）</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">qualified</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">是否晋级64强（前 K 名）</td><td style="vertical-align: top">group_rank ≤ K</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">演算规则 </span><span style="font-weight: bold">（闭环口径，系数 TODO）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">项</td><td style="vertical-align: top">规则</td></tr><tr><td style="vertical-align: top">切片数</td><td style="vertical-align: top">，双方各自按己方最高评分计算，可不同</td></tr><tr><td style="vertical-align: top">单切片成功</td><td style="vertical-align: top">，逐切片独立判定</td></tr><tr><td style="vertical-align: top">比分映射</td><td style="vertical-align: top">成功切片数即该队进球数；</td></tr><tr><td style="vertical-align: top">胜负</td><td style="vertical-align: top">直接比双方进球数（各自按自己切片数累计，不归一化）</td></tr><tr><td style="vertical-align: top">平局破法</td><td style="vertical-align: top">总评高者胜 → 仍平比最高评分 → 再平报名更早者胜（保证唯一晋级）</td></tr><tr><td style="vertical-align: top">轮空</td><td style="vertical-align: top">直接晋级，=该队，=bye， 空</td></tr><tr><td style="vertical-align: top">名次</td><td style="vertical-align: top">按出局轮次定档（冠/亚/四强/八强…），冠军=最后晋级方</td></tr><tr><td style="vertical-align: top">奖励档位</td><td style="vertical-align: top">各名次档发外观+道具；报名失败安慰奖仅道具（TODO 数值）</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">评分公式占位 </span><span style="font-weight: bold">（TODO 后期数值定）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">项</td><td style="vertical-align: top">说明</td></tr><tr><td style="vertical-align: top">single_rating = f(fame_lv, training_lv, life_lv)</td><td style="vertical-align: top">单主角评分，系数 TODO</td></tr><tr><td style="vertical-align: top">team_total = Σ member_rating</td><td style="vertical-align: top">队伍总评</td></tr><tr><td style="vertical-align: top">slice_success_p = own_total /(own_total + opp_total)</td><td style="vertical-align: top">切片成功期望</td></tr>
+    </table>
+</div>
+<p>依附于 [3.6 淘汰赛] 的下注玩法，使用竞猜币押注比赛晋级方。</p>
+<p><span style="font-weight: bold">竞猜对象</span>：淘汰赛<span style="font-weight: bold">单淘汰阶段每一场非轮空比赛</span>（海选阶段不开放竞猜）。</p>
+<p><span style="font-weight: bold">下注窗口</span>：从<span style="font-weight: bold">明确对手后</span>开放，到<span style="font-weight: bold">该场比赛结算前</span>关闭，期间均可取消或修改下注。</p>
+<p><span style="font-weight: bold">下注内容</span>：仅猜胜负，即<span style="font-weight: bold">选择晋级方</span>；可押注<span style="font-weight: bold">自己参赛的队伍</span>（参赛后组队不可变更）。</p>
+<p><span style="font-weight: bold">结算派彩</span>：比赛结算后，押中晋级方者按<span style="font-weight: bold">下注量 × 赔率</span>获得竞猜币；押错损失投注。</p>
+<p><span style="font-weight: bold">赔率</span>：采用其他项目组现成赔率计算方式（<span style="font-weight: bold">TODO</span>，接入时对接）。</p>
+<p><span style="font-weight: bold">竞猜币来源</span>：每日发放免费竞猜币；礼包（[3.11]）也投放竞猜币；竞猜失败会回收80%下注金额。</p>
+<p><span style="font-weight: bold">消耗去向</span>：竞猜币用于下注；亦可在 [3.10 兑换商店]（即"竞猜币兑换商店"，不单列）兑换局外道具。</p>
+<p><span style="font-weight: bold">排名数据</span>：本系统统计每位玩家的<span style="font-weight: bold">命中次数</span>与<span style="font-weight: bold">总收益</span>，排名榜在 [3.8] 统一处理。</p>
+<p><span style="font-weight: bold">支持模块</span>：提供当前可下注场次列表、已下注未结算列表、历史下注列表</p>
+<p><span style="font-weight: bold">关系</span>：数据源自 [3.6] 对阵；货币定义见 [3.4]；兑换见 [3.10]；排名见 [3.8]。</p>
+<p>下注弹窗/可下注场次/历史下注/下注场次</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d9cf5083db62fa1bf728d1ff16fa95302b068583f86d9d4bea42dafcb3b764ed339eb5bf5cec5f50261b320ab9ee12e8f" alt="image.png" style="max-width: 792.0625px; height: auto;" loading="lazy" /></div></p>
+<p>竞猜奖励/竞猜奖励</p>
+<p><div class="image-container"><img src="/core/api/resources/img/5eecdaf48460cde5471f827cdddb15a089f4ac155db398b275b8339e1c4c24832b211f26c5cd06ba39e8703ac5556d0d163772ef6203ff1b5ad7d627f7efe08c7bb94cfaa0665bee4e68929b8d10c0da09273cca37473a715faa8984caa4cfd6" alt="image.png" style="max-width: 535.2916666666666px; height: auto;" loading="lazy" /></div></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: middle">图中元素</td><td style="vertical-align: middle">规则说明</td></tr><tr><td style="vertical-align: middle">页签：Hall of Honor / My Game / Guess</td><td style="vertical-align: middle">映射为荣誉/我的比赛/竞猜。</td></tr><tr><td style="vertical-align: middle">场次卡：Quarterfinals、in progress 倒计时</td><td style="vertical-align: middle">展示当前可竞猜阶段和截止倒计时。</td></tr><tr><td style="vertical-align: middle">双方信息、赔率 1.33 / 1.45、排名 #1/#2、投注人数</td><td style="vertical-align: middle">赔率、投注人数、队伍信息由服务端下发。</td></tr><tr><td style="vertical-align: middle">Betting 按钮 / Change 按钮</td><td style="vertical-align: middle">未下注时显示下注；已下注时显示修改。截止后置灰。</td></tr><tr><td style="vertical-align: middle">下注弹窗 Betting options</td><td style="vertical-align: middle">显示双方、当前选择、赔率、投注人数。</td></tr><tr><td style="vertical-align: middle">投注额按钮：100、200、500、1000、5000</td><td style="vertical-align: middle">快捷投注档位；不能超过竞猜币余额。</td></tr><tr><td style="vertical-align: middle">Corresponding rewards +133</td><td style="vertical-align: middle">预计返还/收益预览；按服务端赔率计算。</td></tr><tr><td style="vertical-align: middle">竞猜结果页：Top 16 betting settlement、+10,000、Results</td><td style="vertical-align: middle">结算后展示收益、命中状态。</td></tr><tr><td style="vertical-align: middle">结果卡：VICTORY、播放按钮、+13,330、View Video / Continue</td><td style="vertical-align: middle">命中展示收益；播放按钮看回放；继续关闭结算。</td></tr><tr><td style="vertical-align: middle">底部导航：shop、Historical Matches、My guess、Profit ranking</td><td style="vertical-align: middle">映射为商店、历史下注/历史比赛、我的竞猜、收益榜。</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">竞猜场次 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">bet_match_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">竞猜场ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">knockout_match_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">对应淘汰赛对阵</td><td style="vertical-align: top">引用 knockout_match（非轮空）</td></tr><tr><td style="vertical-align: top">odds_a / odds_b</td><td style="vertical-align: top">float</td><td style="vertical-align: top">双方赔率</td><td style="vertical-align: top">TODO（接现成算法）</td></tr><tr><td style="vertical-align: top">open_time / close_time</td><td style="vertical-align: top">datetime</td><td style="vertical-align: top">开放/截止（截止=结算前）</td><td style="vertical-align: top">TODO</td></tr><tr><td style="vertical-align: top">status</td><td style="vertical-align: top">enum</td><td style="vertical-align: top">状态</td><td style="vertical-align: top">open/closed/settled</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">下注记录 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">bet_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">下注ID</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">player_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">玩家</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">bet_match_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">竞猜场</td><td style="vertical-align: top">引用 bet_match</td></tr><tr><td style="vertical-align: top">pick_team</td><td style="vertical-align: top">int</td><td style="vertical-align: top">押注的晋级方</td><td style="vertical-align: top">team_id</td></tr><tr><td style="vertical-align: top">stake</td><td style="vertical-align: top">int</td><td style="vertical-align: top">投注竞猜币</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">payout</td><td style="vertical-align: top">int</td><td style="vertical-align: top">派彩（命中=stake×odds，否则0）</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">hit</td><td style="vertical-align: top">bool</td><td style="vertical-align: top">是否命中</td><td style="vertical-align: top">-</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">竞猜统计（汇入 3.8）</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">player_id</td><td style="vertical-align: top">int</td><td style="vertical-align: top">玩家</td><td style="vertical-align: top">≥1</td></tr><tr><td style="vertical-align: top">hit_count</td><td style="vertical-align: top">int</td><td style="vertical-align: top">命中次数</td><td style="vertical-align: top">≥0</td></tr><tr><td style="vertical-align: top">total_profit</td><td style="vertical-align: top">int</td><td style="vertical-align: top">总收益（派彩-投注累计）</td><td style="vertical-align: top">可为负</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">竞猜币日常来源 </span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">字段</td><td style="vertical-align: top">类型</td><td style="vertical-align: top">说明</td><td style="vertical-align: top">取值范围</td></tr><tr><td style="vertical-align: top">daily_free</td><td style="vertical-align: top">int</td><td style="vertical-align: top">每日免费竞猜币</td><td style="vertical-align: top">≥0，TODO</td></tr><tr><td style="vertical-align: top">gift_grant</td><td style="vertical-align: top">int</td><td style="vertical-align: top">礼包投放（见 3.11）</td><td style="vertical-align: top">≥0，TODO</td></tr>
+    </table>
+</div>
+<p>通用活动，汇总各系统产出数据形成四个榜单，按名次段位发奖，仅处理同赛季跨服榜。</p>
+<p><span style="font-weight: bold">四个榜单</span>：<br></p>
+<p><span style="font-weight: bold">积分榜</span>：活动累计切片胜利数（源自 [3.5]）,<span style="font-weight: bold">仅统计积分赛</span>（淘汰赛不参与排名）。</p>
+<p><span style="font-weight: bold">进球榜</span>：活动累计进球数，<span style="font-weight: bold">仅统计积分赛进球</span>（淘汰赛不参与排名）。</p>
+<p><span style="font-weight: bold">竞猜命中榜</span>：竞猜命中次数（源自 [3.7]）。</p>
+<p><span style="font-weight: bold">竞猜收益榜</span>：竞猜总收益（源自 [3.7]）。</p>
+<p><span style="font-weight: bold">结算粒度</span>：<span style="font-weight: bold">活动周期结束</span>结算。</p>
+<p>通用活动，<span style="font-weight: bold">免费轨+ 付费</span>双轨通行证。</p>
+<p><span style="font-weight: bold">升级</span>：通过<span style="font-weight: bold">活跃度</span>提升 BP 等级；活跃度由<span style="font-weight: bold">每日任务</span>获得。</p>
+<p><span style="font-weight: bold">双轨奖励</span>：每个等级有免费轨与付费轨各一份奖励。免费轨默认可领。</p>
+<p><span style="font-weight: bold">付费轨解锁</span>：购买后<span style="font-weight: bold">解锁付费轨所有已达等级的奖励</span>（可立即补领），并可领取<span style="font-weight: bold">后续新达到等级</span>的付费奖励。</p>
+<p><span style="font-weight: bold">奖励内容</span>：外观、比赛道具、生活养成货币（金币）。</p>
+<p>通用活动，使用<span style="font-weight: bold">竞猜币</span>兑换局外道具</p>
+<p><span style="font-weight: bold">货币</span>：竞猜币（来源见 [3.7]）。</p>
+<p><span style="font-weight: bold">兑换内容</span>：局外道具（及外观券等）。</p>
+<p><span style="font-weight: bold">限制</span>：每个商品<span style="font-weight: bold">限购</span>；商店<span style="font-weight: bold">周期刷新</span>（刷新后限购次数重置）。</p>
+<p>通用礼包活动</p>
+<p><span style="font-weight: bold; font-size: 12pt">类型</span>：免费活动礼包（直接领取）与付费充值礼包（付费购买）。</p>
+<p><span style="font-weight: bold">投放内容</span>：生活养成货币（金币）、比赛道具、竞猜币。</p>
+<p><span style="font-weight: bold">限制</span>：<span style="font-weight: bold">限购 + 限时</span>。</p>
+<p><span style="font-weight: bold">3.1 创角与新手引导</span>：4角色仅外观/国籍影响首签/试训3切片(模式可逐切片切换·锁定唯一例外)/1星合同</p>
+<p><span style="font-weight: bold">3.2 切片操作核心</span>： 划线/弹弓·守门强制划线·首个非守门切片锁定整关/6类切片/3道具/回溯重置·三层配置(type_def/preset/instance)+objectives/modifiers正交·叠加优先级固定</p>
+<p><span style="font-weight: bold">3.3 基础关卡</span>： 切片实例组关·逐关配胜平负/进入即扣门票·不存进度·attempt_id幂等·断线作废/AI难度档/助攻/引导关固定脚本</p>
+<p><span style="font-weight: bold">3.4 球星养成</span>： 知名度/生活双线·合同按养成定档·货币(金币/门票/竞猜币)</p>
+<p><span style="font-weight: bold">3.5 积分赛</span>： 大关卡=联赛轮次·小关卡顺序解锁·赛季独立排名·绝对目标即时/排名目标赛季结算·完成发合同</p>
+<p><span style="font-weight: bold">3.6 淘汰赛</span>： 中后期开放·组队/海选(均分G组取前K=64强·不开竞猜·仅见己组)/单淘汰(64强R=6轮)·演算闭环(切片→比分/平局破法/轮空/名次)·回放仅展示·不参与排名</p>
+<p><span style="font-weight: bold">3.7 竞猜</span>： 淘汰赛非轮空场·选晋级方·可押己队·赔率TODO·产出命中/收益</p>
+<p><span style="font-weight: bold">3.8 排名</span>： 4榜·积分/进球赛季独立·竞猜命中/收益全周期·名次段位发奖</p>
+<p><span style="font-weight: bold">3.9 BP 通行证</span>： 免费+付费双轨·活跃度(每日任务)升级·付费补领已达等级</p>
+<p><span style="font-weight: bold">3.10 兑换商店</span>： 竞猜币兑换·限购·周期刷新</p>
+<p><span style="font-weight: bold">3.11 礼包</span>： 付费+免费·限购·限时·投放金币/道具/竞猜币</p>
+<p>关卡进度/扣票/幂等/断线、操作模式锁定、赛季排名结算时机、淘汰赛演算闭环均已在正文定为设计规则，下列仅剩<span style="font-weight: bold">数值</span>待配。</p>
+<p><span style="font-weight: bold">门票</span>：上限、恢复速度、各关消耗（受生活等级 buff 影响）</p>
+<p><span style="font-weight: bold">两条养成线</span>：各等级经验曲线、升级奖励与效果、球队星级门槛</p>
+<p><span style="font-weight: bold">知名度获取公式</span>：胜负/进球/助攻系数 + 球队星级系数</p>
+<p><span style="font-weight: bold">合同</span>：各档待遇数值、赛季目标阈值(含type/threshold/settle_at)、发放等级门槛</p>
+<p><span style="font-weight: bold">淘汰赛</span>：开放关卡L、队伍人数M、海选分组数G(16~32)及每组晋级K、各阶段时间、补位球员固定评分、评分/切片数/演算公式系数</p>
+<p><span style="font-weight: bold">竞猜</span>：赔率算法（对接其他项目组现成系统）、每日免费币、礼包投放量</p>
+<p><span style="font-weight: bold">排名</span>：四榜名次段位划分与各段奖励</p>
+<p><span style="font-weight: bold">BP</span>：各等级活跃度需求、免费/付费轨奖励、付费价格、每日任务配置</p>
+<p><span style="font-weight: bold">兑换商店</span>：商品价格、限购、刷新周期</p>
+<p><span style="font-weight: bold">礼包</span>：各礼包内容、价格、限购、限时</p>
+<p>货币闭环：金币(养成产出↔生活升级)、门票(恢复↔积分赛消耗)、竞猜币(每日/礼包↔竞猜↔兑换商店)</p>
+<p>数据流：关卡结算→养成(知名度)→合同发放→评分→淘汰赛→竞猜→排名</p>
+<p>切片核心(3.2)被基础关卡(3.3)复用一致，均以 slice_instance 配置实例</p>
+<p>排名数据源(3.5积分赛/3.7竞猜)与展示(3.8/积分赛页签)口径一致</p>
+<p>赛季排名结算时刻同时驱动合同「排名达标」目标判定(3.5↔3.8)，避免先发奖不稳定</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">资产</td><td style="vertical-align: top">数量</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">可选球星角色立绘/模型</td><td style="vertical-align: top">4</td><td style="vertical-align: top">创角选角主展示</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">仅外观差异，无数值差异</td></tr><tr><td style="vertical-align: top">角色头像</td><td style="vertical-align: top">4</td><td style="vertical-align: top">创角底部切换、排行榜头像、玩家信息</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">需要选中态/未选中态</td></tr><tr><td style="vertical-align: top">球星半身像/卡面</td><td style="vertical-align: top">1 套基础模板</td><td style="vertical-align: top">球星养成主卡、合同展示</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">可复用角色头像与立绘</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">资产</td><td style="vertical-align: top">数量</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">国籍/地区图标</td><td style="vertical-align: top">待定</td><td style="vertical-align: top">创角国籍弹窗</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">复用已有国旗</td></tr><tr><td style="vertical-align: top">球队队服</td><td style="vertical-align: top">12</td><td style="vertical-align: top">首次签约、合同、积分赛、淘汰赛</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">至少支持默认球队 + 按国籍动态生成球队</td></tr><tr><td style="vertical-align: top">球队队标</td><td style="vertical-align: top">12</td><td style="vertical-align: top">淘汰赛发起者命名球队/选择队标</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">和队服一一对应</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">资产</td><td style="vertical-align: top">数量</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">竖屏球场场景</td><td style="vertical-align: top">1-2</td><td style="vertical-align: top">切片操作主画面</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">必须适配竖屏，留出 HUD 和底部道具栏</td></tr><tr><td style="vertical-align: top">球门</td><td style="vertical-align: top">1</td><td style="vertical-align: top">进攻/任意球/点球/守门</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">需要与门将、球轨迹层级清楚</td></tr><tr><td style="vertical-align: top">足球</td><td style="vertical-align: top">1</td><td style="vertical-align: top">所有切片操作</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">小尺寸下必须高识别</td></tr><tr><td style="vertical-align: top">控球球员标识</td><td style="vertical-align: top">1 套</td><td style="vertical-align: top">切片操作</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可先用简化 2D token，后续替换角色</td></tr><tr><td style="vertical-align: top">球场辅助线</td><td style="vertical-align: top">1 套</td><td style="vertical-align: top">瞄准轨迹、可操作夹角、落点</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">虚线弧线、落点圆点、方向线、力度线</td></tr>
+    </table>
+</div>
+<p>切片玩法的核心可先采用“轻量 3D 模型 + 少量关键动作 + UI 轨迹辅助”的方案，不追求完整足球比赛模拟。动作以服务切片结果表达为主，优先保证读秒、出脚、扑救、成功/失败反馈清楚。</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">模型</td><td style="vertical-align: top">数量</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">主角球员模型</td><td style="vertical-align: top">4</td><td style="vertical-align: top">创角展示、控球球员、签约亮相、庆祝</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">与 4 个角色外观一致，可共用骨骼</td></tr><tr><td style="vertical-align: top">通用队友球员模型</td><td style="vertical-align: top">1-2</td><td style="vertical-align: top">助攻、接应、跑位、禁区站位</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可通过球衣颜色/号码区分</td></tr><tr><td style="vertical-align: top">通用对手球员模型</td><td style="vertical-align: top">1-2</td><td style="vertical-align: top">防守、出球、界外球干扰</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可与队友共骨骼换材质</td></tr><tr><td style="vertical-align: top">门将模型</td><td style="vertical-align: top">1</td><td style="vertical-align: top">任意球、点球、守门切片</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">需要明显区别普通球员</td></tr>
+    </table>
+</div>
+<p>模型制作建议：</p>
+<p>所有球员优先共用同一套人形骨骼，减少动作制作和运行时成本。</p>
+<p>主角 4 个外观只影响视觉，不绑定数值差异。</p>
+<p>队友/对手优先通过球衣主色、号码、队徽贴图区分。</p>
+<p>移动端竖屏中角色多为中远景，面部细节可简化，动作轮廓必须清楚。</p>
+<p>模型需要支持左右镜像或朝向旋转，避免为左右脚/左右扑救重复制作大量资源。</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">动作</td><td style="vertical-align: top">适用对象</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">待机</td><td style="vertical-align: top">全部球员</td><td style="vertical-align: top">切片等待操作、结算前站位</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">轻微呼吸/重心变化</td></tr><tr><td style="vertical-align: top">起跑/短跑</td><td style="vertical-align: top">主角、队友、对手</td><td style="vertical-align: top">进攻推进、接应跑位</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可循环</td></tr><tr><td style="vertical-align: top">停球/控球</td><td style="vertical-align: top">主角、队友</td><td style="vertical-align: top">控球等待、传球前状态</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">需要能和待机衔接</td></tr><tr><td style="vertical-align: top">射门</td><td style="vertical-align: top">主角、队友</td><td style="vertical-align: top">进攻、任意球、点球成功/失败判定前表现</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可先做 1 套通用出脚</td></tr><tr><td style="vertical-align: top">传球</td><td style="vertical-align: top">主角、队友</td><td style="vertical-align: top">助攻、界外球二次进攻</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">和射门可共用部分动作</td></tr><tr><td style="vertical-align: top">进球庆祝</td><td style="vertical-align: top">主角、队友</td><td style="vertical-align: top">切片成功回放、关卡胜利反馈</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">1 套通用即可</td></tr><tr><td style="vertical-align: top">失败沮丧</td><td style="vertical-align: top">主角、队友</td><td style="vertical-align: top">被扑出/出界/失败回放</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可用于回溯前状态</td></tr><tr><td style="vertical-align: top">门将待机</td><td style="vertical-align: top">门将</td><td style="vertical-align: top">射门前准备、守门切片等待</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">与普通待机不同</td></tr><tr><td style="vertical-align: top">门将左扑/右扑</td><td style="vertical-align: top">门将</td><td style="vertical-align: top">点球、任意球、守门方向判断</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">需读得出方向</td></tr><tr><td style="vertical-align: top">门将扑救成功</td><td style="vertical-align: top">门将</td><td style="vertical-align: top">非守门切片失败反馈</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">抱球/挡出二选一</td></tr><tr><td style="vertical-align: top">超时/判断错误反馈</td><td style="vertical-align: top">门将/主角</td><td style="vertical-align: top">守门切片失败</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">可用动作 + UI 文字补足</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">动作</td><td style="vertical-align: top">适用对象</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">角球开球</td><td style="vertical-align: top">主角/队友</td><td style="vertical-align: top">角球切片</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">可由射门动作改造</td></tr><tr><td style="vertical-align: top">界外球掷球</td><td style="vertical-align: top">主角/队友</td><td style="vertical-align: top">界外球切片</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">与其他动作差异较大</td></tr><tr><td style="vertical-align: top">人墙防守</td><td style="vertical-align: top">对手/人墙</td><td style="vertical-align: top">任意球墙体</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">固定站姿 + 闪避/跳起可后置</td></tr><tr><td style="vertical-align: top">对手解围</td><td style="vertical-align: top">对手</td><td style="vertical-align: top">被对方球员出球并踢出界外</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">用于失败原因表达</td></tr><tr><td style="vertical-align: top">签约亮相</td><td style="vertical-align: top">主角</td><td style="vertical-align: top">首次签约展示</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">可用待机 + 挥手/举球衣</td></tr><tr><td style="vertical-align: top">晋级/淘汰表现</td><td style="vertical-align: top">主角/队伍</td><td style="vertical-align: top">淘汰赛结果展示</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">可用简短胜负姿态</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">动作</td><td style="vertical-align: top">适用对象</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">多套进球庆祝</td><td style="vertical-align: top">主角</td><td style="vertical-align: top">外观/稀有奖励、长期表现差异</td><td style="vertical-align: top">P2</td><td style="vertical-align: top">可作为商业化外观</td></tr><tr><td style="vertical-align: top">花式射门</td><td style="vertical-align: top">主角</td><td style="vertical-align: top">高级反馈、活动宣传</td><td style="vertical-align: top">P2</td><td style="vertical-align: top">不影响判定</td></tr><tr><td style="vertical-align: top">受击/碰撞反应</td><td style="vertical-align: top">球员</td><td style="vertical-align: top">更真实的足球反馈</td><td style="vertical-align: top">P2</td><td style="vertical-align: top">MVP 可不做</td></tr><tr><td style="vertical-align: top">观众/替补席庆祝</td><td style="vertical-align: top">场景角色</td><td style="vertical-align: top">氛围包装</td><td style="vertical-align: top">P2</td><td style="vertical-align: top">可用粒子/贴片替代</td></tr>
+    </table>
+</div>
+<p>模型需提供统一缩放标准和脚底原点，便于关卡切片按配置摆放。</p>
+<p>动作需提供可循环标记，例如待机、短跑。</p>
+<p>射门、传球、扑救动作需要标记关键帧事件点，用于同步足球发射、碰撞、扑救结果和镜头反馈。</p>
+<p>回溯会重置球员和足球位置，模型状态需要能快速回到切片初始 pose。</p>
+<p>切片配置已拆为  三层；美术摆位预览应优先按  制作可复用画面， 只做局部覆盖。</p>
+<p>若引擎支持状态机，建议动作按  分组。</p>
+<p>若 3D 成本过高，MVP 可用 2D token + 少量序列帧替代，但接口命名仍按模型/动作需求预留。</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">道具</td><td style="vertical-align: top">图标/表现</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td></tr><tr><td style="vertical-align: top">哨子</td><td style="vertical-align: top">哨子图标 + 生效角标</td><td style="vertical-align: top">增加 1 次非守门切片</td><td style="vertical-align: top">P0</td></tr><tr><td style="vertical-align: top">回溯</td><td style="vertical-align: top">回转箭头/时钟图标 + 次数</td><td style="vertical-align: top">切片失败后重置切片</td><td style="vertical-align: top">P0</td></tr><tr><td style="vertical-align: top">瞄准</td><td style="vertical-align: top">准星图标 + ON/OFF 状态</td><td style="vertical-align: top">显示辅助线</td><td style="vertical-align: top">P0</td></tr><tr><td style="vertical-align: top">世界杯主题头像框/铭牌/聊天气泡三选一</td><td style="vertical-align: top">活动标配</td><td style="vertical-align: top">BP奖励</td><td style="vertical-align: top">P0</td></tr><tr><td style="vertical-align: top">世界杯主题城堡皮肤/行军皮肤二选一</td><td style="vertical-align: top">活动标配</td><td style="vertical-align: top">排名奖励</td><td style="vertical-align: top">P0</td></tr><tr><td style="vertical-align: top">世界杯主题聊天表情</td><td style="vertical-align: top">活动标配</td><td style="vertical-align: top">兑换商店</td><td style="vertical-align: top">P0</td></tr>
+    </table>
+</div>
+<p>需要提供：正常态、选中态、置灰态、数量角标、获得弹窗小图标。</p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">资产</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">金币图标</td><td style="vertical-align: top">生活等级升级、关卡奖励、礼包</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">当前原型用黄色金币</td></tr><tr><td style="vertical-align: top">门票图标</td><td style="vertical-align: top">积分赛消耗、恢复上限显示</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">需区别于竞猜币</td></tr><tr><td style="vertical-align: top">竞猜币图标</td><td style="vertical-align: top">竞猜、兑换商店、礼包</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">当前原型用硬币符号</td></tr>
+    </table>
+</div>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">动效</td><td style="vertical-align: top">用途</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">备注</td></tr><tr><td style="vertical-align: top">开场视频/开场动画</td><td style="vertical-align: top">首次进入活动</td><td style="vertical-align: top">P2</td><td style="vertical-align: top">可先降级为静态开场图</td></tr><tr><td style="vertical-align: top">选角镜头拉近</td><td style="vertical-align: top">创角点选角色</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">文档明确需要拉近镜头</td></tr><tr><td style="vertical-align: top">国籍弹窗出现</td><td style="vertical-align: top">创角流程</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">半屏弹窗</td></tr><tr><td style="vertical-align: top">签约亮相动画</td><td style="vertical-align: top">首次签约后</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">可用角色 + 队徽 + 聚光效果</td></tr><tr><td style="vertical-align: top">进球成功反馈</td><td style="vertical-align: top">切片成功</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">庆祝动作/文字/镜头反馈</td></tr><tr><td style="vertical-align: top">切片失败反馈</td><td style="vertical-align: top">被扑出/出界/超时/判断错误</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">失败原因需要可辨识</td></tr><tr><td style="vertical-align: top">回溯重置反馈</td><td style="vertical-align: top">使用回溯道具</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">时间倒流/闪白/场景复位</td></tr><tr><td style="vertical-align: top">排名奖励领取</td><td style="vertical-align: top">排名/BP/淘汰赛</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">奖励飞入背包或弹窗</td></tr><tr><td style="vertical-align: top">竞猜命中/未命中</td><td style="vertical-align: top">竞猜结算</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">命中收益、未命中损失清晰</td></tr>
+    </table>
+</div>
+<p>&nbsp;</p>
+<p>特效（VFX）指游戏内由粒子/着色器/光效实现的即时反馈，区别于 5.7 动效与反馈 的 UI/镜头/Lottie 表现层。移动端竖屏需控制同屏粒子数与 overdraw，不得遮挡操作区、轨迹层与结算按钮。</p>
+<p><span style="font-weight: bold">局内 · 球与射门</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">VFX ID</td><td style="vertical-align: top">触发时机</td><td style="vertical-align: top">表现要点</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">关联音效</td></tr><tr><td style="vertical-align: top">VFX_AIM_LINE</td><td style="vertical-align: top">瞄准辅助线显示</td><td style="vertical-align: top">轨迹流光 + 落点呼吸光圈 + 可操作夹角扇形（复用 3.3 辅助线资产，VFX 负责动态）</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">—</td></tr><tr><td style="vertical-align: top">VFX_BALL_PULL</td><td style="vertical-align: top">弹弓蓄力/松手</td><td style="vertical-align: top">橡皮筋拉伸光带、方向预瞄、松手回弹</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_BALL_RELEASE</td></tr><tr><td style="vertical-align: top">VFX_KICK_BURST</td><td style="vertical-align: top">出脚瞬间</td><td style="vertical-align: top">脚下草屑迸溅 + 力量冲击波，射门强于传球</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_KICK</td></tr><tr><td style="vertical-align: top">VFX_BALL_TRAIL</td><td style="vertical-align: top">球飞行中</td><td style="vertical-align: top">速度线/弧光拖尾，射门（强）与传球（弱）区分</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_KICK</td></tr><tr><td style="vertical-align: top">VFX_NET_RIPPLE</td><td style="vertical-align: top">球入网</td><td style="vertical-align: top">球网受冲击波动 + 落网瞬间</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_SLICE_SUCCESS</td></tr><tr><td style="vertical-align: top">VFX_POST_SPARK</td><td style="vertical-align: top">击中门框</td><td style="vertical-align: top">金属火花 + 轻微震屏</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_SLICE_FAIL</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">局内 · 守门</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">VFX ID</td><td style="vertical-align: top">触发时机</td><td style="vertical-align: top">表现要点</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">关联音效</td></tr><tr><td style="vertical-align: top">VFX_GK_DIVE_TRAIL</td><td style="vertical-align: top">门将飞身扑救</td><td style="vertical-align: top">手套/身体残影，左右方向可读</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_GK_DIVE</td></tr><tr><td style="vertical-align: top">VFX_GK_CATCH</td><td style="vertical-align: top">扑救成功接球</td><td style="vertical-align: top">手套触球冲击 + 短亮光</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_GK_SAVE_SUCCESS</td></tr><tr><td style="vertical-align: top">VFX_GK_TIMER</td><td style="vertical-align: top">守门反应倒计时</td><td style="vertical-align: top">进度条 + 末段告警闪烁（UI 光效）</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_GK_TICK</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">切片成败反馈</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">VFX ID</td><td style="vertical-align: top">触发时机</td><td style="vertical-align: top">表现要点</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">关联音效</td></tr><tr><td style="vertical-align: top">VFX_GOAL_BURST</td><td style="vertical-align: top">切片成功</td><td style="vertical-align: top">光爆 + 星屑 + 短促彩带，镜头微推</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_SLICE_SUCCESS</td></tr><tr><td style="vertical-align: top">VFX_SLICE_FAIL</td><td style="vertical-align: top">切片/守门失败</td><td style="vertical-align: top">灰暗下沉 + 烟尘，失败原因可辨</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_SLICE_FAIL</td></tr><tr><td style="vertical-align: top">VFX_REWIND</td><td style="vertical-align: top">使用回溯</td><td style="vertical-align: top">时间倒流扫描线 + 残影回退 + 闪白复位</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_ITEM_REWIND</td></tr><tr><td style="vertical-align: top">VFX_WHISTLE</td><td style="vertical-align: top">哨子生效</td><td style="vertical-align: top">图标高亮 + 声波环 + “+1 切片”飘字光</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_ITEM_WHISTLE</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">养成 / 商业化 / 竞猜</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">VFX ID</td><td style="vertical-align: top">触发时机</td><td style="vertical-align: top">表现要点</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">关联音效</td></tr><tr><td style="vertical-align: top">VFX_REWARD_FLY</td><td style="vertical-align: top">奖励到账/领取</td><td style="vertical-align: top">图标飞入背包 + 拖尾 + 到账微光（全活动通用）</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">SFX_REWARD_POP</td></tr><tr><td style="vertical-align: top">VFX_LEVEL_UP</td><td style="vertical-align: top">等级提升</td><td style="vertical-align: top">升级光柱 + 星屑迸发（知名度/生活/BP 通用）</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_LEVEL_UP</td></tr><tr><td style="vertical-align: top">VFX_CONTRACT_SEAL</td><td style="vertical-align: top">新合同发放</td><td style="vertical-align: top">盖章冲击 + 金光扩散</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_CONTRACT_NEW</td></tr><tr><td style="vertical-align: top">VFX_ACHIEVEMENT</td><td style="vertical-align: top">成就解锁</td><td style="vertical-align: top">奖章入场 + 徽光</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_ACHIEVEMENT_UNLOCK</td></tr><tr><td style="vertical-align: top">VFX_BET_WIN</td><td style="vertical-align: top">竞猜命中</td><td style="vertical-align: top">金币雨 + jackpot 光爆</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_BET_WIN</td></tr><tr><td style="vertical-align: top">VFX_BET_LOSE</td><td style="vertical-align: top">竞猜未中</td><td style="vertical-align: top">筹码灰散，克制</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_BET_LOSE</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">淘汰赛 / 排名 / 氛围 / 转场</span></p>
+<div class="table-container">
+    <table class="doc-table">
+        <tr><td style="vertical-align: top">VFX ID</td><td style="vertical-align: top">触发时机</td><td style="vertical-align: top">表现要点</td><td style="vertical-align: top">优先级</td><td style="vertical-align: top">关联音效</td></tr><tr><td style="vertical-align: top">VFX_ADVANCE</td><td style="vertical-align: top">海选/单淘汰晋级</td><td style="vertical-align: top">队伍卡上升光带 + 对阵节点点亮</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_MATCH_WIN</td></tr><tr><td style="vertical-align: top">VFX_ELIMINATE</td><td style="vertical-align: top">淘汰出局</td><td style="vertical-align: top">节点碎裂/熄灭</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_MATCH_OTHER</td></tr><tr><td style="vertical-align: top">VFX_CHAMPION</td><td style="vertical-align: top">夺冠/名次包装</td><td style="vertical-align: top">聚光 + 礼花 + 奖杯光晕</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">SFX_MATCH_WIN</td></tr><tr><td style="vertical-align: top">VFX_CAMERA_FLASH</td><td style="vertical-align: top">签约亮相/夺冠</td><td style="vertical-align: top">看台随机闪光灯点</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">—</td></tr><tr><td style="vertical-align: top">VFX_CONFETTI</td><td style="vertical-align: top">庆典（夺冠/大胜/主界面）</td><td style="vertical-align: top">彩带纸屑飘落</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">—</td></tr><tr><td style="vertical-align: top">VFX_TRANSITION</td><td style="vertical-align: top">切片/视角切换</td><td style="vertical-align: top">黑幕/闪白/速度线（复用 3.3 黑幕转场）</td><td style="vertical-align: top">P1</td><td style="vertical-align: top">—</td></tr><tr><td style="vertical-align: top">VFX_RED_DOT</td><td style="vertical-align: top">可领取提醒</td><td style="vertical-align: top">入口红点呼吸/微光（全活动）</td><td style="vertical-align: top">P0</td><td style="vertical-align: top">—</td></tr>
+    </table>
+</div>
+<p><span style="font-weight: bold">技术要点</span></p>
+<p>操作区与轨迹层之上不堆粒子；成功/失败特效不得遮挡「继续/回放」按钮。</p>
+<p>控制同屏粒子数与 overdraw，提供低端机降级：关键反馈（进球/失败/回溯）保留，氛围粒子（彩带/闪光灯）可关。</p>
+<p>特效需可被「回溯」打断并即时清场，回到切片初始状态。</p>
+<p>出脚/击框/进球的震屏强度需标注，避免晕动。</p>
+<p>优先序列帧 / Shader Graph 实现打击感粒子；UI 光效可用 Lottie。</p>
+        </div>
+        <div class="footer">
+            由钉钉文档解析MCP服务生成 | Powered by Node.js
+        </div>
+    </div>
+</body>
+</html>
