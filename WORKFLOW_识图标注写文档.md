@@ -6,7 +6,7 @@
 ```
 原图 → [识图] claude-opus-4-8 视觉识别 → 元素名+归一化坐标(JSON)
      → [标注] PIL 画红色数字圆圈 → 标注图
-     → [上传] 钉钉 OSS 三步上传 → resourceId
+     → [上传] 钉钉 OSS 三步上传 → resourceUrl
      → [写文档] insert_document_block 插入「左图右文」双列表格
 ```
 
@@ -42,6 +42,12 @@ elems = json.loads(re.search(r'\[.*\]', txt, re.S).group(0))
 ```
 
 ## 二、标注（PIL）
+标注规则：
+- 只在原图上做编号圆点，不把规则说明写进图片；说明文本单独进入文档右栏。
+- 弹窗界面只标注弹窗内部内容，背景页面、资源栏、底部导航等不作为该图标注对象。
+- 相同 UI 组件的不同状态只标注一次，例如按钮正常/置灰/点击中、列表行胜利/失败/未完成；状态差异写入规则说明。
+- 编号圆点放在标注对象旁边的空白区域或边缘位置，避免覆盖按钮、文本、图标等对象本身。
+
 ```python
 from PIL import Image, ImageDraw, ImageFont
 img = Image.open(SRC).convert("RGB"); W,H = img.size
@@ -56,7 +62,7 @@ img.save("marked.png")
 ```
 
 ## 三、上传图片到钉钉（三步，缺一不可）
-1. MCP `get_doc_attachment_upload_info`(fileName, fileSize, mimeType="image/png", nodeId) → 得 `resourceId` + `uploadUrl`
+1. MCP `get_doc_attachment_upload_info`(fileName, fileSize, mimeType="image/png", nodeId) → 得 `resourceId` + `resourceUrl` + `uploadUrl`
 2. **HTTP PUT** 图片二进制到 `uploadUrl`（Header `Content-Type: image/png`），须返回 200：
 ```python
 data=open("marked.png","rb").read()
@@ -64,18 +70,20 @@ req=urllib.request.Request(UPLOAD_URL, data=data, method="PUT",
     headers={"Content-Type":"image/png","Content-Length":str(len(data))})
 assert urllib.request.urlopen(req,timeout=120).status==200
 ```
-3. 图片在文档里的引用 src = `/core/api/resources/img/<resourceId>`
+3. 图片在文档里的引用 `src` 必须使用上传接口返回的完整 `resourceUrl`。
+
+不要手工拼 `/core/api/resources/img/<resourceId>`。钉钉会返回形如 `/core/api/resources/img/5eecdaf...` 的长路径，短 UUID 路径会导致图片块插入成功但文档里图片加载失败。
 
 ## 四、写文档（insert_document_block + JSONML）
 - 先用 `list_document_blocks(format=jsonml)` 抄一个现成样式块照搬。
 - 「左图右文」= 两列 table：`colsWidth:[250,400]`，左 `tc` `fill:#E8F2FE` 放 `img`，右 `tc` `fill:#FFFAE5` 放编号说明。
 - 编号：主项 `list.isOrdered:true`（`%1.`）；子说明 `level:1` + `○` bullet。
-- 定位：`referenceBlockId`=末块 blockId，`where:"after"`。
+- 定位：优先插入到每个模块「界面原型」段落之后、「数据结构 / 配置表」之前。插入前后都用 `list_document_blocks` 校验索引，避免因前面模块新增块导致后续模块索引漂移。
 
 JSONML 骨架：
 ```json
 ["table",{"colsWidth":[250,400],"sr":true},["tr",{},
-  ["tc",{"fill":"#E8F2FE","vAlign":"top"},["p",{},["img",{"src":"/core/api/resources/img/<resourceId>","width":236,"height":512}]]],
+  ["tc",{"fill":"#E8F2FE","vAlign":"top"},["p",{},["img",{"src":"<resourceUrl>","width":236,"height":512}]]],
   ["tc",{"fill":"#FFFAE5","vAlign":"top"},
     ["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"图中编号说明"]]],
     ["p",{"list":{"listId":"x","listStyle":{"format":"decimal","text":"%1.","align":"left"},"level":0,"isOrdered":true}},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"要素名"]]],
@@ -88,6 +96,9 @@ JSONML 骨架：
 2. **`function_is_rate_limit` 限流** → `sleep 15~30` 后重试。
 3. **curl 000** → 改用 Python urllib。
 4. **终端中文乱码** → 正常，文件/文档内容是对的。
+5. **图片加载失败** → 先检查 `img.src` 是否用了完整 `resourceUrl`。如果用了短 UUID 路径，删除错误图片块后重新插入完整路径版本。
+6. **模块插入位置错位** → 插入多个模块时不要复用旧索引；每次插入或删除后重新读取当前块列表，再定位下一个模块。
+7. **弹窗标注过多** → 只标弹窗内部；背景内容若需要说明，另开对应页面图处理。
 
 ## 准确性边界（每次都要告知用户）
 坐标与数值均来自模型视觉识别 = 估计值。圆圈位置可能偏移几十像素，界面内数值（如百分比）可能与原图有出入。**完成后让用户对照原图核对。**
