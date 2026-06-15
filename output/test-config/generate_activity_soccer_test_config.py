@@ -12,12 +12,36 @@ from openpyxl.worksheet.worksheet import Worksheet
 OUT_DIR = Path(__file__).parent
 OUTPUT_FILE = OUT_DIR / "ActivitySoccer.xlsx"
 OUTPUT_LC_FILE = OUT_DIR / "ActivitySoccerLanguage.xlsx"
-OUTPUT_CONST_FILE = OUT_DIR / "ConstConfig_ActvSoccer.xlsx"
 # 追加到 dataconfig/ConstConfig.xlsx 的 CfgID 段（当前线上最大约 10135564）
 ACTV_SOCCER_CONST_CFGID_BASE = 10135601
 SOURCE_DOCS = [
     "钉钉文档 2026世界杯主题活动-开发文档 (amweZ92PV6vDZdmDCKwo2Ev4VxEKBD6p)",
     "K1Client docs/plans/2026-06-09-worldcup-fsm-bt-enemy-ai-design.md",
+]
+# 程序/运行时定义，不进数值策划填表 xlsx（见 2026世界杯主题活动-配置表结构.md §文档边界）
+SHEETS_PROGRAM_ONLY = (
+    "ActvSoccerSliceTypeDefCfg",      # L1 slice_type 程序只读枚举
+    "ActvSoccerPlayerAiDutyEnumCfg",  # player_ai_duty 程序只读枚举
+    "ActvSoccerBetMatchCfg",          # 正式对阵/赔率由服务端生成
+    "ActvSoccerCharacterStateCfg",    # FSM状态→动画映射，客户端+美术维护
+)
+# 走项目通用配套表，不在本活动 xlsx 重复维护
+SHEETS_COMMON_PLATFORM = (
+    "ActvSoccerBattlePassCfg",        # → BattlePassNew / ActivityBattlePass
+    "ActvSoccerExchangeShopCfg",      # → ExchangeShopItemCfg
+    "ActvSoccerGiftCfg",              # → GiftCfg / D2GiftCfg
+    "ActvSoccerRankSectionCfg",       # → ActivityRank / ActvRankSectionCfg
+)
+# 附录列举，不成活动 xlsx 页签
+APPENDIX_ONLY = (
+    "ActvSoccerInMatchItemCfg",       # 局内道具，见配置表结构文档附录
+    "ActvSoccerGlobalConstCfg",       # 玩法常量，合并 dataconfig/ConstConfig.xlsx
+)
+
+IN_MATCH_ITEMS: list[dict] = [
+    {"ID": 1, "ItemKey": "whistle", "Effect": "add_non_gk_slice", "DefaultActive": 1, "FreeCount": 0, "Remark": "哨子"},
+    {"ID": 2, "ItemKey": "rewind", "Effect": "reset_slice", "DefaultActive": 0, "FreeCount": 1, "Remark": "回溯"},
+    {"ID": 3, "ItemKey": "aim", "Effect": "aim_line", "DefaultActive": 1, "FreeCount": 0, "Remark": "瞄准"},
 ]
 
 # 球员 AI 职责枚举（程序侧 PlayerAiDuty）
@@ -28,11 +52,6 @@ PLAYER_AI_DUTY_ENUM: dict[str, int] = {
     "Forward": 3,
 }
 PLAYER_AI_DUTY_ENUM_COMMENT = "1=Goalkeeper,2=Defender,3=Forward"
-# CharacterState 场景表现行专用，不属于 PlayerAiDuty 枚举
-CHARACTER_STATE_SCENE_DUTY = 0
-CHARACTER_STATE_DUTY_COMMENT = (
-    "0=场景(仅CharacterState),1=Goalkeeper,2=Defender,3=Forward"
-)
 
 
 # 第1行读取端: c=仅客户端 s=仅服务端 cs=双端; Remark 留空(备注列)
@@ -40,24 +59,17 @@ SHEET_DEFAULT_READ: dict[str, str] = {
     "ActvSoccerTutorialCfg": "c",
     "ActvSoccerHapticCfg": "c",
     "ActvSoccerSliceFlowCfg": "c",
-    "ActvSoccerCharacterStateCfg": "c",
-    "ActvSoccerPlayerAiDutyEnumCfg": "c",
     "ActvSoccerContractCfg": "cs",
     "ActvSoccerContractStarLicCfg": "s",
-    "ActvSoccerFameGainRuleCfg": "s",
     "ActvSoccerKnockoutCfg": "s",
     "ActvSoccerKnockoutPhaseCfg": "s",
-    "ActvSoccerMatchSimulationCfg": "s",
-    "ActvSoccerBetCoinSourceCfg": "s",
-    "ActvSoccerRankSectionCfg": "s",
+    "ActvSoccerBetMultiplierCfg": "cs",
+    "ActvSoccerBetStakeTierCfg": "cs",
 }
 READ_OVERRIDES: dict[str, dict[str, str]] = {
     "ActvSoccerCharacterCfg": {"AppearanceKey": "c", "DisplayPower": "c"},
     "ActvSoccerNationalityCfg": {"NameLcKey": "c", "ContractPool": "s"},
     "ActvSoccerTutorialCfg": {"SliceInstanceID": "cs", "DescLcKey": "c"},
-    "ActvSoccerSliceTypeDefCfg": {
-        "AllowedModes": "c", "PayloadSchema": "c", "DefaultCameraFov": "c",
-    },
     "ActvSoccerSlicePresetCfg": {
         "NameLcKey": "c", "Tags": "c", "BallPos": "c", "BallVector": "c", "BallOwner": "c",
         "PlayersInit": "c", "CameraFov": "c", "TargetPoint": "c", "RecommendedModes": "c",
@@ -72,7 +84,6 @@ READ_OVERRIDES: dict[str, dict[str, str]] = {
     "ActvSoccerKnockoutPhaseCfg": {
         "PhaseLcKey": "cs", "PhaseKey": "cs", "DayContentLcKey": "c", "BetOpen": "cs",
     },
-    "ActvSoccerBetMatchCfg": {"Status": "s"},
 }
 
 
@@ -285,7 +296,54 @@ def actv_soccer_const_rows() -> list[dict]:
         _const(23, "可操作夹角宽度下限(°)", "ActvSoccer_operable_angle_span_min", "20"),
         _const(24, "可操作夹角宽度上限(°)", "ActvSoccer_operable_angle_span_max", "70"),
         _const(25, "联赛换约候选合同份数", "ActvSoccer_contract_offer_count", "3"),
+        # --- 竞猜赔率与经济（对齐程序 ConstCommon + controller；Val 为策划可读小数，Comment 标注程序键/万分值）---
+        _const(26, "约束返奖率=ChampionMinOdds(程序12000)", "ActvSoccer_bet_constraint_return_rate", "1.2"),
+        _const(27, "最大赔率=ChampionMaxOdds(程序500000)", "ActvSoccer_bet_max_odds", "50"),
+        _const(28, "默认/初始展示倍率=ChampionDefaultOdds(程序17500)", "ActvSoccer_bet_initial_display_odds", "1.75"),
+        _const(29, "赔率下限(程序ChampionMinOdds同值1.2)", "ActvSoccer_bet_min_odds", "1.2"),
+        _const(30, "战力比上限=ChampionPowerRatioMax(程序20000=200%)", "ActvSoccer_bet_power_ratio_max", "2"),
+        _const(31, "战力比下限=ChampionPowerRatioMin(程序3000=30%)", "ActvSoccer_bet_power_ratio_min", "0.3"),
+        _const(32, "单场演算批次=oneMatchPreFightTimes", "ActvSoccer_bet_sim_count", "10"),
+        _const(33, "每tick最多开战场次=maxPreFightBattlesPerTick", "ActvSoccer_bet_max_prefight_battles_per_tick", "50"),
+        _const(34, "演算批次间隔秒=roundFightInterval", "ActvSoccer_bet_round_fight_interval_sec", "1"),
+        _const(35, "单场演算超时秒=preFightTimeout", "ActvSoccer_bet_prefight_timeout_sec", "30"),
+        _const(36, "同步匹配阶段时长秒(活动排期,近preFightTimeout)", "ActvSoccer_bet_sync_phase_duration_sec", "30"),
+        _const(37, "单次购买竞猜币上限(TODO)", "ActvSoccer_bet_coin_purchase_limit", "5000"),
+        _const(38, "免费档命中固定派彩", "ActvSoccer_bet_free_hit_payout", "5"),
+        _const(39, "每日免费领取竞猜币(TODO)", "ActvSoccer_bet_daily_free_amount", "100"),
+        _const(40, "截止前锁定最终倍率(秒)", "ActvSoccer_bet_odds_lock_before_settle_sec", "59"),
+        _const(41, "展示倍率逐分钟收敛间隔(秒)", "ActvSoccer_bet_display_odds_tick_sec", "60"),
     ]
+
+
+# X1 奖励倍率对照表（A 胜率% → A/B 奖励倍率）；查表取 WinRatePctA 最接近行
+BET_MULTIPLIER_ROWS: list[tuple[int, float, int, float, float]] = [
+    (98, 1.02, 2, 50.0, 0.999608),
+    (97, 1.03, 3, 37.72, 1.002622),
+    (95, 1.04, 5, 19.0, 0.986028),
+    (92, 1.05, 8, 12.75, 0.970109),
+    (90, 1.07, 10, 9.63, 0.963),
+    (88, 1.09, 12, 7.75, 0.9556),
+    (85, 1.11, 15, 6.5, 0.948095),
+    (83, 1.13, 17, 5.61, 0.940549),
+    (81, 1.15, 19, 4.94, 0.932841),
+    (79, 1.17, 21, 4.42, 0.925116),
+    (75, 1.22, 25, 3.66, 0.915),
+    (71, 1.27, 29, 3.14, 0.904263),
+    (67, 1.33, 33, 2.75, 0.896446),
+    (64, 1.39, 36, 2.46, 0.888156),
+    (60, 1.46, 40, 2.23, 0.882331),
+    (50, 1.75, 50, 1.75, 0.875),
+]
+
+BET_STAKE_TIER_ROWS: list[dict] = [
+    {"ID": 1, "TierKey": "free", "Stake": 0, "HitPayout": 5, "Sort": 1, "Remark": "免费档;命中固定5竞猜币"},
+    {"ID": 2, "TierKey": "stake_50", "Stake": 50, "HitPayout": 0, "Sort": 2, "Remark": "命中=stake×locked_mult"},
+    {"ID": 3, "TierKey": "stake_100", "Stake": 100, "HitPayout": 0, "Sort": 3, "Remark": ""},
+    {"ID": 4, "TierKey": "stake_150", "Stake": 150, "HitPayout": 0, "Sort": 4, "Remark": ""},
+    {"ID": 5, "TierKey": "stake_200", "Stake": 200, "HitPayout": 0, "Sort": 5, "Remark": ""},
+    {"ID": 6, "TierKey": "stake_300", "Stake": 300, "HitPayout": 0, "Sort": 6, "Remark": "最高档"},
+]
 
 
 def build_const_config_workbook(rows: list[dict]) -> Workbook:
@@ -328,17 +386,33 @@ V_OBJECTIVE = "SoccerObjective_V"
 V_MODIFIER = "SoccerModifier_V"
 V_PLAYER_INIT = "SoccerPlayerInit_V"
 V_SEASON_GOAL = "SoccerSeasonGoal_V"
-V_SIM_PARAMS = "SoccerSimParams_V"
 
-# SoccerPlayerInit_V: team, idx, duty(→PlayerAiDuty), pos
+# SoccerPlayerInit_V: team, idx, duty(→PlayerAiDuty), pos, facing(°)
+GOAL_CENTER_X, GOAL_CENTER_Z = 0.0, 58.0
 PLAYER_INIT_DEFAULT = (
     '[{"team":"home","idx":0,"duty":3,'
-    '"pos":{"x":0,"y":0,"z":0}}]'
+    '"pos":{"x":0,"y":0,"z":0},"facing":0}]'
 )
 
 
-def player_init(team: str, idx: int, duty: int, x: float, y: float, z: float) -> dict:
-    return {"team": team, "idx": idx, "duty": duty, "pos": {"x": x, "y": y, "z": z}}
+def _yaw_deg(dx: float, dz: float) -> float:
+    return round(math.degrees(math.atan2(dx, dz)), 1)
+
+
+def _face_toward(fx: float, fz: float, x: float, z: float) -> float:
+    return _yaw_deg(fx - x, fz - z)
+
+
+def player_init(
+    team: str, idx: int, duty: int, x: float, y: float, z: float, facing: float
+) -> dict:
+    return {
+        "team": team,
+        "idx": idx,
+        "duty": duty,
+        "pos": {"x": x, "y": y, "z": z},
+        "facing": facing,
+    }
 
 
 def players_init_json(players: list[dict]) -> str:
@@ -397,7 +471,7 @@ ROUNDS_TOTAL = 50
 LEVELS_PER_ROUND = 10
 TIERS_TOTAL = 10
 
-# slice_type 编号沿用 ActvSoccerSliceTypeDefCfg
+# slice_type 编号（程序侧 L1 枚举）：1 attack / 2 free_kick / 3 penalty / 4 corner / 5 throw_in / 6 goalkeep
 SLICE_TYPE_NAME: dict[int, str] = {
     1: "attack", 2: "free_kick", 3: "penalty",
     4: "corner", 5: "throw_in", 6: "goalkeep",
@@ -768,50 +842,65 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     四角度列存最宽基线(tier1)，逐 tier 收窄由实例 OverrideOperableAngle 实现。"""
 
     def gk_attack(home_x: float) -> list[dict]:
+        ball_z = 35.0
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, 35),
-            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, 30),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 55),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, 48),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, ball_z,
+                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x, ball_z)),
+            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, 30,
+                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, 30)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 55,
+                        _face_toward(home_x, ball_z, 0, 55)),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, 48,
+                        _face_toward(home_x, ball_z, home_x - 4, 48)),
         ]
 
     def free_kick_wall(ball_x: float) -> list[dict]:
+        ball_z = 42.0
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, 42),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], -2, 0, 50),
-            player_init("away", 2, PLAYER_AI_DUTY_ENUM["Defender"], 2, 0, 50),
-            player_init("away", 3, PLAYER_AI_DUTY_ENUM["Defender"], -1, 0, 50),
-            player_init("away", 4, PLAYER_AI_DUTY_ENUM["Defender"], 1, 0, 50),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
+                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, ball_x, ball_z)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58,
+                        _face_toward(ball_x, ball_z, 0, 58)),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], -2, 0, 50, 180.0),
+            player_init("away", 2, PLAYER_AI_DUTY_ENUM["Defender"], 2, 0, 50, 180.0),
+            player_init("away", 3, PLAYER_AI_DUTY_ENUM["Defender"], -1, 0, 50, 180.0),
+            player_init("away", 4, PLAYER_AI_DUTY_ENUM["Defender"], 1, 0, 50, 180.0),
         ]
 
     def corner_players(side_x: float) -> list[dict]:
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 56),
-            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, 52),
-            player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, 52),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 53),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 56,
+                        _face_toward(0, 55, side_x, 56)),
+            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, 52,
+                        _face_toward(0, 55, 2, 52)),
+            player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, 52,
+                        _face_toward(0, 55, -2, 52)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 53, 180.0),
         ]
 
     def throw_in_players(side_x: float) -> list[dict]:
+        recv_x, recv_z = side_x - 3, 44.0
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 40),
-            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], side_x - 3, 0, 44),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], side_x - 2, 0, 46),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 40,
+                        _face_toward(recv_x, recv_z, side_x, 40)),
+            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
+                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], side_x - 2, 0, 46,
+                        _face_toward(recv_x, recv_z, side_x - 2, 46)),
         ]
 
     def penalty_players() -> list[dict]:
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 50),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 50, 0.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
         ]
 
     def goalkeep_players() -> list[dict]:
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 58),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 56),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 58, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 56, 0.0),
         ]
 
     # (id, slice_type, name, tags, ball_pos, ball_vector, ball_owner, players, fov, target, op_angle, type_payload, rec_modes)
@@ -851,7 +940,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     return rows
 
 
-def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
+def build_workbook(lc: LcRegistry) -> Workbook:
     wb = Workbook()
     wb.remove(wb.active)
 
@@ -916,28 +1005,6 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
     # --- 3.2 切片 ---
     make_sheet(
         wb,
-        "ActvSoccerSliceTypeDefCfg",
-        c(
-            id_col("int", "编号"),
-            ("SliceType", "string", "切片类型"),
-            ("AllowedModes", "string[]", "允许操作模式"),
-            ("JudgeFn", "string", "判定函数"),
-            ("PayloadSchema", "string", "type_payload schema"),
-            ("DefaultCameraFov", "float", "默认相机FOV(0=用预设)"),
-            ("Remark", "string", "L1只读"),
-        ),
-        [
-            {"ID": 1, "SliceType": "attack", "AllowedModes": '["draw_line","slingshot"]', "JudgeFn": "judge_attack", "PayloadSchema": "dest,keeper_weight,angle", "DefaultCameraFov": 0, "Remark": ""},
-            {"ID": 2, "SliceType": "free_kick", "AllowedModes": '["draw_line","slingshot"]', "JudgeFn": "judge_free_kick", "PayloadSchema": "spot,wall,angle,keeper_weight", "DefaultCameraFov": 0, "Remark": ""},
-            {"ID": 3, "SliceType": "penalty", "AllowedModes": '["draw_line","slingshot"]', "JudgeFn": "judge_penalty", "PayloadSchema": "spot,keeper_dirs,reaction_ms", "DefaultCameraFov": 0, "Remark": ""},
-            {"ID": 4, "SliceType": "corner", "AllowedModes": '["draw_line","slingshot"]', "JudgeFn": "judge_corner", "PayloadSchema": "corner_spot,runs,first_touch", "DefaultCameraFov": 0, "Remark": ""},
-            {"ID": 5, "SliceType": "throw_in", "AllowedModes": '["draw_line","slingshot"]', "JudgeFn": "judge_throw_in", "PayloadSchema": "throw_spot,runs,second_attack", "DefaultCameraFov": 0, "Remark": ""},
-            {"ID": 6, "SliceType": "goalkeep", "AllowedModes": '["draw_line"]', "JudgeFn": "judge_goalkeep", "PayloadSchema": "shot_dirs,reaction_ms", "DefaultCameraFov": 0, "Remark": "仅划线"},
-        ],
-    )
-
-    make_sheet(
-        wb,
         "ActvSoccerSlicePresetCfg",
         c(
             id_col("int", "preset_id"),
@@ -947,7 +1014,7 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
             ("BallPos", "ext", "球位置", P_VEC3, '{"x":0,"y":0,"z":0}'),
             ("BallVector", "ext", "球方向", P_VEC3, '{"x":0,"y":0,"z":1}'),
             ("BallOwner", "int", "控球球员索引"),
-            ("PlayersInit", "ext[]", f"球员站位+duty({PLAYER_AI_DUTY_ENUM_COMMENT})", V_PLAYER_INIT, PLAYER_INIT_DEFAULT),
+            ("PlayersInit", "ext[]", f"球员站位+duty+朝向({PLAYER_AI_DUTY_ENUM_COMMENT})", V_PLAYER_INIT, PLAYER_INIT_DEFAULT),
             ("CameraFov", "float", "相机FOV"),
             ("TargetPoint", "ext", "目标点", P_VEC3, '{"x":0,"y":0,"z":58}'),
             ("OperableAngle", "float", "可操作夹角(兼容字段=AngleSpanMax默认)"),
@@ -976,24 +1043,6 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
             ("Remark", "string", "备注"),
         ),
         _build_instance_library(),
-    )
-
-    make_sheet(
-        wb,
-        "ActvSoccerInMatchItemCfg",
-        c(
-            id_col("int", "item_id"),
-            ("ItemKey", "string", "道具键"),
-            ("Effect", "string", "效果"),
-            ("DefaultActive", "bool", "默认生效"),
-            ("FreeCount", "int", "免费次数"),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1, "ItemKey": "whistle", "Effect": "add_non_gk_slice", "DefaultActive": 1, "FreeCount": 0, "Remark": "哨子"},
-            {"ID": 2, "ItemKey": "rewind", "Effect": "reset_slice", "DefaultActive": 0, "FreeCount": 1, "Remark": "回溯"},
-            {"ID": 3, "ItemKey": "aim", "Effect": "aim_line", "DefaultActive": 1, "FreeCount": 0, "Remark": "瞄准"},
-        ],
     )
 
     make_sheet(
@@ -1047,21 +1096,6 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
     # --- FSM/BT/敌人AI (2026-06-09 design) ---
     make_sheet(
         wb,
-        "ActvSoccerPlayerAiDutyEnumCfg",
-        c(
-            id_col("int", "枚举值"),
-            ("EnumKey", "string", "枚举名"),
-            ("Remark", "string", "说明"),
-        ),
-        [
-            {"ID": 1, "EnumKey": "Goalkeeper", "Remark": "守门员"},
-            {"ID": 2, "EnumKey": "Defender", "Remark": "后卫：对方除门将外所有球员"},
-            {"ID": 3, "EnumKey": "Forward", "Remark": "前锋：我方所有球员(含玩家角色)"},
-        ],
-    )
-
-    make_sheet(
-        wb,
         "ActvSoccerAiProfileCfg",
         c(
             id_col("int", "AI难度档ID"),
@@ -1081,7 +1115,7 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
         "ActvSoccerEnemyAiCfg",
         c(
             id_col("int", "敌人AI配置ID"),
-            ("Duty", "int", "球员AI职责→ActvSoccerPlayerAiDutyEnumCfg", "", PLAYER_AI_DUTY_ENUM_COMMENT),
+            ("Duty", "int", "球员AI职责(程序枚举PlayerAiDuty)", "", PLAYER_AI_DUTY_ENUM_COMMENT),
             ("SaveWeight", "int", "扑救权重"),
             ("LeftWeight", "int", "左方向权重"),
             ("RightWeight", "int", "右方向权重"),
@@ -1157,52 +1191,6 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
         ],
     )
 
-    make_sheet(
-        wb,
-        "ActvSoccerCharacterStateCfg",
-        c(
-            id_col("int", "ID"),
-            ("StateKey", "string", "FSM状态"),
-            ("Duty", "int", "球员AI职责→ActvSoccerPlayerAiDutyEnumCfg", "", CHARACTER_STATE_DUTY_COMMENT),
-            ("AnimKey", "string", "美术动作key"),
-            ("MirrorFromID", "int", "镜像来源ID"),
-            ("IsLoop", "bool", "循环"),
-            ("NeedEvent", "bool", "关键帧事件"),
-            ("EventKey", "string", "事件名"),
-            ("Priority", "string", "P0/P1/P2"),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1001, "StateKey": "Idle", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "A01_Idle", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 1002, "StateKey": "Run", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "A02_Jog", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 1003, "StateKey": "Run", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "A03_Sprint", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0", "Remark": "冲刺跑"},
-            {"ID": 1004, "StateKey": "Control", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "B01_ReceiveBall", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "ReceiveBall", "Priority": "P0"},
-            {"ID": 1005, "StateKey": "Control", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "B02_DribbleTouch", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "TouchBall", "Priority": "P0"},
-            {"ID": 1006, "StateKey": "Pass", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "C01_ShortPass", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "ReleaseBall", "Priority": "P0"},
-            {"ID": 1007, "StateKey": "Pass", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "C01_ShortPass", "MirrorFromID": 1006, "IsLoop": 0, "NeedEvent": 1, "EventKey": "ReleaseBall", "Priority": "P0", "Remark": "长传复用短传"},
-            {"ID": 1008, "StateKey": "Kick", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "D01_Shoot", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "ReleaseBall", "Priority": "P0"},
-            {"ID": 1009, "StateKey": "Kick", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "D02_PowerShot", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "ReleaseBall", "Priority": "P0"},
-            {"ID": 1010, "StateKey": "Celebrate", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "G03_JumpCelebrate", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 1011, "StateKey": "Fail", "Duty": PLAYER_AI_DUTY_ENUM["Forward"], "AnimKey": "H03_KneelDown", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 0, "Priority": "P0", "Remark": "建议升P0"},
-            {"ID": 2001, "StateKey": "SavePrepare", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E01_GKIdle", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 2002, "StateKey": "Run", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E02_GKMoveLeft", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0", "Remark": "门将左移"},
-            {"ID": 2003, "StateKey": "Run", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E02_GKMoveLeft", "MirrorFromID": 2002, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0", "Remark": "门将右移镜像"},
-            {"ID": 2004, "StateKey": "SaveLeft", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E04_GKDiveLeft", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "SaveContact", "Priority": "P0"},
-            {"ID": 2005, "StateKey": "SaveRight", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E04_GKDiveLeft", "MirrorFromID": 2004, "IsLoop": 0, "NeedEvent": 1, "EventKey": "SaveContact", "Priority": "P0"},
-            {"ID": 2006, "StateKey": "SaveUp", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E06_GKCatch", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "SaveContact", "Priority": "P0", "Remark": "临时复用接球"},
-            {"ID": 2007, "StateKey": "SaveSuccess", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E06_GKCatch", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "SaveContact", "Priority": "P0"},
-            {"ID": 2008, "StateKey": "Fail", "Duty": PLAYER_AI_DUTY_ENUM["Goalkeeper"], "AnimKey": "E07_GKMiss", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 3001, "StateKey": "Idle", "Duty": PLAYER_AI_DUTY_ENUM["Defender"], "AnimKey": "F01_DefendIdle", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 3002, "StateKey": "Run", "Duty": PLAYER_AI_DUTY_ENUM["Defender"], "AnimKey": "F02_DefendShuffle", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P0"},
-            {"ID": 3003, "StateKey": "Control", "Duty": PLAYER_AI_DUTY_ENUM["Defender"], "AnimKey": "F03_Intercept", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "InterceptBall", "Priority": "P0"},
-            {"ID": 3004, "StateKey": "Idle", "Duty": PLAYER_AI_DUTY_ENUM["Defender"], "AnimKey": "K03_WallDefense", "MirrorFromID": 0, "IsLoop": 1, "NeedEvent": 0, "Priority": "P1", "Remark": "对方人墙(后卫)"},
-            {"ID": 4001, "StateKey": "Kick", "Duty": PLAYER_AI_DUTY_ENUM["Defender"], "AnimKey": "D01_Shoot", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 1, "EventKey": "ReleaseBall", "Priority": "P0", "Remark": "守门切片对方后卫射门"},
-            {"ID": 5001, "StateKey": "Transition", "Duty": CHARACTER_STATE_SCENE_DUTY, "AnimKey": "I02_KickoffReady", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 0, "Priority": "P0", "Remark": "场景表现,Duty=0非枚举"},
-            {"ID": 5002, "StateKey": "Transition", "Duty": CHARACTER_STATE_SCENE_DUTY, "AnimKey": "I03_GoalFreeze", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 0, "Priority": "P0", "Remark": "场景表现,Duty=0非枚举"},
-            {"ID": 5003, "StateKey": "Fail", "Duty": CHARACTER_STATE_SCENE_DUTY, "AnimKey": "J01_TimeoutFeedback", "MirrorFromID": 0, "IsLoop": 0, "NeedEvent": 0, "Priority": "P0", "Remark": "守门超时反馈,Duty=0非枚举"},
-        ],
-    )
-
     # --- 3.4 养成 ---
     make_sheet(
         wb,
@@ -1228,17 +1216,18 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
             ("Level", "int", "知名度等级"),
             ("ExpRequired", "int", "升级所需知名度经验"),
             ("ContractStarLicReward", "int", "合同星级许可奖励(0=无,2-5=license_id)"),
+            ("PlayerRating", "int", "主角评分(仅知名度线投放)"),
             ("TitleLcKey", "string", "称号→ActvSoccerLanguageCfg"),
             ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 1, "Level": 1, "ExpRequired": 0, "ContractStarLicReward": 0, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "1"), "业余球员", "FameGrowthLevelCfg/1")},
-            {"ID": 2, "Level": 2, "ExpRequired": 100, "ContractStarLicReward": 0, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "2"), "新秀", "FameGrowthLevelCfg/2"), "Remark": ""},
-            {"ID": 3, "Level": 3, "ExpRequired": 150, "ContractStarLicReward": 2, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "3"), "专业球员", "FameGrowthLevelCfg/3"), "Remark": "3级→2星许可"},
-            {"ID": 4, "Level": 4, "ExpRequired": 180, "ContractStarLicReward": 2, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "4"), "明星", "FameGrowthLevelCfg/4"), "Remark": ""},
-            {"ID": 5, "Level": 5, "ExpRequired": 200, "ContractStarLicReward": 3, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "5"), "大师", "FameGrowthLevelCfg/5"), "Remark": "文档示例:知名度5级→3星许可"},
-            {"ID": 6, "Level": 6, "ExpRequired": 240, "ContractStarLicReward": 4, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "6"), "世界级", "FameGrowthLevelCfg/6"), "Remark": "6级→4星许可"},
-            {"ID": 7, "Level": 7, "ExpRequired": 300, "ContractStarLicReward": 5, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "7"), "传奇", "FameGrowthLevelCfg/7"), "Remark": "7级→5星许可(tier9-10合同池可达)"},
+            {"ID": 1, "Level": 1, "ExpRequired": 0, "ContractStarLicReward": 0, "PlayerRating": 10, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "1"), "业余球员", "FameGrowthLevelCfg/1")},
+            {"ID": 2, "Level": 2, "ExpRequired": 100, "ContractStarLicReward": 0, "PlayerRating": 15, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "2"), "新秀", "FameGrowthLevelCfg/2"), "Remark": ""},
+            {"ID": 3, "Level": 3, "ExpRequired": 150, "ContractStarLicReward": 2, "PlayerRating": 20, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "3"), "专业球员", "FameGrowthLevelCfg/3"), "Remark": "3级→2星许可"},
+            {"ID": 4, "Level": 4, "ExpRequired": 180, "ContractStarLicReward": 2, "PlayerRating": 25, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "4"), "明星", "FameGrowthLevelCfg/4"), "Remark": ""},
+            {"ID": 5, "Level": 5, "ExpRequired": 200, "ContractStarLicReward": 3, "PlayerRating": 30, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "5"), "大师", "FameGrowthLevelCfg/5"), "Remark": "文档示例:知名度5级→3星许可"},
+            {"ID": 6, "Level": 6, "ExpRequired": 240, "ContractStarLicReward": 4, "PlayerRating": 35, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "6"), "世界级", "FameGrowthLevelCfg/6"), "Remark": "6级→4星许可"},
+            {"ID": 7, "Level": 7, "ExpRequired": 300, "ContractStarLicReward": 5, "PlayerRating": 40, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "7"), "传奇", "FameGrowthLevelCfg/7"), "Remark": "7级→5星许可(tier9-10合同池可达)"},
         ],
     )
 
@@ -1266,22 +1255,6 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
             {"ID": 6, "Level": 6, "ExpRequired": 400, "RewardFame": 15, "ContractStarLicReward": 4, "TicketCap": 300, "TicketRecoverMin": 20, "FreeRewind": 2, "Remark": "6级→4星许可(维持)"},
             {"ID": 7, "Level": 7, "ExpRequired": 550, "RewardFame": 20, "ContractStarLicReward": 5, "TicketCap": 320, "TicketRecoverMin": 18, "FreeRewind": 2, "ExtraRound": 10, "Remark": "7级→5星许可(tier9-10合同池可达)"},
         ],
-    )
-
-    make_sheet(
-        wb,
-        "ActvSoccerFameGainRuleCfg",
-        c(
-            id_col("int", "编号"),
-            ("FromWin", "int", "胜"),
-            ("FromDraw", "int", "平"),
-            ("FromLose", "int", "负"),
-            ("FromGoal", "int", "每进球"),
-            ("FromAssist", "int", "每助攻"),
-            ("TeamStarFactor", "float", "合同星级系数(读current_contract.team_star)"),
-            ("Remark", "string", "TODO数值"),
-        ),
-        [{"ID": 1, "FromWin": 20, "FromDraw": 10, "FromLose": 5, "FromGoal": 5, "FromAssist": 3, "TeamStarFactor": 1.0, "Remark": "测试占位"}],
     )
 
     make_sheet(
@@ -1421,136 +1394,46 @@ def build_workbook(lc: LcRegistry, const_rows: list[dict]) -> Workbook:
         ],
     )
 
+    # --- 3.7 竞猜赔率与投注档位 ---
     make_sheet(
         wb,
-        "ActvSoccerMatchSimulationCfg",
+        "ActvSoccerBetMultiplierCfg",
         c(
             id_col("int", "编号"),
-            ("RuleKey", "string", "规则键"),
-            ("Formula", "string", "公式/说明"),
-            ("Params", "ext", "模拟参数", V_SIM_PARAMS, '{"base":3,"per_rating":0.1}'),
-            ("Remark", "string", "TODO系数"),
+            ("WinRatePctA", "int", "A方胜率(%)"),
+            ("MultA", "float", "A方奖励倍率"),
+            ("WinRatePctB", "int", "B方胜率(%)"),
+            ("MultB", "float", "B方奖励倍率"),
+            ("ReturnRate", "float", "参考返还率(策划校验)"),
+            ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 1, "RuleKey": "single_rating", "Formula": "f(fame_lv,training_lv,life_lv)", "Params": '{"fame_w":1.0,"life_w":1.0,"training_w":1.0}', "Remark": "单主角评分"},
-            {"ID": 2, "RuleKey": "team_total", "Formula": "sum(member_rating)", "Params": "{}", "Remark": "队伍总评"},
-            {"ID": 3, "RuleKey": "slice_count", "Formula": "f(max_rating)", "Params": '{"base":3,"per_rating":0.1}', "Remark": "双方切片数可不同"},
-            {"ID": 4, "RuleKey": "slice_success_p", "Formula": "own_total/(own_total+opp_total)", "Params": "{}", "Remark": "单切片成功期望"},
-            {"ID": 5, "RuleKey": "tie_breaker", "Formula": "total_rating>max_rating>signup_time", "Params": "{}", "Remark": "平局破法"},
+            {
+                "ID": i + 1,
+                "WinRatePctA": wr_a,
+                "MultA": mult_a,
+                "WinRatePctB": wr_b,
+                "MultB": mult_b,
+                "ReturnRate": ret,
+                "Remark": f"X1对照行{i + 1}",
+            }
+            for i, (wr_a, mult_a, wr_b, mult_b, ret) in enumerate(BET_MULTIPLIER_ROWS)
         ],
     )
 
-    # --- 3.7 竞猜 ---
     make_sheet(
         wb,
-        "ActvSoccerBetCoinSourceCfg",
+        "ActvSoccerBetStakeTierCfg",
         c(
             id_col("int", "编号"),
-            ("DailyFree", "int", "每日免费竞猜币"),
-            ("GiftGrant", "int", "礼包投放"),
-            ("LoseRecycleRate", "int", "失败回收万分比"),
-            ("StakeOptions", "int[]", "快捷投注档位"),
+            ("TierKey", "string", "档位键(free/stake_N)"),
+            ("Stake", "int", "投注竞猜币(免费=0)"),
+            ("HitPayout", "int", "命中固定派彩(0=按倍率)"),
+            ("Sort", "int", "排序"),
             ("Remark", "string", "备注"),
         ),
-        [{"ID": 1, "DailyFree": 100, "GiftGrant": 0, "LoseRecycleRate": 8000, "StakeOptions": "[100,200,500,1000,5000]", "Remark": "失败回收80%"}],
+        BET_STAKE_TIER_ROWS,
     )
-
-    make_sheet(
-        wb,
-        "ActvSoccerBetMatchCfg",
-        c(
-            id_col("int", "bet_match_id"),
-            ("KnockoutMatchID", "int", "淘汰赛对阵ID"),
-            ("OddsA", "float", "赔率A"),
-            ("OddsB", "float", "赔率B"),
-            ("OpenTime", "string", "开放"),
-            ("CloseTime", "string", "截止"),
-            ("Status", "string", "open/closed/settled"),
-            ("Remark", "string", "测试模板"),
-        ),
-        [
-            {"ID": 1, "KnockoutMatchID": 1001, "OddsA": 1.33, "OddsB": 1.45, "OpenTime": "2026-07-17 00:00:00", "CloseTime": "2026-07-17 20:00:00", "Status": "open", "Remark": "4强下注示例"},
-        ],
-    )
-
-    # --- 3.9 BP ---
-    make_sheet(
-        wb,
-        "ActvSoccerBattlePassCfg",
-        c(
-            id_col("int", "编号"),
-            ("Level", "int", "BP等级"),
-            ("ExpRequired", "int", "所需活跃度"),
-            ("FreeReward", "ext[]", "免费轨", P_TYIDVAL, '[{"typ":"vm","id":11151001,"val":20}]'),
-            ("PaidReward", "ext[]", "付费轨", P_TYIDVAL, '[{"typ":"vm","id":11151001,"val":50}]'),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1, "Level": 1, "ExpRequired": 100, "FreeReward": '[{"typ":"vm","id":11151001,"val":20}]', "PaidReward": '[{"typ":"vm","id":11151001,"val":50}]'},
-            {"ID": 2, "Level": 2, "ExpRequired": 200, "FreeReward": '[{"typ":"vm","id":11151001,"val":30}]', "PaidReward": '[{"typ":"vm","id":11151001,"val":80}]'},
-            {"ID": 3, "Level": 3, "ExpRequired": 300, "FreeReward": '[{"typ":"item","id":5012109,"val":1}]', "PaidReward": '[{"typ":"item","id":5012109,"val":2}]', "Remark": "外观/道具占位"},
-        ],
-    )
-
-    # --- 3.10 兑换商店 ---
-    make_sheet(
-        wb,
-        "ActvSoccerExchangeShopCfg",
-        c(
-            id_col("int", "商品ID"),
-            ("CostVal", "int", "竞猜币消耗"),
-            ("Reward", "ext[]", "兑换奖励", P_TYIDVAL, '[{"typ":"item","id":5012109,"val":1}]'),
-            ("BuyLimit", "int", "限购"),
-            ("RefreshCycle", "string", "刷新周期"),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1, "CostVal": 500, "Reward": '[{"typ":"item","id":5012109,"val":1}]', "BuyLimit": 1, "RefreshCycle": "7d", "Remark": "世界杯表情"},
-            {"ID": 2, "CostVal": 1000, "Reward": '[{"typ":"item","id":5012109,"val":1}]', "BuyLimit": 1, "RefreshCycle": "7d", "Remark": "回溯道具包"},
-        ],
-    )
-
-    # --- 3.11 礼包 ---
-    make_sheet(
-        wb,
-        "ActvSoccerGiftCfg",
-        c(
-            id_col("int", "礼包ID"),
-            ("GiftType", "int", "0免费1付费"),
-            ("Price", "int", "价格档位"),
-            ("Reward", "ext[]", "奖励", P_TYIDVAL, '[{"typ":"vm","id":11151001,"val":100}]'),
-            ("BuyLimit", "int", "限购"),
-            ("Duration", "string", "限时"),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1, "GiftType": 0, "Price": 0, "Reward": '[{"typ":"vm","id":11151001,"val":100}]', "BuyLimit": 1, "Duration": "1d", "Remark": "免费每日"},
-            {"ID": 2, "GiftType": 1, "Price": 1, "Reward": '[{"typ":"vm","id":11151001,"val":300},{"typ":"item","id":5012109,"val":1}]', "BuyLimit": 3, "Duration": "7d", "Remark": "付费礼包"},
-        ],
-    )
-
-    # --- 3.8 排名档位 ---
-    make_sheet(
-        wb,
-        "ActvSoccerRankSectionCfg",
-        c(
-            id_col("int", "编号"),
-            ("RankType", "string", "slice_win/goal/bet_hit/bet_profit"),
-            ("RankMin", "int", "名次下限"),
-            ("RankMax", "int", "名次上限"),
-            ("Reward", "ext[]", "奖励", P_TYIDVAL, '[{"typ":"item","id":5012109,"val":1}]'),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1, "RankType": "slice_win", "RankMin": 1, "RankMax": 1, "Reward": '[{"typ":"item","id":5012109,"val":1}]', "Remark": "积分榜冠军"},
-            {"ID": 2, "RankType": "slice_win", "RankMin": 2, "RankMax": 10, "Reward": '[{"typ":"vm","id":11151001,"val":200}]', "Remark": "积分榜前10"},
-            {"ID": 3, "RankType": "goal", "RankMin": 1, "RankMax": 3, "Reward": '[{"typ":"vm","id":11151001,"val":100}]', "Remark": "进球榜前三"},
-            {"ID": 4, "RankType": "bet_hit", "RankMin": 1, "RankMax": 10, "Reward": '[{"typ":"vm","id":11151001,"val":50}]', "Remark": "竞猜命中榜"},
-            {"ID": 5, "RankType": "bet_profit", "RankMin": 1, "RankMax": 10, "Reward": '[{"typ":"vm","id":11151001,"val":50}]', "Remark": "竞猜收益榜"},
-        ],
-    )
-
-    make_const_format_sheet(wb, "ActvSoccerGlobalConstCfg", const_rows)
 
     return wb
 
@@ -1559,33 +1442,63 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
     summary = {
         "file": "ActivitySoccer.xlsx",
         "language_file": "ActivitySoccerLanguage.xlsx",
-        "const_file": "ConstConfig_ActvSoccer.xlsx",
-        "const_sheet_in_activity": "ActvSoccerGlobalConstCfg",
-        "const_sheet_in_patch": "ConstConfigCfg",
-        "const_entry_count": len(const_rows),
-        "const_cfgid_range": f"{ACTV_SOCCER_CONST_CFGID_BASE}-{ACTV_SOCCER_CONST_CFGID_BASE + len(const_rows) - 1}",
-        "const_merge_target": "dataconfig/ConstConfig.xlsx / ConstConfigCfg（可选合并；亦可仅保留 ActvSoccerGlobalConstCfg）",
         "sources": SOURCE_DOCS,
         "sheets": sheets,
         "language_sheet": "ActvSoccerLanguageCfg",
         "language_entry_count": len(lc_rows),
+        "sheets_program_only": list(SHEETS_PROGRAM_ONLY),
+        "sheets_common_platform": {
+            "ActvSoccerBattlePassCfg": "BattlePassNew / ActivityBattlePass",
+            "ActvSoccerExchangeShopCfg": "ExchangeShopItemCfg",
+            "ActvSoccerGiftCfg": "GiftCfg / D2GiftCfg",
+            "ActvSoccerRankSectionCfg": "ActivityRank / ActvRankSectionCfg",
+        },
+        "appendix_only": list(APPENDIX_ONLY),
+        "appendix_in_match_items": IN_MATCH_ITEMS,
+        "appendix_const_rows": const_rows,
+        "bet_program_const_map": {
+            "ChampionDefaultOdds": "ActvSoccer_bet_initial_display_odds (17500→1.75)",
+            "ChampionMaxOdds": "ActvSoccer_bet_max_odds (500000→50)",
+            "ChampionMinOdds": "ActvSoccer_bet_min_odds / bet_constraint_return_rate (12000→1.2)",
+            "ChampionPowerRatioMax": "ActvSoccer_bet_power_ratio_max (20000→2.0)",
+            "ChampionPowerRatioMin": "ActvSoccer_bet_power_ratio_min (3000→0.3)",
+            "ChampionOddsCfg": "ActvSoccerBetMultiplierCfg（同表）",
+            "oneMatchPreFightTimes": "ActvSoccer_bet_sim_count (=10)",
+            "maxPreFightBattlesPerTick": "ActvSoccer_bet_max_prefight_battles_per_tick (=50)",
+            "roundFightInterval": "ActvSoccer_bet_round_fight_interval_sec (=1)",
+            "preFightTimeout": "ActvSoccer_bet_prefight_timeout_sec (=30)",
+        },
+        "bet_config_gaps": [
+            "爆冷规则(ChampionBaseOdds/UpSet*/体验扰动): 本期暂不接入,无活动配置",
+            "bet_coin_purchase_limit / bet_daily_free_amount: 活动经济,程序ConstCommon无对应",
+            "bet_display_odds_tick_sec: 主案UI动态展示,程序controller无直接键",
+        ],
+        "const_merge_target": "dataconfig/ConstConfig.xlsx / ConstConfigCfg",
+        "const_entry_count": len(const_rows),
+        "const_cfgid_range": f"{ACTV_SOCCER_CONST_CFGID_BASE}-{ACTV_SOCCER_CONST_CFGID_BASE + len(const_rows) - 1}",
         "sheet_groups": {
             "玩法基础": [
                 "ActvSoccerCharacterCfg", "ActvSoccerNationalityCfg", "ActvSoccerTutorialCfg",
-                "ActvSoccerSliceTypeDefCfg", "ActvSoccerSlicePresetCfg", "ActvSoccerSliceInstanceCfg",
+                "ActvSoccerSlicePresetCfg", "ActvSoccerSliceInstanceCfg",
                 "ActvSoccerLevelCfg", "ActvSoccerSeasonCfg",
             ],
             "FSM_BT_AI": [
-                "ActvSoccerPlayerAiDutyEnumCfg",
                 "ActvSoccerAiProfileCfg", "ActvSoccerEnemyAiCfg", "ActvSoccerSliceAiCfg",
-                "ActvSoccerAiModifierCfg", "ActvSoccerSliceFlowCfg", "ActvSoccerCharacterStateCfg",
+                "ActvSoccerAiModifierCfg", "ActvSoccerSliceFlowCfg",
             ],
-            "养成与配套": [
+            "养成与合同": [
+                "ActvSoccerCurrencyCfg",
                 "ActvSoccerFameGrowthLevelCfg", "ActvSoccerLifeGrowthLevelCfg",
-                "ActvSoccerContractStarLicCfg",
-                "ActvSoccerContractCfg", "ActvSoccerKnockoutCfg",
-                "ActvSoccerBattlePassCfg", "ActvSoccerGiftCfg", "ActvSoccerRankSectionCfg",
-                "ActvSoccerGlobalConstCfg",
+                "ActvSoccerTeamCfg", "ActvSoccerContractStarLicCfg", "ActvSoccerContractCfg",
+            ],
+            "淘汰赛": [
+                "ActvSoccerKnockoutCfg", "ActvSoccerKnockoutPhaseCfg",
+            ],
+            "竞猜": [
+                "ActvSoccerBetMultiplierCfg", "ActvSoccerBetStakeTierCfg",
+            ],
+            "体验与反馈": [
+                "ActvSoccerHapticCfg",
             ],
         },
         "id_cross_ref": {
@@ -1597,18 +1510,27 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-2);101-203=试训/引导",
             "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
             "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
+            "BetMultiplier": "16行=程序ChampionOddsCfg;按WinRatePctA查最近行→MultA/MultB",
+            "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300",
         },
         "test_flow": [
             "创角→试训切片101/102/103 (SliceAi 3001-3003, easy档)",
             "引导关201/202/203 (3004-3006: 进攻+助攻+守门射手)",
             "正式关301移动门将 (3007+Modifier4001) / 302点球 (3008)",
             "困难关复用301 (3009+Profile1003+Modifier4002)",
-            "切片FSM: SliceFlowCfg按类型读流程; 角色表现: CharacterStateCfg映射动画",
+            "切片FSM: SliceFlowCfg按类型读流程; 角色动画映射见客户端CharacterStateCfg(不进策划xlsx)",
         ],
         "notes": [
-            "球员AI职责仅三档:守门员/后卫(对方非门将)/前锋(我方含玩家);见ActvSoccerPlayerAiDutyEnumCfg",
-            "CharacterState场景行可用Duty=0(非枚举);其余EnemyAi/CharacterState用Duty(int)",
-            "PlayersInit每项含duty:我方Forward(3)对方门将Goalkeeper(1)对方其余Defender(2)",
+            "球员AI职责仅三档:守门员/后卫(对方非门将)/前锋(我方含玩家);程序枚举PlayerAiDuty(1/2/3)",
+            "PlayersInit: SoccerPlayerInit_V 含 facing(°) 初始朝向；回溯重置恢复摆位+facing",
+            "不进策划xlsx: SliceTypeDef/PlayerAiDutyEnum/BetMatch/CharacterState(客户端+美术)",
+            "知名度结算: 读current_contract.PayFinish/PayGoal/PayAssist/PayFame，无ActvSoccerFameGainRuleCfg",
+            "淘汰赛演算: match_simulation_rule写在主案规则节，无ActvSoccerMatchSimulationCfg",
+            "竞猜币投放: 通用GiftCfg.Reward(typ:vm bet_coin)；每日免费见常量bet_daily_free_amount",
+            "竞猜赔率: BetMultiplierCfg对照表+附录常量bet_*；BetMatch运行时生成",
+            "通行证/兑换商店/礼包/排名: 走项目通用配套表，不在ActivitySoccer.xlsx重复维护",
+            "局内道具与玩法常量: 见配置表结构文档附录；常量合并 dataconfig/ConstConfig.xlsx",
+            "知名度等级表可拆分为更细档位(行数>当前测试7档)；生活等级保持小量级不参与主角评分",
             "AI难度只控成功率; 死角球见ConstConfig ActvSoccer_dead_corner_can_save",
             "单切片AI在ActvSoccerSliceAiCfg配置,移动门将归属切片级Modifier",
             "回溯后RewindRandom=1,种子含rewind_count",
@@ -1618,7 +1540,6 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "仅含单个参数时用int/float/string等基础类型,不用ext",
             "第1行读取端: 能确定仅前端c/仅后端s,拿不准或双端用cs; 见SHEET_DEFAULT_READ/READ_OVERRIDES",
             "展示文案字段用*LcKey(string)引用语言表ID,格式ActvSoccer_{category}_{semantic}_{seq}",
-            "玩法数值常量: ActvSoccerGlobalConstCfg 与 ConstConfig_ActvSoccer.xlsx 字段相同(对齐 ConstConfig); 自行选择保留在活动表或合并进 dataconfig/ConstConfig.xlsx",
         ],
         "const_keys": [row["Constant"] for row in const_rows],
         "lc_id_format": "ActvSoccer_{category}_{semantic}_{seq}",
@@ -1631,9 +1552,8 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "SoccerTypePayload_V": ["TypePayload"],
             "SoccerObjective_V": ["ExtraObjectives"],
             "SoccerModifier_V": ["Modifiers"],
-            "SoccerPlayerInit_V": ["PlayersInit(team,idx,duty,pos)"],
+            "SoccerPlayerInit_V": ["PlayersInit(team,idx,duty,pos,facing)"],
             "SoccerSeasonGoal_V": ["SeasonGoal"],
-            "SoccerSimParams_V": ["Params"],
         },
         "flattened_fields": {
             "DefaultCameraFov": "原DefaultCamera.fov",
@@ -1642,6 +1562,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "ObjectiveType": "原Objectives单目标type",
             "ActvSoccerFameGrowthLevelCfg/ActvSoccerLifeGrowthLevelCfg": "原ActvSoccerGrowthLevelCfg按养成线拆分",
             "RewardFame/ContractStarLicReward/TicketCap等": "原LevelUpReward/LevelUpEffect拆列",
+            "PlayerRating": "仅知名度等级表投放；读当前知名度档位行.PlayerRating；生活等级不参与",
             "effective_license_id": "max(知名度许可,生活许可) OR取较高",
             "ContractPool": "首签关联contract_id(原TeamPool)",
             "TeamCfg无Star": "星级仅在ContractCfg.TeamStar",
@@ -1650,6 +1571,11 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "GrantScene": "首签走ContractPool;联赛换约走许可表+合同池",
             "pending_contract_choices": "服务端生成待选合同列表(玩家存档)",
             "GrantFameLevel/GrantLifeLevel": "原GrantLevelReq",
+            "FameGain": "比赛结算读ContractCfg.PayFinish/PayGoal/PayAssist/PayFame，无独立FameGainRuleCfg",
+            "MatchSimulation": "海选/单淘汰演算见主案match_simulation_rule规则节，无独立MatchSimulationCfg",
+            "BetCoinSource": "竞猜币礼包投放见通用GiftCfg.Reward；每日免费见ActvSoccer_bet_daily_free_amount",
+            "BetOdds": "mult=min(constraint_return_rate/win_rate,max_odds);ChampionOddsCfg=ActvSoccerBetMultiplierCfg",
+            "CommonPlatform": "BP/兑换商店/礼包/排名见项目通用表；局内道具与常量见配置表结构附录",
             "LevelCfg.Group": "所属联赛轮次=SeasonCfg.ID",
             "SeasonCfg.Group": "联赛系列;总轮次=count(同Group);小关卡由LevelCfg.Group关联",
             "SeasonCfg.NextSeason": "后置联赛(原UnlockPrevSeason反向)",
@@ -1663,9 +1589,8 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
 def main() -> None:
     lc = LcRegistry()
     const_rows = actv_soccer_const_rows()
-    wb = build_workbook(lc, const_rows)
+    wb = build_workbook(lc)
     lc_wb = build_language_workbook(lc)
-    const_wb = build_const_config_workbook(const_rows)
 
     target = OUTPUT_FILE
     try:
@@ -1683,18 +1608,10 @@ def main() -> None:
         lc_wb.save(lc_target)
         print(f"WARN: {OUTPUT_LC_FILE} 被占用，已写入 {lc_target}")
 
-    const_target = OUTPUT_CONST_FILE
-    try:
-        const_wb.save(const_target)
-    except PermissionError:
-        const_target = OUT_DIR / "ConstConfig_ActvSoccer.generated.xlsx"
-        const_wb.save(const_target)
-        print(f"WARN: {OUTPUT_CONST_FILE} 被占用，已写入 {const_target}")
-
     export_summary(wb.sheetnames, lc.rows, const_rows)
     print(f"Wrote {target}")
     print(f"Wrote {lc_target} ({len(lc.rows)} language entries)")
-    print(f"Wrote {const_target} ({len(const_rows)} const entries → merge into ConstConfig.xlsx)")
+    print(f"Appendix: {len(IN_MATCH_ITEMS)} in-match items, {len(const_rows)} const keys (→ ConstConfig.xlsx)")
     print(f"Sheets ({len(wb.sheetnames)}): {', '.join(wb.sheetnames)}")
 
 
