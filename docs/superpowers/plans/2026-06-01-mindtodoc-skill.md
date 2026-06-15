@@ -1,3 +1,9 @@
+> **ARCHIVED — 历史文档，勿作实现依据**
+>
+> 归档日期：2026-06-15。本文档为 2026-06-01 **旧版** MindToDoc 的实现计划（四段式开发文档 + `ui-ux-pro-max` HTML 原型 + `output/prototypes/`）。
+>
+> **现行规范**：[SKILL.md](../../../SKILL.md)（对齐项目组 `system-design-doc` 定稿）；界面走 `-界面标注.md` 截图红圈流程，**不再**生成 HTML 原型。
+
 # MindToDoc 技能实现计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

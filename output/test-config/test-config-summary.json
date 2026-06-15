@@ -1,6 +1,12 @@
 {
   "file": "ActivitySoccer.xlsx",
   "language_file": "ActivitySoccerLanguage.xlsx",
+  "const_file": "ConstConfig_ActvSoccer.xlsx",
+  "const_sheet_in_activity": "ActvSoccerGlobalConstCfg",
+  "const_sheet_in_patch": "ConstConfigCfg",
+  "const_entry_count": 26,
+  "const_cfgid_range": "10135601-10135626",
+  "const_merge_target": "dataconfig/ConstConfig.xlsx / ConstConfigCfg（可选合并；亦可仅保留 ActvSoccerGlobalConstCfg）",
   "sources": [
     "钉钉文档 2026世界杯主题活动-开发文档 (amweZ92PV6vDZdmDCKwo2Ev4VxEKBD6p)",
     "K1Client docs/plans/2026-06-09-worldcup-fsm-bt-enemy-ai-design.md"
@@ -23,9 +29,11 @@
     "ActvSoccerSliceFlowCfg",
     "ActvSoccerCharacterStateCfg",
     "ActvSoccerCurrencyCfg",
-    "ActvSoccerGrowthLevelCfg",
+    "ActvSoccerFameGrowthLevelCfg",
+    "ActvSoccerLifeGrowthLevelCfg",
     "ActvSoccerFameGainRuleCfg",
     "ActvSoccerTeamCfg",
+    "ActvSoccerContractStarLicCfg",
     "ActvSoccerContractCfg",
     "ActvSoccerSeasonCfg",
     "ActvSoccerKnockoutCfg",
@@ -40,7 +48,7 @@
     "ActvSoccerGlobalConstCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
-  "language_entry_count": 50,
+  "language_entry_count": 167,
   "sheet_groups": {
     "玩法基础": [
       "ActvSoccerCharacterCfg",
@@ -62,20 +70,26 @@
       "ActvSoccerCharacterStateCfg"
     ],
     "养成与配套": [
-      "ActvSoccerGrowthLevelCfg",
+      "ActvSoccerFameGrowthLevelCfg",
+      "ActvSoccerLifeGrowthLevelCfg",
+      "ActvSoccerContractStarLicCfg",
       "ActvSoccerContractCfg",
       "ActvSoccerKnockoutCfg",
       "ActvSoccerBattlePassCfg",
       "ActvSoccerGiftCfg",
-      "ActvSoccerRankSectionCfg"
+      "ActvSoccerRankSectionCfg",
+      "ActvSoccerGlobalConstCfg"
     ]
   },
   "id_cross_ref": {
-    "AiProfile": "1001=easy, 1002=normal, 1003=hard",
+    "AiProfile": "1001-1010=tier1-10难度档(easy/normal/hard),单调递增,DeadCorner固定0",
     "PlayerAiDuty": "1=Goalkeeper守门员,2=Defender后卫(对方非门将),3=Forward前锋(我方含玩家)",
-    "EnemyAi": "2001=门将, 2002=后卫, 2003=后卫射门, 2004=移动门将",
-    "SliceAi": "3001-3008 绑定切片101-302; 3009=困难复用301",
-    "Modifier": "4001=移动门将, 4002=困难移动门将, 4003=无辅助线, 4004=固定人墙"
+    "EnemyAi": "2001-2003=band1(tier1-3);20X1/20X2/20X3=bandX门将/后卫/射手(X=2,3,4)",
+    "SliceAi": "3001-3006=试训/引导切片101-203;3100+=库实例(每库实例一行)",
+    "Modifier": "4001/4002/4005=移动门将(普通/困难/极限),4003=无辅助线,4004=固定人墙,4006=收窄夹角,4007=随机扑救",
+    "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-2);101-203=试训/引导",
+    "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
+    "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)"
   },
   "test_flow": [
     "创角→试训切片101/102/103 (SliceAi 3001-3003, easy档)",
@@ -88,7 +102,7 @@
     "球员AI职责仅三档:守门员/后卫(对方非门将)/前锋(我方含玩家);见ActvSoccerPlayerAiDutyEnumCfg",
     "CharacterState场景行可用Duty=0(非枚举);其余EnemyAi/CharacterState用Duty(int)",
     "PlayersInit每项含duty:我方Forward(3)对方门将Goalkeeper(1)对方其余Defender(2)",
-    "AI难度只控成功率; 死角球DeadCornerCanSave固定0",
+    "AI难度只控成功率; 死角球见ConstConfig ActvSoccer_dead_corner_can_save",
     "单切片AI在ActvSoccerSliceAiCfg配置,移动门将归属切片级Modifier",
     "回溯后RewindRandom=1,种子含rewind_count",
     "参数叠加: preset→instance→ai_profile→modifier",
@@ -96,7 +110,36 @@
     "ext/ext[]数据行不得留空: ext默认{}, ext[]默认[]; 有列示例时优先用第7行示例作默认值",
     "仅含单个参数时用int/float/string等基础类型,不用ext",
     "第1行读取端: 能确定仅前端c/仅后端s,拿不准或双端用cs; 见SHEET_DEFAULT_READ/READ_OVERRIDES",
-    "展示文案字段用*LcKey(string)引用语言表CfgID,格式ActvSoccer_{category}_{semantic}_{seq}"
+    "展示文案字段用*LcKey(string)引用语言表ID,格式ActvSoccer_{category}_{semantic}_{seq}",
+    "玩法数值常量: ActvSoccerGlobalConstCfg 与 ConstConfig_ActvSoccer.xlsx 字段相同(对齐 ConstConfig); 自行选择保留在活动表或合并进 dataconfig/ConstConfig.xlsx"
+  ],
+  "const_keys": [
+    "ActvSoccer_ticket_cap_default",
+    "ActvSoccer_ticket_recover_minutes",
+    "ActvSoccer_knockout_open_level",
+    "ActvSoccer_default_character_count",
+    "ActvSoccer_first_sign_contract_star",
+    "ActvSoccer_ai_random_seed_formula",
+    "ActvSoccer_dead_corner_can_save",
+    "ActvSoccer_config_overlay_order",
+    "ActvSoccer_move_speed_idle",
+    "ActvSoccer_move_speed_walk",
+    "ActvSoccer_move_speed_run_min",
+    "ActvSoccer_move_speed_run_max",
+    "ActvSoccer_move_speed_ratio_idle",
+    "ActvSoccer_move_speed_ratio_walk",
+    "ActvSoccer_move_speed_ratio_run",
+    "ActvSoccer_move_speed_ratio_jog",
+    "ActvSoccer_move_speed_ratio_sprint",
+    "ActvSoccer_move_speed_ratio_dribble",
+    "ActvSoccer_move_speed_ratio_press",
+    "ActvSoccer_move_speed_ratio_keeper_lateral",
+    "ActvSoccer_kick_force_min",
+    "ActvSoccer_kick_force_max",
+    "ActvSoccer_ball_control_distance",
+    "ActvSoccer_operable_angle_span_min",
+    "ActvSoccer_operable_angle_span_max",
+    "ActvSoccer_contract_offer_count"
   ],
   "lc_id_format": "ActvSoccer_{category}_{semantic}_{seq}",
   "lc_fields": [
@@ -144,7 +187,18 @@
     "CameraFov": "原Camera.fov",
     "OverrideOperableAngle": "原Overrides.operable_angle",
     "ObjectiveType": "原Objectives单目标type",
-    "RewardFame/TeamStarUnlock/TicketCap等": "原LevelUpReward/LevelUpEffect拆列",
-    "GrantFameLevel/GrantLifeLevel": "原GrantLevelReq"
+    "ActvSoccerFameGrowthLevelCfg/ActvSoccerLifeGrowthLevelCfg": "原ActvSoccerGrowthLevelCfg按养成线拆分",
+    "RewardFame/ContractStarLicReward/TicketCap等": "原LevelUpReward/LevelUpEffect拆列",
+    "effective_license_id": "max(知名度许可,生活许可) OR取较高",
+    "ContractPool": "首签关联contract_id(原TeamPool)",
+    "TeamCfg无Star": "星级仅在ContractCfg.TeamStar",
+    "ActvSoccerContractStarLicCfg": "联赛换约星级权重(2-5星许可);同星级内均匀抽合同",
+    "ActvSoccerContractCfg": "读取端cs(合同内容客户端展示)",
+    "GrantScene": "首签走ContractPool;联赛换约走许可表+合同池",
+    "pending_contract_choices": "服务端生成待选合同列表(玩家存档)",
+    "GrantFameLevel/GrantLifeLevel": "原GrantLevelReq",
+    "LevelCfg.Group": "所属联赛轮次=SeasonCfg.ID",
+    "SeasonCfg.Group": "联赛系列;总轮次=count(同Group);小关卡由LevelCfg.Group关联",
+    "SeasonCfg.NextSeason": "后置联赛(原UnlockPrevSeason反向)"
   }
 }
