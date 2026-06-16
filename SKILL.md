@@ -7,16 +7,27 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 把 `input/`（或既有 `*-开发文档.md`）下的粗糙游戏想法，转化为 **system-design-doc 格式** 的可评审策划案。
 
-## 定位与分工
+## 本技能定位
 
-| | **MindToDoc（本技能）** | **system-design-doc（定稿规范）** |
-|---|------------------------|-----------------------------------|
-| 职责 | **从素材到成稿**的工作流：`input/` 扫描、逐模块澄清、产出路径、迁移旧稿 | **文档格式 SSOT**：章节结构、边界、界面标注、钉钉、reference 细则 |
-| 输入 | 脑图、框架、参考游戏名、旧版开发文档 | 已有策划案的起草/修订/落地 |
-| 默认产出 | 主案 + 配置表/界面标注等派生 md | 不绑定 `input/`→`output/` 目录 |
-| 关系 | 执行时**必须先读** system-design-doc 及其 `references/` | 被 MindToDoc 引用，不重复发明结构 |
+- **职责**：从素材到成稿的工作流 —— `input/` 扫描、逐模块澄清、产出路径、迁移旧稿。
+- **格式来源**：采用 system-design-doc 文档格式（章节结构、内容边界、界面标注、钉钉落地）。**相关规范与脚本已随附进本技能 `references/` 与 `scripts/`，self-contained，不依赖任何外部路径或技能。**
+- **默认产出**：主案 + 配置表结构 / 界面标注等派生 md，可选同步钉钉。
 
-**格式 SSOT 路径**：`C:\Project\X1X15K1_skills\common\common_gd_skills\system-design-doc`
+## 随附文件（self-contained）
+
+| 文件 | 用途 | 何时读 |
+|------|------|--------|
+| `references/feature-spec-boundaries.md` | 主案内容边界：写什么、不写什么、数值奖励粒度 | 起草前必读 |
+| `references/feature-spec-writing.md` | 起草顺序、功能/界面规则分工、常见错误 | 起草前必读 |
+| `references/mobile-system-rules-reference.md` | 逐系统交付物判定、红点、线上数据兼容、配置表边界 | 涉及手游入口/红点/线上/配表 |
+| `references/ui-annotation-reference.md` | UI 识图、归类、红圈标注、上传、左图右文、key 录入表 | 阶段 4 界面标注 |
+| `references/dingtalk-sync-reference.md` | 钉钉 MCP、`md2jsonml.py`、payload 限制、补 ind/表/图 | 阶段 5 钉钉落地 |
+| `scripts/md2jsonml.py` | md → 钉钉 jsonml 转换器（可执行真相源） | 钉钉落地 |
+| `templates/*.md` | 主案 / 模块 / 配置表 / 界面标注模板 | 起草各阶段 |
+
+> **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
+>
+> **维护说明**：`references/` 与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动同步，保持本技能自包含。
 
 ---
 
@@ -28,7 +39,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 | **正文结构** | 固定四段：概述 / 核心机制 / 系统设计 / Checklist | ABC 必写 + DEFG 按需；**顺逻辑组织，不套僵化模板** | 对齐 ABC + 关键决策 + 按需 DEFG |
 | **文档标题** | 正文 `# {{游戏名}} 开发文档` | 功能名只在**文件名**；正文从 `# 变更记录` 起 | 删除 H0 总标题 |
 | **元信息块** | `> 平台 \| 对标 \| 日期` | 无固定块 | 拆入简介 / 关键决策 / 变更记录 |
-| **模块写法** | `### 3.x` + 固定四小节 | 详细规则内 H2/H3 按对象分章 | `feature-module.md`；**不**固定四件套 |
+| **模块写法** | `### 3.x` + 固定四小节 | 详细规则内 H2/H3 按对象分章 | `templates/feature-module.md`；**不**固定四件套 |
 | **模块四小节** | 规则 → 流程图 → **HTML 原型** → **内嵌字段表** | 按需判定；界面走截图标注；字段不进主案 | 流程图按需；界面→派生；字段→配置表派生 |
 | **界面** | `output/prototypes/*.html` + OSS 截图平铺表 | 红圈标注 + **左图右文** + key 表；无图不写控件 | `-界面标注.md` + `ui-annotation/assets/` |
 | **配置/数据** | 主案内完整字段 schema | 主案只写表名/用途；字段 schema 派生 | `-配置表结构.md`（**仅数值策划 Excel**） |
@@ -47,13 +58,13 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 1. **文档粒度**：一个完整功能（如「2026 世界杯主题活动」）= **一份主功能案**；创角、关卡、养成等是「详细规则」内章节，**不是**每个模块各一份独立 `.md`。
 2. **配置表派生边界**：`-配置表结构.md` **只**含数值/关卡/活动策划在 Excel 填写的表；**不含** `player_profile`、运行时态、协议、DB、程序只读枚举定义。
-3. **配置表概览**：派生文档须含文件清单、公共/外部依赖、专用表一览与关联（见 `derived-config-tables.md`）。
+3. **配置表概览**：派生文档须含文件清单、公共/外部依赖、专用表一览与关联（见 `templates/derived-config-tables.md`）。
 4. **界面派生**：主案 E 节仅占位 + 子界面清单；控件级内容 SSOT 在 `-界面标注.md`；用户提供图后走标准流程（识图→归类→红圈→审核→左图右文→可选钉钉）。
 5. **边界归属**：玩法边界情况、数据兼容、功能边界 → **主案**；配表文档边界 → **配置表派生**；控件/key → **界面标注派生**（见 §边界归属）。
 6. **功能 vs 界面规则**：解锁、结算、状态、数值判定 → 主案；按钮态、布局、文案 key、红点表现 → 界面派生。
 7. **旧稿迁移**：`*-开发文档.md` 保留作素材；拆为 `output/<功能名>.md` + 派生文档，不直接覆盖旧文件。
 
-**迁移样例**（世界杯主题活动）：`C:\Project\MindToDoc\output\system-design-doc-samples\`
+**迁移样例**（世界杯主题活动）：`output/system-design-doc-samples/`
 
 ---
 
@@ -92,7 +103,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 | **其他派生**（按需） | `output/<功能名>-checklist.md` 等 | Checklist、美术、程序结构 |
 | **旧版（只读素材）** | `output/<游戏名>-开发文档.md` | 迁移源，新稿不覆盖 |
 
-模板：`templates/doc-structure.md`（主案）、`feature-module.md`（模块章）、`derived-config-tables.md`、`derived-ui-annotation.md`。
+模板：`templates/doc-structure.md`（主案）、`templates/feature-module.md`（模块章）、`templates/derived-config-tables.md`、`templates/derived-ui-annotation.md`。
 
 ---
 
@@ -122,9 +133,9 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ---
 
-## 与 system-design-doc 章节对应
+## 文档章节模型（采自 system-design-doc）
 
-| system-design-doc | MindToDoc 落地 |
+| 章节 | MindToDoc 落地 |
 |-------------------|----------------|
 | A 变更记录 / B 简介 / C 详细规则 | 主案必写；阶段 1–2 |
 | 关键决策表 | 主案 `# 关键决策`（含文档粒度、配表边界等） |
@@ -133,9 +144,9 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 | F BI / G 待确认 | 按需；真待定才写 |
 | 配置表 | 主案表名/用途；Excel 字段 + 文档边界 → 配置表派生 |
 | 界面标注 | **不用 HTML 原型**；供图 → 标准流程 |
-| 钉钉 | 本地 md SSOT；按需 `dingtalk-sync-reference.md` |
+| 钉钉 | 本地 md SSOT；按需 `references/dingtalk-sync-reference.md` |
 
-起草前必读：`feature-spec-boundaries.md`、`feature-spec-writing.md`；手游/红点/兼容/配表 → `mobile-system-rules-reference.md`。
+起草前必读：`references/feature-spec-boundaries.md`、`references/feature-spec-writing.md`；手游/红点/兼容/配表 → `references/mobile-system-rules-reference.md`。
 
 ---
 
@@ -168,11 +179,11 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ### 阶段 3 · 派生文档与收尾
 
-1. **配置表结构**：`derived-config-tables.md` — 文档边界、概览、各模块字段。
+1. **配置表结构**：`templates/derived-config-tables.md` — 文档边界、概览、各模块字段。
 2. **界面 E 节**：主案占位 + 子界面清单；**二选一** — 供图走阶段 4，或明确待补图。
 3. **其他派生**：Checklist、美术等 + `# 派生文档说明`。
 4. 主案补 **边界情况处理**（若阶段 2 未单列）。
-5. system-design-doc **自检清单**。
+5. 走 §自检清单。
 
 ### 阶段 4 · 界面标注（用户提供图片后）
 
@@ -181,7 +192,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 → 用户审核 → 写入 -界面标注.md（左图右文 + key 表）→（可选）钉钉
 ```
 
-细则：`ui-annotation-reference.md`、`derived-ui-annotation.md`。无图不写控件；新建 key 按项目 localization reference 查重。
+细则：`references/ui-annotation-reference.md`、`templates/derived-ui-annotation.md`。无图不写控件；新建 key 按所在项目的多语言规范命名与查重。
 
 **截图标注硬性规则**（从旧版平铺表升级时仍适用）：
 
@@ -192,7 +203,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ### 阶段 5 · 钉钉落地（按需）
 
-先改本地 md，再 `dingtalk-sync-reference.md` + `md2jsonml.py`。
+先改本地 md，再 `references/dingtalk-sync-reference.md` + `scripts/md2jsonml.py`。
 
 ---
 
@@ -204,7 +215,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 | 界面 | 用户截图 + 多模态识图 + PIL 红圈标注 → `-界面标注.md` | 主案 E 节仅占位子界面清单 |
 | 钉钉 | 钉钉 MCP + md2jsonml | 仅本地 md |
 
-> **已废弃（勿再写进流程）**：旧版「`ui-ux-pro-max` → `output/prototypes/*.html`」界面原型路径。定稿界面一律走 **E 节 + 界面标注派生**（`ui-annotation-reference.md`），与 system-design-doc 一致。
+> **已废弃（勿再写进流程）**：旧版「`ui-ux-pro-max` → `output/prototypes/*.html`」界面原型路径。界面一律走 **E 节 + 界面标注派生**（`references/ui-annotation-reference.md`）。
 
 ---
 
@@ -229,9 +240,9 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ## 自检清单
 
-**定稿对齐**
+**格式对齐**
 
-- [ ] 已读 system-design-doc 及本次 §定稿共识
+- [ ] 已读 `references/feature-spec-boundaries.md`、`feature-spec-writing.md` 及本技能 §定稿共识
 - [ ] 整功能一份主案；未误拆为多份独立策划案
 - [ ] 旧四段式 / HTML 原型 / 主案内嵌字段表已迁出
 
@@ -250,4 +261,4 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 **流程**
 
 - [ ] 阶段 1 问过参考玩法；界面 E 节已二选一
-- [ ] 已对照 system-design-doc 自检清单
+- [ ] 已对照本节自检清单走完
