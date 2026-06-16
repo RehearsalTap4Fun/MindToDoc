@@ -73,6 +73,7 @@ assert urllib.request.urlopen(req,timeout=120).status==200
 - 先 `list_document_blocks(format=jsonml)` 抄一个现成块照搬样式。
 - 两列 table：`colsWidth:[250,400]`，左 `tc` `fill:#E8F2FE` 放 `img`，右 `tc` `fill:#FFFAE5` 放编号说明。
 - 编号说明：主项 `list.isOrdered:true`（`%1.`）= 要素名；子说明 `level:1` + `○` bullet = 该要素的文本key/状态/交互。与正文两级列表规则一致。
+- **凡界面文案要素，子说明必须注明其本地化枚举 key**（如 `LC_EVENT_tab_home`）；新建 key 用红字、复用 key 用黑字。右栏只写 key 名，key 的中文与占位符传参在**文末统一本地化表**登记，不在右栏重复写中文。
 - 新建 key 的右栏说明若在源信息中写作 `{{red:...}}`，构造左图右文表 JSONML 时必须转成 leaf 的 `"color":"#FE0300"`；不要把 `{{red:...}}` 标记原样写进钉钉。复用 key 用默认黑字。
 - 定位：`referenceBlockId`=参照块 blockId，`where:"after"`。
 
@@ -88,20 +89,24 @@ JSONML 骨架：
   ]]]
 ```
 
-## 四之二、界面下方的多语言录入表
-左图右文表格写完后，**紧跟其下**再写一张两列表，只收本界面**新建 key**（右栏中用 `{{red:...}}` 标记、落地后显示为红字的那些），供整列复制录入翻译表。列固定：第一列 `KEY`、第二列 `中文`。全部复用、无新建 key 时不写此表。
-- 定位：`referenceBlockId` = 上面左图右文表格的 blockId，`where:"after"`。
-- 表头行用 `isTblHeader:true`；中文文案禁单元格内回车，换行用 `\n`。
+## 四之二、文档末尾的本地化文本汇总表
+**所有标注图写完后，在派生文档末尾写一张统一的本地化汇总表**（不再每界面各写一张），汇总本文档全部标注涉及的界面文案：每个 key 一行，复用 key 与新建 key 都列入。供整列复制录入翻译表。
+- 三列固定：`枚举 KEY`、`中文`、`占位符传参说明`。
+- **占位符传参说明**列：无占位符写「无」；有占位符（`{0}{1}`，从 0 起连续编号）必须写清每个参数的含义、来源与示例，多语言版本参数数量与顺序须一致。
+- 新建 key（文中标红的）在中文后或单独备注标「新建」；中文文案禁单元格内回车，换行用 `\n`。
+- 定位：写在文档最末（派生文档说明/末尾），表头行用 `isTblHeader:true`。
 
 JSONML 骨架（表头 + 一行示例）：
 ```json
-["table",{"colsWidth":[200,450],"sr":true,"tblLook":{"firstRow":1}},
+["table",{"colsWidth":[200,300,300],"sr":true,"tblLook":{"firstRow":1}},
   ["tr",{"isTblHeader":true},
-    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"KEY"]]]],
-    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"中文"]]]]],
+    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"枚举 KEY"]]]],
+    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"中文"]]]],
+    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"占位符传参说明"]]]]],
   ["tr",{},
-    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"LC_EVENT_tab_home"]]]],
-    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"主页"]]]]]
+    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"LC_EVENT_bet_win_tip"]]]],
+    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"恭喜押中 {0}，获得 {1} 竞猜币"]]]],
+    ["tc",{},["p",{},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"{0}=晋级队伍名（来源对局结果），{1}=派彩数量（整数）"]]]]]
 ]
 ```
 
