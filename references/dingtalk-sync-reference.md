@@ -53,6 +53,7 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
   ```
 - **大文档（≥ ~50KB，如 150+ 块）**：不要硬传整篇，改走"markdown 主体 + 分批补 ind/编号"：
   1. `update_document(nodeId, markdown=<out>.body.md 的内容, mode="overwrite")` —— markdown 体积小不会断；`__TABLE_n__` / `__IMG_n__` 占位必须保留，供后续补表/补图定位；两级列表自带相对层级；
+     - **markdown 主体也有 payload 上限（血泪教训）**：实测 ~40KB 的 body.md 一次 overwrite 仍会 `API Error`。超限时按 **H1 边界把 body.md 切成多段**（每段 ≤ ~16KB，切点落在 `# 标题` 行上、不切断 mermaid/表格）：**第 1 段用 `mode="overwrite"` 打底，其余段用 `mode="append"` 顺序续写**。切分用脚本按 `grep -n "^# "` 的行号做，逐段 `Read` 后写入，每段成功即落档，便于中断续传。
   2. `list_document_blocks(format="jsonml")` 取全部块，拿到各块 blockId 与文本；
   3. 按 `scripts/md2jsonml.py` 算好的目标块顺序与写入后的钉钉块顺序一一映射，拿到每个目标块对应的 blockId；文本只做错位校验，不做主定位。
   4. 按目标块的 ind/list 属性，**分批** `update_document_block`（每条消息并行 ~10 个小请求，每个块 jsonml 都很小、不会断；约每 10 块一批）。标题块同时补 `list` 编号。
@@ -62,11 +63,15 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
 ## 四、补表格（markdown 管道，不炸）
 
 对每个 `__TABLE_n__` 占位段：
-1. `list_document_blocks` 找到占位段 blockId；
-2. 用 **markdown 管道表格** `update_document(append)` 或 `insert_document_block` 写在占位段前/后；
-3. 删除占位段。
+1. `list_document_blocks` 找到占位段 blockId 与其全局 `index`；
+2. 用 **markdown 管道表格** `update_document(append, index=占位index+1)` 把表插到占位段**之后**，或 `insert_document_block` 写在占位段前/后；
+   - **`update_document` 的 `index=N` 语义 = 插到「第 N 个 block 之前」**（实测）。要插到占位段后面就传 `占位段index + 1`。
+   - **从后往前补**：每补一张表，其后所有块 index 会 +1。按文档**倒序**（最后一张表先补）处理，前面块的 index 不受影响，避免逐张重新定位。
+3. **删除占位段**——占位文字 `TABLE_n` 会**原样渲染成可见文本**，必须清除：
+   - 占位独占一个 paragraph 块时：`delete_document_block` 整块删。
+   - 占位**黏在正文段尾/中间**时（md2jsonml 偶发把占位与相邻正文并进同一块）：不能整块删，用 `update_document_block` 改写该块文本、去掉 `TABLE_n` 字样。
 
-markdown 管道表格一定渲染成真 table（变更记录表、KEY 表均如此）。文档常只有变更记录表（最前）、KEY 表（最末）等少数几张，可控。
+markdown 管道表格一定渲染成真 table（变更记录表、KEY 表均如此）。
 
 ## 五、补界面图
 
@@ -77,6 +82,20 @@ markdown 管道表格一定渲染成真 table（变更记录表、KEY 表均如�
 
 图带 `resourceUrl`，所以是 table、不炸 columns。图表块结构与上传链路见 [`ui-annotation-reference.md`](ui-annotation-reference.md)。
 
+## 五之二、补标题自动编号（markdown 路径必做）
+
+走 markdown 路径写入后，**所有标题都是"光的"——没有 `1.` `1.1` 自动编号**。需逐个标题块用 `update_document_block(format="jsonml")` 补 `list` 属性（element/markdown 格式的 heading 不含 list 字段，只能 jsonml）：
+
+- 全文同一 `listId`（如 `worldcup-h`）才能连续编号；`autoLevel:true`、`listStyleType:"DEC_DEC_DEC_P"`。
+- 按层级套模板：**H1** `level:0`/`text:"%1"`/`ind.left:0`/`sz:21`；**H2** `level:1`/`text:"%1.%2"`/`ind.left:32`/`sz:18`；**H3** `level:2`/`text:"%1.%2.%3"`/`ind.left:64`/`sz:16`。
+
+H1 模板（H2/H3 改 level、text、ind.left、sz 即可）：
+```json
+["h1",{"ind":{"hanging":0,"left":0},"list":{"listId":"<doc>-h","level":0,"isOrdered":true,"autoLevel":true,"listStyleType":"DEC_DEC_DEC_P","symbolStyle":{"sz":21,"bold":true},"listStyle":{"format":"decimal","text":"%1","align":"left"}}},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"标题文本"]]]
+```
+
+`list_document_blocks(blockType="heading")` 一次取全部标题及 blockId，可并行分批补（标题块互不依赖，编号由 autoLevel 自动算，删改其一不影响其余编号连续性）。
+
 ## 六、注意事项
 
 1. 写入前先 `get_document_info` 确认目标文档（除非新建）。
@@ -85,3 +104,8 @@ markdown 管道表格一定渲染成真 table（变更记录表、KEY 表均如�
 4. **加粗与红字**：源 md 只使用 `**加粗**` 与 `{{red:红字}}`；不要用 markdown 的 `<span style>`、代码块、链接、删除线等未支持格式。
 5. **回读抽查**（写入后必做）：`list_document_blocks` 抽查——标题有 `list`、正文 `ind.left ≠ 0`、表格用 `element` 模式确认是 `table` 而非 `columns`。
 6. 终端中文乱码属正常（GBK），写进文档的内容是对的。
+7. **block id 在编辑后会变动（重要）**：每次 `update_document` overwrite / 补表 / 补编号等写操作后，受影响范围的 blockId **可能全部重新分配**（前缀都变）。后果：
+   - 上一次 `list_document_blocks` 拿到的 id **可能失效**（删/改时报 `invalidRequest.resource.notFound … expected to be found`）。
+   - **每批增删改前重新 `list_document_blocks` 取最新 id**；批量删除时**一次只删少量、删完重新拉取**，不要拿一份旧清单连删一长串。
+   - 经验：纯 `paragraph` 块的 id 相对稳定，`heading` 块在补编号/删除后最易换 id。失效就重新列、重新删。
+8. **blockquote 不支持 `update_document_block`**（报 `unsupported type blockquote`）。要改引用块内容，只能用 `paragraph` 类型替换它（丢引用样式但保内容），或删后重插。
