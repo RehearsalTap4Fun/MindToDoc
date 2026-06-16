@@ -2,7 +2,7 @@
 
 > **定位**：主策划案 `{{功能名}}.md` 之 **E. 界面设计** 的 SSOT。  
 > **规则层**在主案「详细规则」；本文只收**界面规则**（控件、状态、文案 key、交互）。  
-> **钉钉落地**：本地 md 定稿 → `system-design-doc` 的 `dingtalk-sync-reference`；图文块见 `ui-annotation-reference`。
+> **钉钉落地**：本地 md 定稿 → `references/dingtalk-sync-reference.md`；图文块见 `references/ui-annotation-reference.md`。
 
 ---
 
