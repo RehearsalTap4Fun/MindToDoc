@@ -109,3 +109,19 @@ H1 模板（H2/H3 改 level、text、ind.left、sz 即可）：
    - **每批增删改前重新 `list_document_blocks` 取最新 id**；批量删除时**一次只删少量、删完重新拉取**，不要拿一份旧清单连删一长串。
    - 经验：纯 `paragraph` 块的 id 相对稳定，`heading` 块在补编号/删除后最易换 id。失效就重新列、重新删。
 8. **blockquote 不支持 `update_document_block`**（报 `unsupported type blockquote`）。要改引用块内容，只能用 `paragraph` 类型替换它（丢引用样式但保内容），或删后重插。
+
+## 七、钉钉 → 本地 反转义(双向同步必做)
+
+钉钉 `get_document_content(format=markdown)` 返回的字符串走 GFM 严格转义（`\+`、`\*\*x\*\*`、`\{` `\}`、`\[` `\]`、`&#91;` `&#93;` 等），**直接写到本地 md 会出现满屏反斜杠或 markdown 失效**。统一用 `scripts/dingtalk_md_unescape.py` 清洗：
+
+```bash
+# 一行清洗:把 dingtalk-raw.md 反转义后写到 output/<name>.md
+python scripts/dingtalk_md_unescape.py dingtalk-raw.md -o "output/2026世界杯主题活动.md"
+
+# 校验本地 md 没有残留转义(CI/pre-commit 用)
+python scripts/dingtalk_md_unescape.py --check "output/<name>.md"
+```
+
+反向(本地 → 钉钉)**不要手工加 `\\+` `\\*\\*` 等转义**，本地写干净 markdown 即可，钉钉 `update_document` / `insert_document_block` 接 markdown 时会自动转义；**只需保证 `markdown` 参数里换行是真实 `\n`(U+000A)**，不能是字面字符串 `\n`(反斜杠+字母 n)，否则全部塞到一行。
+
+详细规则与全部转义对照见 memory/dingtalk-md-escape-diff.md。

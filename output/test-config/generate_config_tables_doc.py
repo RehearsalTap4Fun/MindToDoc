@@ -39,6 +39,7 @@ SHEET_META: dict[str, dict[str, str]] = {
     "ActvSoccerKnockoutPhaseCfg": {"用途": "赛程阶段日期与当日内容", "关联": "←KnockoutCfg；BetOpen控制竞猜", "填表": "活动"},
     "ActvSoccerBetMultiplierCfg": {"用途": "胜率→奖励倍率对照表(=程序ChampionOddsCfg)", "关联": "同步匹配后查最近WinRatePctA；配合附录bet_*常量", "填表": "数值"},
     "ActvSoccerBetStakeTierCfg": {"用途": "投注档位(免费+5档)", "关联": "下注弹窗选项；免费档HitPayout=5", "填表": "数值"},
+    "ActvSoccerAchieveCfg": {"用途": "活动成就(类型/计数/品质/图标/奖励)", "关联": "NameLcKey/DescLcKey→Language；Reward→ItemCfg/VM", "填表": "数值"},
     "ActvSoccerLanguageCfg": {"用途": "活动文案", "关联": "被所有 *LcKey 引用", "填表": "本地化"},
 }
 
@@ -85,6 +86,7 @@ SECTION_GROUPS: list[tuple[str, list[str]]] = [
         "竞猜",
         ["ActvSoccerBetMultiplierCfg", "ActvSoccerBetStakeTierCfg"],
     ),
+    ("成就", ["ActvSoccerAchieveCfg"]),
     ("本地化", ["ActvSoccerLanguageCfg"]),
 ]
 

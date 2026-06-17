@@ -1,0 +1,18 @@
+# 临时/中间产物,不入库
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 钉钉同步/源料 中间产物(每次任务期短期使用,不进版本)
+output/dingtalk-sync/
+output/dingtalk-source/
+output/scripts/
+
+# 本地 diff/调试临时目录
+.diff-tmp/
+
+# 测试配置生成失败时的备用产物
+output/test-config/ActivitySoccer.generated.xlsx
+output/test-config/ActivitySoccerLanguage.generated.xlsx

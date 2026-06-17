@@ -73,7 +73,8 @@ assert urllib.request.urlopen(req,timeout=120).status==200
 - 先 `list_document_blocks(format=jsonml)` 抄一个现成块照搬样式。
 - 两列 table：`colsWidth:[250,400]`，左 `tc` `fill:#E8F2FE` 放 `img`，右 `tc` `fill:#FFFAE5` 放编号说明。
 - 编号说明：主项 `list.isOrdered:true`（`%1.`）= 要素名；子说明 `level:1` + `○` bullet = 该要素的文本key/状态/交互。与正文两级列表规则一致。
-- **凡界面文案要素，子说明必须注明其本地化枚举 key**（如 `LC_EVENT_tab_home`）；新建 key 用红字、复用 key 用黑字。右栏只写 key 名，key 的中文与占位符传参在**文末统一本地化表**登记，不在右栏重复写中文。
+- **凡界面文案要素，子说明必须注明其本地化枚举 key**（如 `<前缀>_tab_home`）；新建 key 用红字、复用 key 用黑字。右栏只写 key 名，key 的中文与占位符传参在**文末统一本地化表**登记，不在右栏重复写中文。
+- **key 前缀按所在项目规范**：K1 项目用**功能名前缀**（如世界杯活动 = `ActvSoccer_`），**不用** `LC_`+页签名；X1/X15 等项目可能用 `LC_<页签>_`。动手前先确认本项目命名习惯，全文档前缀统一。
 - 新建 key 的右栏说明若在源信息中写作 `{{red:...}}`，构造左图右文表 JSONML 时必须转成 leaf 的 `"color":"#FE0300"`；不要把 `{{red:...}}` 标记原样写进钉钉。复用 key 用默认黑字。
 - 定位：`referenceBlockId`=参照块 blockId，`where:"after"`。
 
@@ -85,7 +86,7 @@ JSONML 骨架：
     ["p",{},["span",{"data-type":"text"},["span",{"bold":true,"data-type":"leaf"},"图中编号说明"]]],
     ["p",{"list":{"listId":"x","listStyle":{"format":"decimal","text":"%1.","align":"left"},"level":0,"isOrdered":true}},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"要素名"]]],
     ["p",{"list":{"listId":"x","listStyle":{"format":"bullet","text":"○","align":"left"},"level":1,"isOrdered":false}},["span",{"data-type":"text"},["span",{"data-type":"leaf"},"子说明（key+文案/状态/交互）"]]],
-    ["p",{"list":{"listId":"x","listStyle":{"format":"bullet","text":"○","align":"left"},"level":1,"isOrdered":false}},["span",{"data-type":"text"},["span",{"data-type":"leaf","color":"#FE0300"},"新建 key 示例：LC_EVENT_xxx｜中文文案"]]]
+    ["p",{"list":{"listId":"x","listStyle":{"format":"bullet","text":"○","align":"left"},"level":1,"isOrdered":false}},["span",{"data-type":"text"},["span",{"data-type":"leaf","color":"#FE0300"},"新建 key 示例：<前缀>_xxx｜中文文案"]]]
   ]]]
 ```
 

@@ -34,6 +34,8 @@
 
 ### 公共 / 外部依赖
 
+<!-- 候选表名见 references/k1-common-configs.md（活动框架 ActivityOnline / 通行证 ActivityBattlePass·BattlePassChest·BattlePassShop / 排行 ActivityRank / 兑换 ExchangeShop / 礼包 Gift·MonthlyCard / 充值 Shop·ActivityRecharge / 邮件 Mail / 物品 Item / 货币 VM / 常数 ConstConfig 等）。命中即写表名+用法，不复制清单到派生文档。 -->
+
 | 类型 | 典型表 / 机制 | 本功能用法 | 策划动作 |
 |------|----------------|------------|----------|
 | 全局常量 | {{ConstConfig}} | {{用法}} | {{动作}} |

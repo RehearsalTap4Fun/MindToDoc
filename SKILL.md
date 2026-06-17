@@ -23,12 +23,13 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 - `references/feature-spec-boundaries.md`：主功能案内容边界——写什么、不写什么、数值奖励粒度。
 - `references/feature-spec-writing.md`：起草顺序、功能/界面规则分工、常见错误。
 - `references/mobile-system-rules-reference.md`：逐系统交付物判定、红点规则、线上数据兼容、配置表边界。
+- `references/k1-common-configs.md`：K1 项目公共配置表清单（活动框架 / 通行证 / 排行 / 礼包 / 邮件 / 联盟 / KVK 等），写派生 `-配置表结构.md` 的「公共 / 外部依赖」时直接挑用。
 - `references/ui-annotation-reference.md`：UI 识图、归类、标注、上传、左图右文、界面下方 key 录入表。
 - `references/dingtalk-sync-reference.md`：钉钉 MCP、`md2jsonml.py`、payload 限制、jsonml/markdown 双路径、补 ind、补表、补图。
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
 
 > **维护说明**：`references/` 与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动同步，保持本技能自包含。
-> **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
+> **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重——K1 用**功能名前缀**（如 `ActvSoccer_`），X1/X15 用 `LC_<页签>_`；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
 
 ---
 
@@ -173,6 +174,11 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ## 主案 / 派生写作要点
 
+**整稿覆盖/大幅重写**
+
+- ≥ 200 行的全文覆盖**用 Bash heredoc 多段追加**(`cat >> file.md << 'EOF' ... EOF`),不要一次 Write 大字符串。一次 Write 20k+ 字符极易触发 API Error 然后被迫拆段重写,反而更慢。第一段用 Write 起头,后续段全部 heredoc 追加;最后跑一次校验脚本(如 `scripts/dingtalk_md_unescape.py --check`)。
+- 钉钉 ↔ 本地双向同步必须做转义清洗,详见 `references/dingtalk-sync-reference.md §七`。
+
 **主案**
 
 - 强调：`**加粗**`、`{{red:红字}}`；成段叙述 + 分层 bullet，不堆碎句。
@@ -194,6 +200,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 **配置表派生**
 
 - 含：Excel 页签/字段、概览、公共依赖；不含存档/运行时/协议。
+- 「公共 / 外部依赖」表直接从 `references/k1-common-configs.md` 挑表填入；命中即用，不复制内容到派生文档。
 
 **界面标注派生**
 

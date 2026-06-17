@@ -12,13 +12,15 @@
     "ActvSoccerSlicePresetCfg",
     "ActvSoccerSliceInstanceCfg",
     "ActvSoccerHapticCfg",
+    "ActvSoccerReceiveDecisionCfg",
+    "ActvSoccerPlayerStyleCfg",
+    "ActvSoccerFirstTouchAnimCfg",
     "ActvSoccerLevelCfg",
     "ActvSoccerAiProfileCfg",
     "ActvSoccerEnemyAiCfg",
     "ActvSoccerSliceAiCfg",
     "ActvSoccerAiModifierCfg",
     "ActvSoccerSliceFlowCfg",
-    "ActvSoccerCurrencyCfg",
     "ActvSoccerFameGrowthLevelCfg",
     "ActvSoccerLifeGrowthLevelCfg",
     "ActvSoccerTeamCfg",
@@ -31,7 +33,7 @@
     "ActvSoccerBetStakeTierCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
-  "language_entry_count": 167,
+  "language_entry_count": 166,
   "sheets_program_only": [
     "ActvSoccerSliceTypeDefCfg",
     "ActvSoccerPlayerAiDutyEnumCfg",
@@ -492,7 +494,6 @@
       "ActvSoccerSliceFlowCfg"
     ],
     "养成与合同": [
-      "ActvSoccerCurrencyCfg",
       "ActvSoccerFameGrowthLevelCfg",
       "ActvSoccerLifeGrowthLevelCfg",
       "ActvSoccerTeamCfg",
@@ -509,6 +510,11 @@
     ],
     "体验与反馈": [
       "ActvSoccerHapticCfg"
+    ],
+    "接球决策": [
+      "ActvSoccerReceiveDecisionCfg",
+      "ActvSoccerPlayerStyleCfg",
+      "ActvSoccerFirstTouchAnimCfg"
     ]
   },
   "id_cross_ref": {
@@ -517,10 +523,13 @@
     "EnemyAi": "2001-2003=band1(tier1-3);20X1/20X2/20X3=bandX门将/后卫/射手(X=2,3,4)",
     "SliceAi": "3001-3006=试训/引导切片101-203;3100+=库实例(每库实例一行)",
     "Modifier": "4001/4002/4005=移动门将(普通/困难/极限),4003=无辅助线,4004=固定人墙,4006=收窄夹角,4007=随机扑救",
+    "ReceiveDecision": "5001-5004=接球决策风格(Balanced/Playmaker/Dribbler/TargetMan)",
+    "PlayerStyle": "5101-5104=球员风格(Balanced/Playmaker/Dribbler/TargetMan);CharacterCfg.PlayerStyleCfgID引用",
+    "FirstTouchAnim": "5201+=第一脚触球表现映射(Action×BallHeight×Direction×Pressure)",
     "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-2);101-203=试训/引导",
     "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
     "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
-    "BetMultiplier": "16行=程序ChampionOddsCfg;按WinRatePctA查最近行→MultA/MultB",
+    "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
     "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300"
   },
   "test_flow": [
