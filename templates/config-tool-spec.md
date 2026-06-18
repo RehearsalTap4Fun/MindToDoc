@@ -157,6 +157,7 @@ output/test-config/{{工具名}}/
 - 此模板适用时,brainstorming 阶段应**一次性把 1-7 节合并到 ≤3 个 AskUserQuestion**(每题 multiSelect,塞同节问题),避免 9 轮单题问询。
 - 用户已选过的项就在 spec 里直引,不重复问。
 - 词表初版若选 AI 提,先读项目现有默认逻辑(如 generate_*.py 里的 tier 模板),据此提候选,不空想。
+- **subagent-driven 实施**时,派发 spec/quality reviewer 的 prompt **必须 inline `references/reviewer-spec-grounding.md` 的「Mandatory pre-judgment ritual」段**,强制 reviewer 引用 spec/plan 章节作为评判支撑。否则 haiku reviewer 会凭通用规范误判项目专有设计(如把"校验放在生成阶段"误判成"patch 应防御边界")。
 
 ---
 
@@ -164,32 +165,29 @@ output/test-config/{{工具名}}/
 
 写完 implementation plan 后,plan 通常含几十段 Python 代码片段,函数签名 / 类型 / 全局状态(如 TAG_REGISTRY)不一致是最常见漏检。占位扫和 spec 覆盖度可肉眼过,签名一致只能机器看。
 
-**plan 第一个任务必须是「stub 抽提 + 静态检查」**,通过后再开始按任务实现。具体做法:
+**plan 第一个任务必须是「跑 `scripts/check_plan_signatures.py`」**,通过后再开始按任务实现。具体做法:
 
-1. **抽提**:把 plan 里所有 Python 代码块连缀成 `output/.plan-stub/{{工具名}}_stub.py`(临时文件,不入 git),按出现顺序拼接;import / dataclass / 函数 / 测试 全部入栈。
-2. **跑 ruff**:
-   ```bash
-   ruff check output/.plan-stub/{{工具名}}_stub.py
-   ```
-   重点看 F821(未定义引用)/ F811(重复定义)/ E999(语法错)。
-3. **跑 mypy --strict**(可选,需要项目已配 mypy):
-   ```bash
-   mypy --strict output/.plan-stub/{{工具名}}_stub.py
-   ```
-   重点看 `name-defined` / `attr-defined` / 签名不匹配。
-4. **修复**:发现的不一致**直接改 plan**(不是改 stub),再次抽提验证。
-5. **删除 stub**:静态检查通过后删除 `output/.plan-stub/`,plan 才进入正式实施。
-
-**抽提脚本建议**(`scripts/extract_plan_stub.py`,可选实现):
-```python
-# 用法: python scripts/extract_plan_stub.py docs/superpowers/plans/<plan>.md > output/.plan-stub/<name>_stub.py
-import re, sys
-content = open(sys.argv[1], encoding='utf-8').read()
-blocks = re.findall(r'```python\n(.*?)```', content, re.DOTALL)
-print('\n# --- block ---\n'.join(blocks))
+```bash
+python scripts/check_plan_signatures.py docs/superpowers/plans/<plan>.md \
+    --critical TagSpec PatchContext TAG_REGISTRY register \
+                <其它本工具关键符号 ...>
 ```
+
+工具行为:
+1. 抽 plan 里所有 ` ```python ``` ` 代码块;
+2. 每段单独 ast.parse 检查语法合法;
+3. 收集所有顶层 def / class / 赋值 / import 名字成"已定义集";
+4. 校验 `--critical` 列表里的关键符号都在已定义集中(否则退出 1);
+5. 扫描跨段 `lib./app./g./mod.` 之类属性访问,警告但不 fail(标准库会大量误报);
+6. 退出码 0 = 通过,1 = 语法错或关键符号缺失,2 = plan 文件不存在。
+
+进阶(可选):
+- 如本机有 `ruff` 与 `mypy`,可在脚本通过后再补一次 `ruff check / mypy --strict` 跑临时拼接 stub,捕捉签名不匹配。
+- 抽 stub 的最小代码就在 `scripts/check_plan_signatures.py:extract_python_blocks` 里,可二次复用。
+
+**修复**:发现关键符号缺失或语法错时,**改 plan**(不是脚本),再次运行直到通过。
 
 **为什么不在执行阶段才发现**:plan 阶段抽提一次拍平所有签名分歧;执行 agent 一边跑测试一边修签名会反复回滚先前任务,代价高 5-10 倍。
 
-**适用条件**:plan 含 ≥10 段 Python 代码块时强制跑;<10 段时人工眼检即可。
+**适用条件**:plan 含 ≥10 段 Python 代码块时强制跑;<10 段时可跳过。
 
