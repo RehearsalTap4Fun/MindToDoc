@@ -108,3 +108,83 @@ def _register_level_only_tags() -> None:
 
 _register_level_only_tags()
 
+
+def _slice_id(tier: int, stype: int, variant: int) -> int:
+    return tier * 100 + stype * 10 + variant
+
+
+def _slice_type(sid: int) -> int:
+    return (sid // 10) % 10
+
+
+def _patch_set_piece(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    has_fk = any(_slice_type(s) == 2 for s in sl)
+    has_pk = any(_slice_type(s) == 3 for s in sl)
+    if not has_fk:
+        sl.insert(0, _slice_id(ctx.tier, 2, 1))
+    if not has_pk:
+        sl.insert(1 if not has_fk else 0, _slice_id(ctx.tier, 3, 1))
+    sl = sl[:5]
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _patch_corner_focus(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    sl[-1] = _slice_id(ctx.tier, 4, 2)
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _patch_gk_test(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    sl[-1] = _slice_id(ctx.tier, 6, 2)
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _patch_long_match(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    if len(sl) >= 5:
+        return
+    used_types = {_slice_type(s) for s in sl}
+    for stype in (1, 2, 3, 4, 5, 6):
+        if stype not in used_types:
+            sl.append(_slice_id(ctx.tier, stype, 1))
+            break
+    else:
+        sl.append(_slice_id(ctx.tier, 1, 1))
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _patch_short_match(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    if len(sl) > 2:
+        sl = sl[:-1]
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _patch_all_v2(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    sl = [(s // 10) * 10 + 2 for s in sl]
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _register_slice_tags() -> None:
+    for name in ("set_piece", "corner_focus", "gk_test",
+                 "long_match", "short_match", "all_v2"):
+        TAG_REGISTRY.pop(name, None)
+    register(TagSpec("set_piece", ("slice",), None,
+                     "保证至少 1 free_kick + 1 penalty", _patch_set_piece))
+    register(TagSpec("corner_focus", ("slice",), None,
+                     "末位强制 corner v2", _patch_corner_focus))
+    register(TagSpec("gk_test", ("slice",), None,
+                     "末位强制 goalkeep v2", _patch_gk_test))
+    register(TagSpec("long_match", ("slice",), "length",
+                     "切片数 +1(上限 5)", _patch_long_match))
+    register(TagSpec("short_match", ("slice",), "length",
+                     "切片数 -1(下限 2)", _patch_short_match))
+    register(TagSpec("all_v2", ("slice",), None,
+                     "SliceList 全切到 v2 复合变体", _patch_all_v2))
+
+
+_register_slice_tags()
+

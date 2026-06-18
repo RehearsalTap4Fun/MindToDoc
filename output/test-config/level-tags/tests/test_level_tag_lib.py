@@ -106,3 +106,69 @@ def test_tutorial_marks_and_swaps_slices():
     assert ctx.level_row["IsTutorial"] == 1
     assert ctx.level_row["TicketCost"] == 0
     assert ctx.level_row["SliceList"] == "[201,202,203]"
+
+
+def test_set_piece_inserts_freekick_and_penalty():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    lib.TAG_REGISTRY["set_piece"].patch(ctx)
+    sl = json.loads(ctx.level_row["SliceList"])
+    assert any(s // 10 % 10 == 2 for s in sl), f"无 free_kick: {sl}"
+    assert any(s // 10 % 10 == 3 for s in sl), f"无 penalty: {sl}"
+
+
+def test_corner_focus_makes_last_corner_v2():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    lib.TAG_REGISTRY["corner_focus"].patch(ctx)
+    sl = json.loads(ctx.level_row["SliceList"])
+    last = sl[-1]
+    assert last // 10 % 10 == 4 and last % 10 == 2, f"末位非 corner v2: {last}"
+
+
+def test_gk_test_makes_last_goalkeep_v2():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    lib.TAG_REGISTRY["gk_test"].patch(ctx)
+    sl = json.loads(ctx.level_row["SliceList"])
+    last = sl[-1]
+    assert last // 10 % 10 == 6 and last % 10 == 2, f"末位非 goalkeep v2: {last}"
+
+
+def test_long_match_adds_one_slice_capped_at_5():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx(slice_count=4)
+    lib.TAG_REGISTRY["long_match"].patch(ctx)
+    sl = json.loads(ctx.level_row["SliceList"])
+    assert len(sl) == 5
+
+    ctx2 = _make_ctx(slice_count=5)
+    ctx2.level_row["SliceList"] = "[541,551,561,511,521]"
+    lib.TAG_REGISTRY["long_match"].patch(ctx2)
+    assert len(json.loads(ctx2.level_row["SliceList"])) == 5  # 上限 5
+
+
+def test_short_match_removes_one_floor_at_2():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    lib.TAG_REGISTRY["short_match"].patch(ctx)
+    assert len(json.loads(ctx.level_row["SliceList"])) == 3
+
+    ctx2 = _make_ctx()
+    ctx2.level_row["SliceList"] = "[541,551]"
+    lib.TAG_REGISTRY["short_match"].patch(ctx2)
+    assert len(json.loads(ctx2.level_row["SliceList"])) == 2
+
+
+def test_all_v2_flips_last_digit():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    lib.TAG_REGISTRY["all_v2"].patch(ctx)
+    sl = json.loads(ctx.level_row["SliceList"])
+    assert all(s % 10 == 2 for s in sl), f"非全 v2: {sl}"
