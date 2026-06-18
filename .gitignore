@@ -16,3 +16,8 @@ output/scripts/
 # 测试配置生成失败时的备用产物
 output/test-config/ActivitySoccer.generated.xlsx
 output/test-config/ActivitySoccerLanguage.generated.xlsx
+
+# 关卡 tag 工具产物(由 apply_level_tags.py 生成)
+output/test-config/level-tags/ActivitySoccer.LevelTagged.xlsx
+output/test-config/level-tags/ActivitySoccer.LevelTagged.generated.xlsx
+output/test-config/level-tags/level-tag-summary.json
