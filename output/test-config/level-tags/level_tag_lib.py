@@ -19,7 +19,7 @@ class PatchContext:
     new_id_alloc: Callable[[], int]      # 9xxx 段虚拟 ID 分配器
     level_in_round: int
     tier: int
-    library: dict                        # 只读快照:{'instances':..., 'slice_ais':..., 'tier_specs':...}
+    library: dict                        # reserved:只读快照,留给未来需要查库的 patch 使用;当前 16 个 patch 都不消费
 
 
 @dataclass
