@@ -157,3 +157,39 @@ output/test-config/{{工具名}}/
 - 此模板适用时,brainstorming 阶段应**一次性把 1-7 节合并到 ≤3 个 AskUserQuestion**(每题 multiSelect,塞同节问题),避免 9 轮单题问询。
 - 用户已选过的项就在 spec 里直引,不重复问。
 - 词表初版若选 AI 提,先读项目现有默认逻辑(如 generate_*.py 里的 tier 模板),据此提候选,不空想。
+
+---
+
+## 11. 自检自动化(plan 落盘后必跑)
+
+写完 implementation plan 后,plan 通常含几十段 Python 代码片段,函数签名 / 类型 / 全局状态(如 TAG_REGISTRY)不一致是最常见漏检。占位扫和 spec 覆盖度可肉眼过,签名一致只能机器看。
+
+**plan 第一个任务必须是「stub 抽提 + 静态检查」**,通过后再开始按任务实现。具体做法:
+
+1. **抽提**:把 plan 里所有 Python 代码块连缀成 `output/.plan-stub/{{工具名}}_stub.py`(临时文件,不入 git),按出现顺序拼接;import / dataclass / 函数 / 测试 全部入栈。
+2. **跑 ruff**:
+   ```bash
+   ruff check output/.plan-stub/{{工具名}}_stub.py
+   ```
+   重点看 F821(未定义引用)/ F811(重复定义)/ E999(语法错)。
+3. **跑 mypy --strict**(可选,需要项目已配 mypy):
+   ```bash
+   mypy --strict output/.plan-stub/{{工具名}}_stub.py
+   ```
+   重点看 `name-defined` / `attr-defined` / 签名不匹配。
+4. **修复**:发现的不一致**直接改 plan**(不是改 stub),再次抽提验证。
+5. **删除 stub**:静态检查通过后删除 `output/.plan-stub/`,plan 才进入正式实施。
+
+**抽提脚本建议**(`scripts/extract_plan_stub.py`,可选实现):
+```python
+# 用法: python scripts/extract_plan_stub.py docs/superpowers/plans/<plan>.md > output/.plan-stub/<name>_stub.py
+import re, sys
+content = open(sys.argv[1], encoding='utf-8').read()
+blocks = re.findall(r'```python\n(.*?)```', content, re.DOTALL)
+print('\n# --- block ---\n'.join(blocks))
+```
+
+**为什么不在执行阶段才发现**:plan 阶段抽提一次拍平所有签名分歧;执行 agent 一边跑测试一边修签名会反复回滚先前任务,代价高 5-10 倍。
+
+**适用条件**:plan 含 ≥10 段 Python 代码块时强制跑;<10 段时人工眼检即可。
+
