@@ -49,6 +49,15 @@ def _slice_count_of(level_row: dict) -> int:
     return len(json.loads(level_row["SliceList"]))
 
 
+# --- patch 函数设计约定 ---
+# 1. 阈值类 patch (boss/must_win/lenient) 不做 n<2 防御:
+#    - 主生成器 _slice_count 最小返回 2,n=1 在生产路径不可达
+#    - lenient 与 must_win 同 mutex_group="threshold" 不叠加
+#    - 校验由 apply_level_tags.validate_dataset 在 generation 阶段统一抓
+#    详见 spec §4.4 (校验阶段) 与 §7 (validate 项)
+# 2. patch 直接修改 ctx.level_row,不返回值
+
+
 def _patch_boss(ctx: PatchContext) -> None:
     n = _slice_count_of(ctx.level_row)
     ctx.level_row["OpponentTeamStar"] = 5
