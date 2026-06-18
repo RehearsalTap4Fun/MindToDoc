@@ -228,3 +228,180 @@ def validate_dataset(ds: dict) -> None:
 
     if errors:
         raise ValidationError(errors)
+
+
+from collections import defaultdict
+
+
+_SHEET_SCHEMA: dict[str, list[tuple[str, str, str]]] = {
+    "ActvSoccerSeasonCfg": [
+        ("cs", "int", "ID"), ("c", "string", "LeagueNameLcKey"),
+        ("cs", "int", "NextSeason"), ("cs", "int", "ContractOfferCount"),
+        ("-", "string", "Remark"),
+    ],
+    "ActvSoccerLevelCfg": [
+        ("cs", "int", "ID"), ("cs", "bool", "IsTutorial"),
+        ("cs", "int[]", "SliceList"), ("cs", "int", "AiProfileID"),
+        ("cs", "int", "WinThreshold"), ("cs", "int", "DrawThreshold"),
+        ("cs", "int", "TicketCost"), ("cs", "int", "OpponentTeamID"),
+        ("cs", "int", "OpponentTeamStar"), ("cs", "int", "SeasonID"),
+        ("-", "string", "Remark"),
+    ],
+    "ActvSoccerSlicePresetCfg": [
+        ("cs", "int", "ID"), ("cs", "string", "SliceType"),
+        ("c", "string", "NameLcKey"), ("c", "string[]", "Tags"),
+        ("c", "ext", "BallPos"), ("c", "ext", "BallVector"),
+        ("c", "int", "BallOwner"), ("c", "ext[]", "PlayersInit"),
+        ("c", "float", "CameraFov"), ("c", "ext", "TargetPoint"),
+        ("cs", "float", "OperableAngle"), ("c", "float", "AngleSpanMin"),
+        ("c", "float", "AngleSpanMax"), ("c", "float", "AngleMaxCenterShift"),
+        ("c", "float", "AngleMargin"), ("cs", "ext", "TypePayload"),
+        ("c", "string[]", "RecommendedModes"), ("-", "string", "Remark"),
+    ],
+    "ActvSoccerSliceInstanceCfg": [
+        ("cs", "int", "ID"), ("cs", "string", "SliceType"),
+        ("cs", "int", "PresetID"), ("c", "float", "OverrideOperableAngle"),
+        ("cs", "string", "ObjectiveType"), ("cs", "ext[]", "ExtraObjectives"),
+        ("cs", "ext[]", "Modifiers"), ("-", "string", "Remark"),
+    ],
+    "ActvSoccerSliceAiCfg": [
+        ("cs", "int", "ID"), ("cs", "int", "SliceID"),
+        ("cs", "int", "AiProfileID"), ("cs", "int", "GoalkeeperAiID"),
+        ("cs", "int", "DefenderAiID"), ("cs", "int", "ShooterAiID"),
+        ("cs", "int", "ModifierID"), ("cs", "bool", "IsGuideAi"),
+        ("cs", "bool", "RewindRandom"), ("cs", "int", "OverrideReactionTimeMs"),
+        ("-", "string", "Remark"),
+    ],
+    "ActvSoccerAiProfileCfg": [
+        ("cs", "int", "ID"), ("cs", "string", "Difficulty"),
+        ("cs", "int", "GoalkeeperSaveRate"), ("cs", "int", "DefenderSuccessRate"),
+        ("cs", "int", "ShooterSuccessRate"), ("cs", "int", "DeadCornerCanSave"),
+        ("cs", "int", "ReactionTimeMs"), ("-", "string", "Remark"),
+    ],
+    "ActvSoccerEnemyAiCfg": [
+        ("cs", "int", "ID"), ("cs", "int", "Duty"),
+        ("cs", "int", "SaveWeight"), ("cs", "int", "LeftWeight"),
+        ("cs", "int", "RightWeight"), ("cs", "int", "UpWeight"),
+        ("cs", "int", "InterceptWeight"), ("cs", "int", "ClearanceWeight"),
+        ("cs", "int", "KeeperCatchFail"), ("cs", "int", "OutOfBoundsFail"),
+        ("c", "string", "AnimationKey"), ("-", "string", "Remark"),
+    ],
+    "ActvSoccerAiModifierCfg": [
+        ("cs", "int", "ID"), ("cs", "string", "ModifierType"),
+        ("cs", "string", "Param1Key"), ("cs", "string", "Param1Value"),
+        ("cs", "string", "Param2Key"), ("cs", "string", "Param2Value"),
+        ("cs", "string", "Param3Key"), ("cs", "string", "Param3Value"),
+        ("-", "string", "Remark"),
+    ],
+    "ActvSoccerTeamCfg": [
+        ("cs", "int", "ID"), ("c", "string", "NameLcKey"),
+        ("cs", "string", "Region"), ("c", "string", "KitKey"),
+        ("c", "string", "BadgeKey"), ("-", "string", "Remark"),
+    ],
+}
+
+
+def _write_sheet(wb, name: str, schema: list[tuple[str, str, str]], rows: list[dict]) -> None:
+    ws = wb.create_sheet(name)
+    for col_idx, (read, type_, field) in enumerate(schema, start=1):
+        ws.cell(1, col_idx, read)
+        ws.cell(2, col_idx, type_)
+        ws.cell(3, col_idx, field)
+    for r_idx, row in enumerate(rows, start=9):
+        for c_idx, (_, type_, field) in enumerate(schema, start=1):
+            val = row.get(field)
+            if val is None:
+                if type_ == "ext[]":
+                    val = "[]"
+                elif type_ == "ext":
+                    val = "{}"
+            if val is not None:
+                ws.cell(r_idx, c_idx, val)
+
+
+def write_outputs(ds: dict, tag_rows: list[dict], target: Path, summary_path: Path) -> Path:
+    """写 9 表 xlsx + summary.json。文件被占用时回退 *.generated.xlsx。"""
+    from openpyxl import Workbook
+    target = Path(target); summary_path = Path(summary_path)
+
+    wb = Workbook(); wb.remove(wb.active)
+    _write_sheet(wb, "ActvSoccerSeasonCfg", _SHEET_SCHEMA["ActvSoccerSeasonCfg"], ds["seasons"])
+    _write_sheet(wb, "ActvSoccerLevelCfg", _SHEET_SCHEMA["ActvSoccerLevelCfg"], ds["levels"])
+    _write_sheet(wb, "ActvSoccerSlicePresetCfg", _SHEET_SCHEMA["ActvSoccerSlicePresetCfg"], ds["presets"])
+    _write_sheet(wb, "ActvSoccerSliceInstanceCfg", _SHEET_SCHEMA["ActvSoccerSliceInstanceCfg"], ds["slice_instances"])
+    _write_sheet(wb, "ActvSoccerSliceAiCfg", _SHEET_SCHEMA["ActvSoccerSliceAiCfg"], ds["slice_ais"])
+    _write_sheet(wb, "ActvSoccerAiProfileCfg", _SHEET_SCHEMA["ActvSoccerAiProfileCfg"], ds["ai_profiles"])
+    _write_sheet(wb, "ActvSoccerEnemyAiCfg", _SHEET_SCHEMA["ActvSoccerEnemyAiCfg"], ds["enemy_ais"])
+    _write_sheet(wb, "ActvSoccerAiModifierCfg", _SHEET_SCHEMA["ActvSoccerAiModifierCfg"], ds["ai_modifiers"])
+    _write_sheet(wb, "ActvSoccerTeamCfg", _SHEET_SCHEMA["ActvSoccerTeamCfg"], ds["teams"])
+
+    actual = target
+    try:
+        wb.save(actual)
+    except PermissionError:
+        actual = target.with_suffix(".generated.xlsx")
+        wb.save(actual)
+        print(f"[warn] {target} 被占用,回退写入 {actual}")
+
+    tag_hits: dict[str, list[int]] = defaultdict(list)
+    levels_with_tags = 0
+    for trow in tag_rows:
+        if trow["Tags"]:
+            levels_with_tags += 1
+            for tag in trow["Tags"]:
+                tag_hits[tag].append(trow["ID"])
+    summary = {
+        "input": str(target),
+        "levels_total": len(ds["levels"]),
+        "levels_with_tags": levels_with_tags,
+        "virtual_slice_instance_count": sum(1 for r in ds["slice_instances"] if r["ID"] >= 90000),
+        "virtual_slice_ai_count": sum(1 for r in ds["slice_ais"] if r["ID"] >= 90000),
+        "tag_hits": {k: sorted(v) for k, v in sorted(tag_hits.items())},
+    }
+    summary_path.write_text(_json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    return actual
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("--output", type=Path, default=HERE / "ActivitySoccer.LevelTagged.xlsx")
+    parser.add_argument("--summary", type=Path, default=HERE / "level-tag-summary.json")
+    args = parser.parse_args(argv)
+
+    try:
+        rows = load_level_tag_cfg(args.input)
+        td_tags = load_tag_def(args.input)
+    except FileNotFoundError as e:
+        print(f"[error] 输入文件不存在: {e}", file=sys.stderr)
+        return 2
+    except Exception as e:
+        print(f"[error] 输入加载失败: {e}", file=sys.stderr)
+        return 2
+
+    try:
+        validate_loaded(rows, td_tags=td_tags)
+    except ValidationError as e:
+        print("[error] 加载阶段校验失败:", file=sys.stderr)
+        for err in e.errors:
+            print(f"  - {err}", file=sys.stderr)
+        return 1
+
+    ds = build_dataset(rows)
+    try:
+        validate_dataset(ds)
+    except ValidationError as e:
+        print("[error] 生成阶段校验失败:", file=sys.stderr)
+        for err in e.errors:
+            print(f"  - {err}", file=sys.stderr)
+        return 1
+
+    actual = write_outputs(ds, rows, args.output, args.summary)
+    tagged = sum(1 for r in rows if r["Tags"])
+    print(f"[ok] 关卡 tag 产物写入: {actual} (贴 tag 关数 {tagged}/500)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

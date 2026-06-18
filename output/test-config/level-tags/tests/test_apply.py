@@ -171,3 +171,84 @@ def test_post_validate_catches_threshold_violation(tmp_path):
     # lenient + must_win 同 mutex_group,会在 validate_loaded 阶段被抓
     with pytest.raises(app.ValidationError):
         app.validate_loaded(rows, td_tags=td_tags)
+
+
+def test_write_outputs_xlsx_with_9_sheets(tmp_path):
+    out = _make_minimal_xlsx(tmp_path)
+    import apply_level_tags as app
+    importlib.reload(app)
+    rows = app.load_level_tag_cfg(out)
+    td_tags = app.load_tag_def(out)
+    app.validate_loaded(rows, td_tags=td_tags)
+    ds = app.build_dataset(rows)
+    app.validate_dataset(ds)
+    target = tmp_path / "ActivitySoccer.LevelTagged.xlsx"
+    summary_path = tmp_path / "level-tag-summary.json"
+    app.write_outputs(ds, rows, target, summary_path)
+    assert target.exists()
+    assert summary_path.exists()
+
+    from openpyxl import load_workbook
+    wb = load_workbook(target)
+    expected = {
+        "ActvSoccerSeasonCfg", "ActvSoccerLevelCfg",
+        "ActvSoccerSlicePresetCfg", "ActvSoccerSliceInstanceCfg",
+        "ActvSoccerSliceAiCfg", "ActvSoccerAiProfileCfg",
+        "ActvSoccerEnemyAiCfg", "ActvSoccerAiModifierCfg",
+        "ActvSoccerTeamCfg",
+    }
+    assert expected.issubset(set(wb.sheetnames))
+
+
+def test_summary_records_tag_hits(tmp_path):
+    out = _make_minimal_xlsx(tmp_path, tag_overrides={
+        100: "boss",
+        200: "boss",
+        300: "hard_plus",
+    })
+    import apply_level_tags as app
+    importlib.reload(app)
+    rows = app.load_level_tag_cfg(out)
+    td_tags = app.load_tag_def(out)
+    app.validate_loaded(rows, td_tags=td_tags)
+    ds = app.build_dataset(rows)
+    target = tmp_path / "out.xlsx"
+    summary_path = tmp_path / "summary.json"
+    app.write_outputs(ds, rows, target, summary_path)
+    import json
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["tag_hits"]["boss"] == [100, 200]
+    assert summary["tag_hits"]["hard_plus"] == [300]
+    assert summary["levels_total"] == 500
+    assert summary["levels_with_tags"] == 3
+
+
+def test_main_cli_clean_run_returns_zero(tmp_path, monkeypatch):
+    out = _make_minimal_xlsx(tmp_path)
+    import apply_level_tags as app
+    importlib.reload(app)
+    target = tmp_path / "tagged.xlsx"
+    summary_path = tmp_path / "summary.json"
+    rc = app.main(["--input", str(out), "--output", str(target),
+                   "--summary", str(summary_path)])
+    assert rc == 0
+    assert target.exists()
+
+
+def test_main_cli_validation_error_returns_one(tmp_path):
+    out = _make_minimal_xlsx(tmp_path, tag_overrides={1: "ghost_xyz"})
+    import apply_level_tags as app
+    importlib.reload(app)
+    rc = app.main(["--input", str(out),
+                   "--output", str(tmp_path / "x.xlsx"),
+                   "--summary", str(tmp_path / "x.json")])
+    assert rc == 1
+
+
+def test_main_cli_missing_input_returns_two(tmp_path):
+    import apply_level_tags as app
+    importlib.reload(app)
+    rc = app.main(["--input", str(tmp_path / "absent.xlsx"),
+                   "--output", str(tmp_path / "x.xlsx"),
+                   "--summary", str(tmp_path / "x.json")])
+    assert rc == 2
