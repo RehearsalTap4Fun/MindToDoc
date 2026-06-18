@@ -1,6 +1,6 @@
 # 足球场地坐标系协议 · 草稿
 
-> **状态**:**草稿,多处 TBD 等程序方/美术方确认**。
+> **状态**:**草稿,多处 TBD 等程序方/美术方确认**。共 **19 个编号 TBD**(`scripts/list_tbd.py` 实测,2026-06-18)。
 > **来源**:从 `output/test-config/generate_activity_soccer_test_config.py` 中 18 个 preset 的实际坐标反推,补充 FIFA 标准场地与切片规则约束。
 > **用途**:新增切片预设 / 切片实例 / patch 函数 涉及空间数据时,所有人(策划 / 程序 / AI Agent / 关卡 tag 工具)以本协议为准。
 >
@@ -8,6 +8,7 @@
 > - 数值变更必须同步更新 `generate_activity_soccer_test_config.py:775` 的常量段。
 > - TBD 项必须由程序方或美术方填写,**未填写前禁止生成任何新切片预设**。
 > - 本协议与 `2026世界杯主题活动-开发文档.md` §3.2(切片摆位/物理参数)交叉参考;若冲突,以主案为准并同步本协议。
+> - 跑 `python scripts/list_tbd.py` 查所有 references/*.md 的 TBD 当前状态;协议每填完 N 项后建议重跑刷新本头部计数。
 
 ---
 
