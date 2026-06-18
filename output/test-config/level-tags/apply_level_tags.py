@@ -132,3 +132,99 @@ def validate_loaded(rows: list[dict], td_tags: set[str]) -> None:
 
     if errors:
         raise ValidationError(errors)
+
+
+import json as _json
+
+
+def _import_main_generator():
+    """惰性导入主生成器,避免顶层 import 顺序污染。"""
+    sys.path.insert(0, str(HERE.parent))
+    import generate_activity_soccer_test_config as g  # noqa
+    return g
+
+
+def _build_default_dataset() -> dict:
+    """复用主生成器构造默认数据集(独立 LcRegistry,语言行不写出)。"""
+    g = _import_main_generator()
+    lc = g.LcRegistry()
+    presets = g._build_presets(lc)
+    instances = g._build_instance_library()
+    slice_ais = g._slice_ai_for_library(instances)
+    levels = g._build_levels(lc)
+    seasons = g._build_seasons(lc)
+    teams = g._build_theme_teams(lc)
+    return {
+        "presets": presets,
+        "slice_instances": instances,
+        "slice_ais": slice_ais,
+        "ai_profiles": g._build_ai_profiles(),
+        "enemy_ais": g._build_enemy_ai(),
+        "ai_modifiers": g._build_ai_modifiers(),
+        "teams": teams,
+        "seasons": seasons,
+        "levels": levels,
+    }
+
+
+def _slot_alloc(level_id: int):
+    counter = {"v": 90000 + level_id * 10}
+    def alloc():
+        counter["v"] += 1
+        return counter["v"]
+    return alloc
+
+
+def build_dataset(tag_rows: list[dict]) -> dict:
+    """加载主生成器默认数据集,逐关 patch,返回带 9xxx 虚拟行的完整产物。"""
+    ds = _build_default_dataset()
+    levels_by_id = {r["ID"]: r for r in ds["levels"]}
+    insts_by_id = {r["ID"]: r for r in ds["slice_instances"]}
+    ais_by_sid = {r["SliceID"]: r for r in ds["slice_ais"]}
+    library_snapshot = {"insts": insts_by_id, "ais": ais_by_sid}
+
+    for trow in tag_rows:
+        if not trow["Tags"]:
+            continue
+        lid = trow["ID"]
+        level_row = levels_by_id[lid]
+        ctx = level_tag_lib.PatchContext(
+            level_row=level_row,
+            slice_ai_rows=ds["slice_ais"],
+            slice_instance_rows=ds["slice_instances"],
+            new_id_alloc=_slot_alloc(lid),
+            level_in_round=trow["LevelInRound"],
+            tier=trow["Tier"],
+            library=library_snapshot,
+        )
+        for tag in trow["Tags"]:
+            level_tag_lib.TAG_REGISTRY[tag].patch(ctx)
+
+    return ds
+
+
+def validate_dataset(ds: dict) -> None:
+    """生成阶段校验(spec §7)。"""
+    errors: list[str] = []
+    inst_ids = {r["ID"] for r in ds["slice_instances"]}
+
+    for r in ds["levels"]:
+        sl = _json.loads(r["SliceList"])
+        n = len(sl)
+        if not (0 < r["DrawThreshold"] < r["WinThreshold"] <= n):
+            errors.append(
+                f"level {r['ID']} 阈值非法: lose<draw<win<=n 不成立 "
+                f"(draw={r['DrawThreshold']}, win={r['WinThreshold']}, n={n})"
+            )
+        for s in sl:
+            if s not in inst_ids:
+                errors.append(f"level {r['ID']} SliceList 含未注册 SliceInstance: {s}")
+        if not (1001 <= r["AiProfileID"] <= 1010):
+            errors.append(f"level {r['ID']} AiProfileID 越界: {r['AiProfileID']}")
+
+    for r in ds["slice_ais"]:
+        if r["SliceID"] not in inst_ids:
+            errors.append(f"SliceAi {r['ID']} 引用未注册 SliceInstance: {r['SliceID']}")
+
+    if errors:
+        raise ValidationError(errors)

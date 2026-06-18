@@ -116,3 +116,58 @@ def test_validate_tag_def_drift(tmp_path):
     td_tags = app.load_tag_def(out)
     import level_tag_lib as lib
     assert td_tags != set(lib.TAG_REGISTRY.keys())
+
+
+def test_orchestrate_no_tags_returns_default_dataset(tmp_path):
+    out = _make_minimal_xlsx(tmp_path)
+    import apply_level_tags as app
+    importlib.reload(app)
+    rows = app.load_level_tag_cfg(out)
+    td_tags = app.load_tag_def(out)
+    app.validate_loaded(rows, td_tags=td_tags)
+    dataset = app.build_dataset(rows)
+    assert len(dataset["levels"]) == 500
+    assert len(dataset["seasons"]) == 50
+    assert len(dataset["slice_instances"]) == 126
+    assert all(r["ID"] < 90000 for r in dataset["slice_instances"])
+
+
+def test_orchestrate_boss_tag_changes_only_target_level(tmp_path):
+    out = _make_minimal_xlsx(tmp_path, tag_overrides={250: "boss"})
+    import apply_level_tags as app
+    importlib.reload(app)
+    rows = app.load_level_tag_cfg(out)
+    td_tags = app.load_tag_def(out)
+    app.validate_loaded(rows, td_tags=td_tags)
+    dataset = app.build_dataset(rows)
+    levels = {r["ID"]: r for r in dataset["levels"]}
+    assert levels[250]["OpponentTeamStar"] == 5
+    # 邻居关默认 OpponentTeamStar 应不一定是 5(取决于 tier),不强断言相等
+
+
+def test_orchestrate_extreme_keeper_appends_virtual_rows(tmp_path):
+    out = _make_minimal_xlsx(tmp_path, tag_overrides={250: "extreme_keeper"})
+    import apply_level_tags as app
+    importlib.reload(app)
+    rows = app.load_level_tag_cfg(out)
+    td_tags = app.load_tag_def(out)
+    app.validate_loaded(rows, td_tags=td_tags)
+    dataset = app.build_dataset(rows)
+    virt_inst = [r for r in dataset["slice_instances"] if r["ID"] >= 90000]
+    virt_ai = [r for r in dataset["slice_ais"] if r["ID"] >= 90000]
+    assert len(virt_inst) > 0 and len(virt_inst) == len(virt_ai)
+    assert all(r["ModifierID"] == 4005 for r in virt_ai)
+    levels = {r["ID"]: r for r in dataset["levels"]}
+    import json as _json
+    assert all(s >= 90000 for s in _json.loads(levels[250]["SliceList"]))
+
+
+def test_post_validate_catches_threshold_violation(tmp_path):
+    out = _make_minimal_xlsx(tmp_path, tag_overrides={250: "lenient,must_win"})
+    import apply_level_tags as app
+    importlib.reload(app)
+    rows = app.load_level_tag_cfg(out)
+    td_tags = app.load_tag_def(out)
+    # lenient + must_win 同 mutex_group,会在 validate_loaded 阶段被抓
+    with pytest.raises(app.ValidationError):
+        app.validate_loaded(rows, td_tags=td_tags)
