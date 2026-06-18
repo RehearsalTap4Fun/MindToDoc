@@ -62,16 +62,46 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
 
 ## 四、补表格（markdown 管道，不炸）
 
-对每个 `__TABLE_n__` 占位段：
+**占位字符（v2 起统一）**：md2jsonml.py 现在生成 `〚TBL-N〛` / `〚IMG-N〛`（生僻中文标点，不会被钉钉 markdown 误识为强调/分隔），且占位段**前后强制空行**，避免与上一段列表/正文合并到同一 block。旧文档残留的 `__TABLE_n__` 经钉钉 markdown 解析会变成 `TABLE_n`（下划线被吃掉）；处理旧文档时记得识别两种形态。
+
+对每个占位段：
 1. `list_document_blocks` 找到占位段 blockId 与其全局 `index`；
 2. 用 **markdown 管道表格** `update_document(append, index=占位index+1)` 把表插到占位段**之后**，或 `insert_document_block` 写在占位段前/后；
    - **`update_document` 的 `index=N` 语义 = 插到「第 N 个 block 之前」**（实测）。要插到占位段后面就传 `占位段index + 1`。
    - **从后往前补**：每补一张表，其后所有块 index 会 +1。按文档**倒序**（最后一张表先补）处理，前面块的 index 不受影响，避免逐张重新定位。
-3. **删除占位段**——占位文字 `TABLE_n` 会**原样渲染成可见文本**，必须清除：
+3. **删除占位段**——占位文字会**原样渲染成可见文本**，必须清除：
    - 占位独占一个 paragraph 块时：`delete_document_block` 整块删。
-   - 占位**黏在正文段尾/中间**时（md2jsonml 偶发把占位与相邻正文并进同一块）：不能整块删，用 `update_document_block` 改写该块文本、去掉 `TABLE_n` 字样。
+   - 占位**黏在正文段尾/中间**时（旧版 md2jsonml 占位前后无空行，钉钉 markdown 把占位与相邻正文并进同一块）：不能整块删，用 `update_document_block` 改写该块文本、去掉占位字样。v2 生成的文档中此情况不应再出现。
 
-markdown 管道表格一定渲染成真 table（变更记录表、KEY 表均如此）。
+**自动出补表计划（推荐）**：批量场景（数十张表）用 `scripts/dingtalk_table_inserter.py`：
+```bash
+# 1) 把 list_document_blocks 输出存到 blocks.json
+# 2) 让脚本算出 anchor 倒序 + 同 anchor 内 table_idx DESC 的执行计划
+python scripts/dingtalk_table_inserter.py \
+  --blocks blocks.json \
+  --tables output/dingtalk-sync/<doc>.jsonml.tables.json \
+  --node-id <node_id> \
+  --out plan.json
+# 3) 按 plan.ops 顺序执行 append_table → update_block/delete_block；
+#    同一 anchor 的多张表必须串行（钉钉服务端按到达顺序应用），不同 anchor 可 ~8 并行
+# 旧文档（占位是 TABLE_）传 --marker TABLE_
+```
+脚本只生成计划、不调 MCP；agent 按计划顺次执行，避免人工算 index。
+
+**markdown 管道表格一定渲染成真 table**（变更记录表、KEY 表均如此）。但有以下大表症状需注意：
+
+### 大表渲染散开（已知症状）
+
+钉钉 markdown 解析对超大或含特殊字符的表会**逐行拆段**，结果不是单个 `table` 块、而是若干 `paragraph` 块（每行甚至每两个 `|` 一段）。已观察的触发条件（任一即可）：
+- **行数 ≥ ~30**：典型如玩法常量大表。
+- **单元格内含连续下划线标识符**（如 `ActvSoccer_bet_constraint_return_rate`）：底层 markdown parser 把 `_..._` 当 emphasis 解析失败、降级。
+- **行长过长**：单行总字符数 > ~200 时观察到散开。
+
+**规避方案**：
+1. **拆表（推荐）**：超大常量表拆成"表头说明 + 多组小表"（按业务维度分组，每组 ≤ 20 行）。源 md 维护多张小表，钉钉同步后视觉一致。
+2. **改走 jsonml `table` 块**：理论可行（带 `cellAttrs` 规避 columns 降级），但纯文字表很容易被降级，工作量大、不推荐作为常规路径。
+3. **接受散开**：如果只是常量表给程序读取、人不需要逐项浏览，散开不影响功能；下次大批量重构时再拆表。
+
 
 ## 五、补界面图
 

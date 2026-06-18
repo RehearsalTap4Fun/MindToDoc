@@ -5,12 +5,13 @@
 
 支持的 md 元素：
 - 注释 <!-- --> ：跳过（md 给人看的元数据，不进钉钉）
-- 图片占位 <!-- IMG: 界面名 | image_id --> ：转成 __IMG_<i>__ 占位段，并写入 images sidecar
+- 图片占位 <!-- IMG: 界面名 | image_id --> ：转成 〚IMG-N〛 占位段，并写入 images sidecar
 - # / ## / ### 标题：转 h1/h2/h3，全部带 list 编号 + ind.left（H1=0,H2=32,H3=64）
 - 两级无序列表（- 项 / 两空格缩进 - 子项）：转 p+list bullet，ind = 所属标题正文档(标题+32)，二级再+? 这里列表本身有 level，ind 用所属标题的正文档值
 - 普通段落：转 p，ind = 所属标题正文档值
-- 表格 | a | b |：转 __TABLE_<i>__ 占位段，并写入 tables sidecar
-- 大文档 markdown 主体：输出 <out>.body.md，保留 __TABLE_<i>__ / __IMG_<i>__ 占位
+- 表格 | a | b |：转 〚TBL-N〛 占位段（前后留空行），并写入 tables sidecar
+- 图片占位 <!-- IMG: 界面名 | image_id --> ：转成 〚IMG-N〛 占位段（前后留空行），并写入 images sidecar
+- 大文档 markdown 主体：输出 <out>.body.md，保留 〚TBL-N〛 / 〚IMG-N〛 占位
 - 行内格式：**加粗**、{{red:红字}}
 
 ind 规则（正文比标题多缩一档，每级 32）：
@@ -28,8 +29,8 @@ lines = open(SRC, encoding="utf-8").read().split("\n")
 
 blocks = []
 cur_heading_level = 0  # 当前所属标题级别（0=文档顶，无标题）
-tables_md = []           # 表格 markdown 列表，占位段文本为 __TABLE_<i>__
-images_md = []           # 图片占位元数据，占位段文本为 __IMG_<i>__
+tables_md = []           # 表格 markdown 列表，占位段文本为 〚TBL-i〛
+images_md = []           # 图片占位元数据，占位段文本为 〚IMG-i〛
 body_lines = []          # 大文档 markdown overwrite 主体，保留 TABLE/IMG 占位
 i = 0
 n = len(lines)
@@ -129,14 +130,18 @@ while i < n:
         if m_img:
             raw_meta = m_img.group(1).strip()
             parts = [p.strip() for p in raw_meta.split("|", 1)]
-            marker = "__IMG_%d__" % len(images_md)
+            marker = "〚IMG-%d〛" % len(images_md)
             images_md.append({
                 "marker": marker,
                 "name": parts[0] if parts and parts[0] else marker,
                 "id": parts[1] if len(parts) > 1 and parts[1] else ""
             })
             blocks.append(["p", {"ind": {"hanging": 0, "left": body_ind(cur_heading_level)}}, leaf(marker)])
+            # 同 TABLE 占位：前后留空行避免钉钉 markdown 合并到上一段
+            if body_lines and body_lines[-1].strip():
+                body_lines.append("")
             body_lines.append(marker)
+            body_lines.append("")
             i += 1
             continue
         while i < n and "-->" not in lines[i]:
@@ -164,11 +169,16 @@ while i < n:
         while i < n and lines[i].strip().startswith("|"):
             tbl_lines.append(lines[i].strip())
             i += 1
-        marker = "__TABLE_%d__" % len(tables_md)
+        marker = "〚TBL-%d〛" % len(tables_md)
         tables_md.append("\n".join(tbl_lines))
         # 占位段：ind 跟随当前标题正文档；文本是 marker，便于写入后定位替换
         blocks.append(["p", {"ind": {"hanging": 0, "left": body_ind(cur_heading_level)}}, leaf(marker)])
+        # body.md 中，占位段前后强制留空行：避免钉钉 markdown 解析时把占位
+        # 与上一个 list/段合并到同一 block（合并后无法用整段删除清理）
+        if body_lines and body_lines[-1].strip():
+            body_lines.append("")
         body_lines.append(marker)
+        body_lines.append("")
         continue
 
     # 列表（- 或 两空格+-）
@@ -196,13 +206,13 @@ while i < n:
 root = ["root", {}] + blocks
 json.dump(root, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
 import os
-# sidecar：表格 markdown（按 __TABLE_i__ 顺序），写入主体后用 markdown 单独补
+# sidecar：表格 markdown（按 〚TBL-i〛 顺序），写入主体后用 markdown 单独补
 side = os.path.splitext(OUT)[0] + ".tables.json"
 json.dump(tables_md, open(side, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-# sidecar：图片占位元数据（按 __IMG_i__ 顺序），写入主体后定位并替换成左图右文表
+# sidecar：图片占位元数据（按 〚IMG-i〛 顺序），写入主体后定位并替换成左图右文表
 img_side = os.path.splitext(OUT)[0] + ".images.json"
 json.dump(images_md, open(img_side, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-# 大文档 markdown 主体：保留 TABLE/IMG 占位，供 markdown overwrite 后继续定位
+# 大文档 markdown 主体：保留 〚TBL〛/〚IMG〛 占位，供 markdown overwrite 后继续定位
 body_side = os.path.splitext(OUT)[0] + ".body.md"
 open(body_side, "w", encoding="utf-8").write("\n".join(body_lines) + "\n")
 print("BLOCKS", len(blocks), "TABLES", len(tables_md), "IMAGES", len(images_md), "->", OUT, "+", side, "+", img_side, "+", body_side)
