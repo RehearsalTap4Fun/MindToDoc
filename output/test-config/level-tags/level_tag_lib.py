@@ -188,3 +188,69 @@ def _register_slice_tags() -> None:
 
 _register_slice_tags()
 
+
+def _patch_hard_plus(ctx: PatchContext) -> None:
+    ctx.level_row["AiProfileID"] = min(1010, ctx.level_row["AiProfileID"] + 1)
+    ctx.level_row["OpponentTeamStar"] = min(5, ctx.level_row["OpponentTeamStar"] + 1)
+
+
+def _patch_easy_minus(ctx: PatchContext) -> None:
+    ctx.level_row["AiProfileID"] = max(1001, ctx.level_row["AiProfileID"] - 1)
+    ctx.level_row["OpponentTeamStar"] = max(1, ctx.level_row["OpponentTeamStar"] - 1)
+
+
+def _virtualize_slice_modifier(ctx: PatchContext, new_modifier_id: int) -> None:
+    """对 SliceList 中每个槽位:复制原 SliceInstance + 原 SliceAi 各一份(用 new_id_alloc),
+    新 SliceAi.ModifierID = new_modifier_id,SliceList 改指向新 instance ID。"""
+    sl = json.loads(ctx.level_row["SliceList"])
+    ai_by_sid = {r["SliceID"]: r for r in ctx.slice_ai_rows}
+    inst_by_id = {r["ID"]: r for r in ctx.slice_instance_rows}
+    new_sl: list[int] = []
+    for original_sid in sl:
+        new_id = ctx.new_id_alloc()
+        if original_sid in inst_by_id:
+            new_inst = dict(inst_by_id[original_sid])
+            new_inst["ID"] = new_id
+            new_inst["Remark"] = (new_inst.get("Remark", "") + f" tag-virtual lvl{ctx.level_row['ID']}").strip()
+            ctx.slice_instance_rows.append(new_inst)
+        if original_sid in ai_by_sid:
+            new_ai = dict(ai_by_sid[original_sid])
+            new_ai["ID"] = new_id
+            new_ai["SliceID"] = new_id
+            new_ai["ModifierID"] = new_modifier_id
+            new_ai["Remark"] = (new_ai.get("Remark", "") + f" tag-virtual lvl{ctx.level_row['ID']}").strip()
+            ctx.slice_ai_rows.append(new_ai)
+        new_sl.append(new_id)
+    ctx.level_row["SliceList"] = json.dumps(new_sl)
+
+
+def _patch_extreme_keeper(ctx: PatchContext) -> None:
+    _virtualize_slice_modifier(ctx, 4005)
+
+
+def _patch_no_modifier(ctx: PatchContext) -> None:
+    _virtualize_slice_modifier(ctx, 0)
+
+
+def _patch_narrow_angle(ctx: PatchContext) -> None:
+    _virtualize_slice_modifier(ctx, 4006)
+
+
+def _register_ai_tags() -> None:
+    for name in ("hard_plus", "easy_minus", "extreme_keeper",
+                 "no_modifier", "narrow_angle"):
+        TAG_REGISTRY.pop(name, None)
+    register(TagSpec("hard_plus", ("ai",), "difficulty",
+                     "AiProfile +1 + OpponentStar +1", _patch_hard_plus))
+    register(TagSpec("easy_minus", ("ai",), "difficulty",
+                     "AiProfile -1 + OpponentStar -1", _patch_easy_minus))
+    register(TagSpec("extreme_keeper", ("ai",), "modifier",
+                     "ModifierID 强制 4005", _patch_extreme_keeper))
+    register(TagSpec("no_modifier", ("ai",), "modifier",
+                     "ModifierID 强制 0", _patch_no_modifier))
+    register(TagSpec("narrow_angle", ("ai",), "modifier",
+                     "ModifierID 强制 4006", _patch_narrow_angle))
+
+
+_register_ai_tags()
+
