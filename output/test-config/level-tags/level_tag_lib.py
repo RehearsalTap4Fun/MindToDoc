@@ -39,3 +39,63 @@ def register(spec: TagSpec) -> None:
     if spec.name in TAG_REGISTRY:
         raise ValueError(f"重复注册 tag: {spec.name}")
     TAG_REGISTRY[spec.name] = spec
+
+
+import json
+import math
+
+
+def _slice_count_of(level_row: dict) -> int:
+    return len(json.loads(level_row["SliceList"]))
+
+
+def _patch_boss(ctx: PatchContext) -> None:
+    n = _slice_count_of(ctx.level_row)
+    ctx.level_row["OpponentTeamStar"] = 5
+    ctx.level_row["WinThreshold"] = n
+    ctx.level_row["DrawThreshold"] = max(1, n - 1)
+
+
+def _patch_must_win(ctx: PatchContext) -> None:
+    n = _slice_count_of(ctx.level_row)
+    ctx.level_row["WinThreshold"] = n
+    ctx.level_row["DrawThreshold"] = max(1, n - 1)
+
+
+def _patch_lenient(ctx: PatchContext) -> None:
+    n = _slice_count_of(ctx.level_row)
+    win = max(1, math.ceil(n * 0.4))
+    ctx.level_row["WinThreshold"] = win
+    ctx.level_row["DrawThreshold"] = max(1, win - 1)
+
+
+def _patch_free_run(ctx: PatchContext) -> None:
+    ctx.level_row["TicketCost"] = 0
+
+
+def _patch_tutorial(ctx: PatchContext) -> None:
+    ctx.level_row["IsTutorial"] = 1
+    ctx.level_row["TicketCost"] = 0
+    ctx.level_row["SliceList"] = "[201,202,203]"
+    ctx.level_row["AiProfileID"] = 1001
+
+
+def _register_level_only_tags() -> None:
+    """注册不依赖 SliceAi/SliceInstance 的 5 个 level-only tag。
+    幂等:重复调用先清同名条目再注册。"""
+    for name in ("boss", "must_win", "lenient", "free_run", "tutorial"):
+        TAG_REGISTRY.pop(name, None)
+    register(TagSpec("boss", ("level",), None,
+                     "对手 5 星 + 全胜阈值", _patch_boss))
+    register(TagSpec("must_win", ("level",), "threshold",
+                     "切片全胜才能赢", _patch_must_win))
+    register(TagSpec("lenient", ("level",), "threshold",
+                     "胜阈值降至 40%", _patch_lenient))
+    register(TagSpec("free_run", ("level",), None,
+                     "门票消耗 0", _patch_free_run))
+    register(TagSpec("tutorial", ("level", "slice"), "tutorial",
+                     "强制引导关 + [201,202,203]", _patch_tutorial))
+
+
+_register_level_only_tags()
+
