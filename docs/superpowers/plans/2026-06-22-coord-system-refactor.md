@@ -808,3 +808,111 @@ git commit -m "feat(generator): 6 个 preset 生成函数 PlayersInit z 反转 +
 ```
 
 ---
+
+## Task 6: 任意球人墙改用 WALL_PLAYER_GAP_MIN 间距
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1240-1251`(`free_kick_wall`)
+
+按 spec §5.2:墙距球 9m(`ball_z + PENALTY_FREE_RADIUS`),墙员间距 1.4m。
+
+- [ ] **Step 1: Read 当前 free_kick_wall**
+
+确认 Task 5 之后的 `ball_z = -16.0`、墙人 z = -8(差 8m)与 9m 不符。本 Task 修正墙位置 + 间距。
+
+- [ ] **Step 2: Edit 替换为 4 人墙(协议下间距 1.4m,墙距球 9m)**
+
+new:
+```python
+def free_kick_wall(ball_x: float) -> list[dict]:
+    """4 人人墙(常规任意球)。墙距球 PENALTY_FREE_RADIUS,人间距 WALL_PLAYER_GAP_MIN。
+    墙在「球与对方球门之间」,即 z 比球更接近 0(对方球门)。"""
+    ball_z = -16.0
+    wall_z = ball_z + PENALTY_FREE_RADIUS  # = -7,墙比球更靠对方球门 9m
+    gap = WALL_PLAYER_GAP_MIN
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, ball_x, ball_z)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 0,
+                    _face_toward(ball_x, ball_z, 0, 0)),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], -1.5 * gap, 0, wall_z, 180.0),
+        player_init("away", 2, PLAYER_AI_DUTY_ENUM["Defender"], -0.5 * gap, 0, wall_z, 180.0),
+        player_init("away", 3, PLAYER_AI_DUTY_ENUM["Defender"],  0.5 * gap, 0, wall_z, 180.0),
+        player_init("away", 4, PLAYER_AI_DUTY_ENUM["Defender"],  1.5 * gap, 0, wall_z, 180.0),
+    ]
+```
+
+注意:
+- `wall_z = -16 + 9 = -7`(在大禁区外 z=-10 之内,合理)
+- 4 人墙 x 坐标:`-2.1, -0.7, 0.7, 2.1`(中心对齐 x=0,墙宽 4.2m)
+- 间距 = `gap = 1.4m`,连续两人 Δx = 1.4 ✓
+
+**5 人墙(preset 17 弧线任意球)**:`free_kick_wall` 当前只有 4 人。preset 17 的 `wall_count: 5` 是 `TypePayload` 字段(策划数据),实际 PlayersInit 仍是 4 人。本 Task 不扩 5 人(超出 spec §5.2 实现范围),只把 4 人间距改对。如需 5 人在后续 Task 处理。
+
+- [ ] **Step 3: 跑 lint(任意球人墙合规应过)**
+
+```bash
+python scripts/check_preset_consistency.py
+```
+Expected: 任意球人墙间距违规消除,全合规,退出码 0。
+
+- [ ] **Step 4: 39 测试看回归**
+
+```bash
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3
+```
+Expected: 39 passed。
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add output/test-config/generate_activity_soccer_test_config.py
+git commit -m "feat(generator): 任意球人墙改用 WALL_PLAYER_GAP_MIN=1.4m + 墙距球 PENALTY_FREE_RADIUS=9m" --no-verify
+```
+
+---
+
+## Task 7: Const ball_control_distance 1.2 → 0.5
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:306`
+
+- [ ] **Step 1: Read line 305-310**
+
+确认 `_const(22, ...)` 行的位置。
+
+- [ ] **Step 2: Edit 替换**
+
+old:
+```python
+_const(22, "停球/控球距离(m TODO)", "ActvSoccer_ball_control_distance", "1.2"),
+```
+new:
+```python
+_const(22, "停球/控球距离(m,协议 v1 §4)", "ActvSoccer_ball_control_distance", "0.5"),
+```
+
+- [ ] **Step 3: 验证常量值**
+
+```bash
+python -c "import sys; sys.path.insert(0,'output/test-config'); import generate_activity_soccer_test_config as g; rows = g.actv_soccer_const_rows(); v = next(r for r in rows if r['Constant'] == 'ActvSoccer_ball_control_distance'); print('Val=', v['Val'])"
+```
+Expected: `Val= 0.5`。
+
+- [ ] **Step 4: 跑 lint + 39 测试**
+
+```bash
+python scripts/check_protocol_drift.py
+python scripts/check_preset_consistency.py
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3
+```
+Expected:协议 drift / preset 合规 / 39 tests 全过。
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add output/test-config/generate_activity_soccer_test_config.py
+git commit -m "feat(generator): ConstConfig.ball_control_distance 1.2 → 0.5(协议 v1 §4)" --no-verify
+```
+
+---
