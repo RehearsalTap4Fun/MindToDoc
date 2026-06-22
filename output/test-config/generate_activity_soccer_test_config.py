@@ -1338,12 +1338,13 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         ]
 
     def throw_in_players(side_x: float) -> list[dict]:
-        recv_x = max(-16.0, min(16.0, side_x - (3 if side_x > 0 else -3)))
+        throw_x = max(-FIELD_X_HALF, min(FIELD_X_HALF, side_x))
+        recv_x = max(-16.0, min(16.0, throw_x - (3 if throw_x > 0 else -3)))
         recv_z = -14.0
         ball_z = -18.0
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, ball_z,
-                        _face_toward(recv_x, recv_z, side_x, ball_z)),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], throw_x, 0, ball_z,
+                        _face_toward(recv_x, recv_z, throw_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
             player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
@@ -1398,13 +1399,26 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
 
     rows = []
     type_id = {v: k for k, v in SLICE_TYPE_NAME.items()}
+    type_desc = {
+        "attack": "进攻射门基础站位",
+        "free_kick": "任意球+人墙基础站位",
+        "penalty": "点球基础站位",
+        "corner": "角球传中基础站位",
+        "throw_in": "界外球二次进攻基础站位",
+        "goalkeep": "守门扑救基础站位",
+    }
     for (pid, stype, name, tags, ball_pos, ball_vec, owner, players, fov, target, op_angle, payload, rec) in specs:
+        target_desc = target if target else "无固定目标点"
         row = {
             "ID": pid, "SliceType": stype,
             "NameLcKey": lc.add(lc_key("preset", "name", str(pid)), name, f"SlicePresetCfg/{pid}"),
             "Tags": tags, "BallPos": ball_pos, "BallVector": ball_vec, "BallOwner": owner,
             "PlayersInit": players_init_json(players), "CameraFov": fov, "TargetPoint": target,
             "OperableAngle": op_angle, "TypePayload": payload, "RecommendedModes": rec,
+            "Remark": (
+                f"{name}；{type_desc[stype]}；球点={ball_pos}；方向={ball_vec}；"
+                f"目标={target_desc}；控球home[{owner}]；推荐操作={rec}"
+            ),
         }
         row.update(_preset_angle_cols(type_id[stype]))
         rows.append(row)
@@ -1487,7 +1501,7 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("BallOwner", "int", "控球球员索引"),
             ("PlayersInit", "ext[]", f"球员站位+duty+朝向({PLAYER_AI_DUTY_ENUM_COMMENT})", V_PLAYER_INIT, PLAYER_INIT_DEFAULT),
             ("CameraFov", "float", "相机FOV"),
-            ("TargetPoint", "ext", "目标点", P_VEC3, '{"x":0,"y":0,"z":58}'),
+            ("TargetPoint", "ext", "目标点", P_VEC3, '{"x":0,"y":0,"z":0}'),
             ("OperableAngle", "float", "可操作夹角(兼容字段=AngleSpanMax默认)"),
             ("AngleSpanMin", "float", "可操作夹角宽度下限(°)"),
             ("AngleSpanMax", "float", "可操作夹角宽度上限(°)"),
@@ -1495,7 +1509,7 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("AngleMargin", "float", "合法目标贴边余量(°)"),
             ("TypePayload", "ext", "type_payload默认", V_TYPE_PAYLOAD, '{"keeper_weight":5000,"angle":35}'),
             ("RecommendedModes", "string[]", "建议模式"),
-            ("Remark", "string", "备注"),
+            ("Remark", "string", "设计备注:说明该preset的切片类型、球点/方向、目标点、控球球员和推荐操作；用于策划排查与实例复用"),
         ),
         _build_presets(lc),
     )
