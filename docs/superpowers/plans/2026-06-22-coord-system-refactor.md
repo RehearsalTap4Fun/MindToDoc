@@ -1054,3 +1054,196 @@ Expected: `[ok] 关卡 tag 产物写入: ... (贴 tag 关数 5/500)`(因 LevelTa
 如某项失败,**回退最近的 commit 重做**;不要尝试在产物里手 patch。
 
 ---
+
+## Task 10: 协议 §12 加状态机 + 状态列 + 头部升级到 v1.1
+
+**Files:**
+- Modify: `references/soccer-coordinate-protocol.md`(头部状态行 + §12 表头 + §12 表)
+
+按 spec §7。
+
+- [ ] **Step 1: Read 协议 §12 当前内容**
+
+确认 §12 表的当前结构(7 列:#、改动、位置、优先级、说明)。
+
+- [ ] **Step 2: Edit 协议头部状态行**
+
+old:
+```markdown
+> **状态**:v1 主体已确认。剩余 1 项实质 TBD(控球距离起算锚点)+ 2 项 SliceFlowCfg 留空(CamYawRange/CamYawDefault,主案 §3.2 未填)。
+```
+new:
+```markdown
+> **状态**:**v1.1 派生改动已落地**(2026-06-22 完成)。代码与协议主体一致,产物可在游戏内落地。剩余 1 项实质 TBD(TBD-18 控球距离起算锚点)+ 2 项 SliceFlowCfg 留空(CamYawRange/CamYawDefault,主案 §3.2 未填)。
+```
+
+- [ ] **Step 3: Edit §12 标题下、表格前加状态机说明**
+
+在 §12 标题(`## 12. 派生改动清单(代码侧必跟进)`)下、第一段说明文字之后,插入:
+
+```markdown
+### 状态机
+
+- **v1**:主体确认,18 项 TBD 全填。代码侧未跟进,产物空间字段不可信。
+- **v1.1**:P0 全部完成 + 三道 lint 全过 + 关卡 tag 39 测试无回归。代码 ↔ 协议主体一致,产物可在游戏内落地。
+- **v2**:P1 全部完成(常量段 self-documenting + lint 工具落定)。
+
+每条改动 commit 后责任人在表「状态」列勾 ✅。勾完所有 P0 + lint 三道全过,**才允许把头部状态从 v1 改 v1.1**。
+
+```
+
+- [ ] **Step 4: Edit §12 表加「状态」列**
+
+在表头加 `状态` 列(最后一列),所有行加对应 ✅ / ☐:
+
+old(表头):
+```markdown
+| # | 改动 | 位置 | 优先级 | 说明 |
+|---|---|---|---|---|
+```
+new:
+```markdown
+| # | 改动 | 位置 | 优先级 | 说明 | 状态 |
+|---|---|---|---|---|---|
+```
+
+每行末尾加新列:
+- 第 1 行(GOAL_CENTER_Z): `| ✅ |`
+- 第 2 行(18 preset z 反转): `| ✅ |`
+- 第 3 行(ball_control_distance): `| ✅ |`
+- 第 4 行(ReceiveDecisionCfg 单位): `| ✅ |`
+- 第 5 行(任意球人墙间距): `| ✅ |`
+- 第 6 行(点球点): `| ✅ |`(在 Task 3 BallPos 重写时已用 PENALTY_SPOT)
+- 第 7 行(角球 BallPos): `| ✅ |`(同上)
+- 第 8 行(大禁区数值代入,P1): `| ☐ |`
+- 第 9 行(主生成器顶部常量段,P1): `| ✅ |`(Task 2 已加,虽属 P1 范畴)
+- 第 10 行(check_preset_consistency.py,P1): `| ✅ |`
+- 第 11 行(level_tag_lib.PatchContext.library 加 protocol_v1 子键,P2): `| ☐ |`
+
+- [ ] **Step 5: Edit §12 表尾加 commit 记录段**
+
+在表格之后,加一段:
+
+```markdown
+### v1.1 落地 commit 记录
+
+- `?` Task 1 lint 框架(空壳)
+- `?` Task 2 协议 v1 常量段 + 3 helper
+- `?` Task 3 18 preset BallPos 重写
+- `?` Task 4 18 preset TargetPoint + 全局默认
+- `?` Task 5 PlayersInit + corner/throw_in 实参
+- `?` Task 6 任意球人墙间距 1.4m + 距球 9m
+- `?` Task 7 ball_control_distance 1.2 → 0.5
+- `?` Task 8 ReceiveDecisionCfg 单位转 m
+- `?` Task 9 端到端验证
+- `?` Task 10 协议升级 v1.1
+- `?` Task 11 删主生成器 WARN 注释 + 验收
+```
+
+(`?` 实际填写时,执行 task 的 subagent 把对应 commit hash 填进去。)
+
+- [ ] **Step 6: 跑 list_tbd**
+
+```bash
+python scripts/list_tbd.py
+```
+Expected: `references/soccer-coordinate-protocol.md` 编号 TBD 0(协议头部 ✅ 不算编号 TBD)。
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add references/soccer-coordinate-protocol.md
+git commit -m "docs(references): 协议升级到 v1.1(派生改动已落地)+ §12 加状态机 + 状态列" --no-verify
+```
+
+---
+
+## Task 11: 删主生成器 WARN 注释段 + 最终验收清单
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:774-779`(删 WARN,但 Task 2 已替换为常量段;此 Task 只确保最终状态)
+- 验证 spec §10 验收清单 10 项
+
+- [ ] **Step 1: Read 主生成器 770-790 行**
+
+确认 Task 2 已替换 WARN 注释为协议常量段;若仍存在 `# WARN(2026-06-18)` 行,本 Step 删除。
+
+- [ ] **Step 2: 跑全套验收(对照 spec §10 验收清单逐条)**
+
+```bash
+echo "=== 1/9 check_preset_consistency ===" && \
+python scripts/check_preset_consistency.py && \
+echo "=== 2/9 check_protocol_drift ===" && \
+python scripts/check_protocol_drift.py && \
+echo "=== 3/9 关卡 tag 工具 39 测试 ===" && \
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3 && cd - && \
+echo "=== 4/9 主生成器全量跑 ===" && \
+python output/test-config/generate_activity_soccer_test_config.py 2>&1 | tail -5 && \
+echo "=== 5/9 list_tbd ===" && \
+python scripts/list_tbd.py 2>&1 | head -15
+```
+
+预期所有 5 项全过,退出码 0。
+
+- [ ] **Step 3: 验证协议状态**
+
+```bash
+grep -A1 "## 状态" references/soccer-coordinate-protocol.md | head -3 || \
+head -10 references/soccer-coordinate-protocol.md | grep "v1.1"
+```
+Expected: 协议头部含「v1.1 派生改动已落地」字样。
+
+- [ ] **Step 4: 验证 §12 表状态**
+
+```bash
+grep -E "^\|.*\|.*\|.*\|.*\|.*\|.*\| (✅|☐) \|" references/soccer-coordinate-protocol.md | wc -l
+```
+Expected: 11(11 条派生改动每条一行)。
+
+- [ ] **Step 5: 验证主生成器顶部常量段**
+
+```bash
+grep -A2 "# === 坐标系协议 v1 ===" output/test-config/generate_activity_soccer_test_config.py | head -3
+grep "GOAL_CENTER_Z, GOAL_CENTER_X" output/test-config/generate_activity_soccer_test_config.py | head -2
+```
+Expected: 常量段标识存在;旧的 `GOAL_CENTER_Z = 58.0` 不存在(已被替换为 `GOAL_CENTER_Z = AWAY_GOAL_CENTER[2]`,即 0.0)。
+
+- [ ] **Step 6: Push 全部 commits 到 origin/main**
+
+```bash
+git push origin main 2>&1 | tail -2
+```
+Expected: 推送成功,远端与本地一致。
+
+- [ ] **Step 7: 收尾 commit(若有任何遗留改动)**
+
+```bash
+git status
+```
+应当干净。若有未提交改动,**先汇报给 controller**,不要直接 commit。
+
+---
+
+## Self-Review 验收清单(Task 11 之后)
+
+对照 spec §10 逐条勾:
+
+- [ ] `scripts/check_preset_consistency.py` 跑过(0 violations)
+- [ ] `scripts/check_protocol_drift.py` 跑过(0 drift)
+- [ ] `pytest output/test-config/level-tags/tests/` 39 passed
+- [ ] `python output/test-config/generate_activity_soccer_test_config.py` 不报错跑通
+- [ ] 协议头部状态 = v1.1
+- [ ] §12 P0 7 条全部 ✅,#10 ✅
+- [ ] 主生成器 `:774` 起的 WARN 注释段已删
+- [ ] `python scripts/list_tbd.py`:`soccer-coordinate-protocol.md` 编号 TBD = 0
+- [ ] 全部 commits push 到 origin/main
+
+全部 ✅ → 重构完成。任何一项 ☐ → 回退到对应 task 修复。
+
+---
+
+## 回滚策略
+
+如某 task 实施后跑 lint 报错,**优先回退最近一次 commit**(`git reset --hard HEAD~1`),分析失败原因,改 plan,重做。**不要**为了让 lint 过而手 patch 数据(违背 spec §8「协议 = 真相」的单源约束)。
+
+如发现协议本身有错(如某常量数值不对),**先改协议**,再跑 `check_protocol_drift.py` 让代码跟着报 drift,再改代码。这保证两侧永远不会出现「代码改了但协议没改」的隐性 drift。
