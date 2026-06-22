@@ -916,3 +916,141 @@ git commit -m "feat(generator): ConstConfig.ball_control_distance 1.2 → 0.5(�
 ```
 
 ---
+
+## Task 8: ReceiveDecisionCfg 7 字段单位 mm → m + 类型 int → float
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1481-1487`(列定义)
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1503-1506`(4 行数据 5001-5004)
+
+按 spec §4。
+
+- [ ] **Step 1: Read 主生成器 1480-1510**
+
+确认列定义元组结构 + 4 行数据字段数。
+
+- [ ] **Step 2: Edit 列定义(line 1481-1487)**
+
+把 7 个字段类型从 `int` 改 `float`,注释里的「(mm)」/「(mm/s)」改「(m)」/「(m/s)」。
+
+old:
+```python
+("SafeDistance", "int", "安全距离;最近防守人大于该距离视为低压(mm)"),
+("HighPressureDistance", "int", "高压距离;最近防守人小于该距离视为高压(mm)"),
+("ForwardProbeDistance", "int", "前方空间探测距离(mm)"),
+("SideProbeDistance", "int", "左右空间探测距离(mm)"),
+("BackwardProbeDistance", "int", "身后空间探测距离(mm)"),
+("HighBallHeight", "int", "高空球高度阈值;超过后表现层优先胸停/头球(mm)"),
+("FastBallSpeed", "int", "高速来球速度阈值;超过后提高停球权重(mm/s)"),
+```
+new:
+```python
+("SafeDistance", "float", "安全距离;最近防守人大于该距离视为低压(m,协议 v1)"),
+("HighPressureDistance", "float", "高压距离;最近防守人小于该距离视为高压(m,协议 v1)"),
+("ForwardProbeDistance", "float", "前方空间探测距离(m,协议 v1)"),
+("SideProbeDistance", "float", "左右空间探测距离(m,协议 v1)"),
+("BackwardProbeDistance", "float", "身后空间探测距离(m,协议 v1)"),
+("HighBallHeight", "float", "高空球高度阈值;超过后表现层优先胸停/头球(m,协议 v1)"),
+("FastBallSpeed", "float", "高速来球速度阈值;超过后提高停球权重(m/s,协议 v1)"),
+```
+
+- [ ] **Step 3: Edit 4 行数据(line 1503-1506)折算 ÷ 1000**
+
+| 字段 | 5001 | 5002 | 5003 | 5004 |
+|---|---|---|---|---|
+| SafeDistance | 3500 → 3.5 | 3500 → 3.5 | 3200 → 3.2 | 3000 → 3.0 |
+| HighPressureDistance | 1600 → 1.6 | 1700 → 1.7 | 1500 → 1.5 | 1400 → 1.4 |
+| ForwardProbeDistance | 5000 → 5.0 | 4500 → 4.5 | 5500 → 5.5 | 4000 → 4.0 |
+| SideProbeDistance | 3500 → 3.5 | 3500 → 3.5 | 4000 → 4.0 | 3000 → 3.0 |
+| BackwardProbeDistance | 2500 → 2.5 | 2500 → 2.5 | 2500 → 2.5 | 3000 → 3.0 |
+| HighBallHeight | 900 → 0.9 | 900 → 0.9 | 900 → 0.9 | 900 → 0.9 |
+| FastBallSpeed | 16000 → 16.0 | 16000 → 16.0 | 16000 → 16.0 | 15000 → 15.0 |
+
+逐字段 Edit,4 行各 7 个数值。例如 5001 行(line 1503):
+
+old:
+```python
+{"ID": 5001, "Style": "Balanced", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3500, "HighPressureDistance": 1600, "ForwardProbeDistance": 5000, "SideProbeDistance": 3500, "BackwardProbeDistance": 2500, "HighBallHeight": 900, "FastBallSpeed": 16000, ...},
+```
+new:
+```python
+{"ID": 5001, "Style": "Balanced", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3.5, "HighPressureDistance": 1.6, "ForwardProbeDistance": 5.0, "SideProbeDistance": 3.5, "BackwardProbeDistance": 2.5, "HighBallHeight": 0.9, "FastBallSpeed": 16.0, ...},
+```
+
+5002 行(Playmaker)、5003 行(Dribbler)、5004 行(TargetMan)同样替换 7 个字段。
+
+注意:`DecisionMinMs / DecisionMaxMs / 各 Weight` 字段**保持不变**(单位是 ms / 整数权重,不属本次单位转换)。
+
+- [ ] **Step 4: 验证数据**
+
+```bash
+python -c "
+import sys; sys.path.insert(0,'output/test-config')
+import generate_activity_soccer_test_config as g
+# 找 ReceiveDecisionCfg 的 build 函数(没单独提取,只在 build_workbook 内联);
+# 直接用 main 跑一次确认无报错
+print('module import ok')
+"
+```
+Expected: `module import ok`。
+
+- [ ] **Step 5: 跑 lint + 39 测试**
+
+```bash
+python scripts/check_protocol_drift.py
+python scripts/check_preset_consistency.py
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3
+```
+Expected:全过。
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add output/test-config/generate_activity_soccer_test_config.py
+git commit -m "feat(generator): ReceiveDecisionCfg 7 字段 mm/(mm/s) → m/(m/s),类型 int → float(协议 v1)" --no-verify
+```
+
+---
+
+## Task 9: 端到端跑主生成器 + lint 全套
+
+**Files:** 无修改,仅验证。
+
+- [ ] **Step 1: 跑主生成器全量**
+
+```bash
+python output/test-config/generate_activity_soccer_test_config.py
+```
+Expected: 无报错;输出 `ActivitySoccer.xlsx` / `ActivitySoccerLanguage.xlsx` / `test-config-summary.json` 等(具体看主生成器 main 输出)。
+
+- [ ] **Step 2: 跑 check_protocol_drift**
+
+```bash
+python scripts/check_protocol_drift.py
+```
+Expected: `[ok] 协议 ↔ 代码常量段一致(7 项)`,退出码 0。
+
+- [ ] **Step 3: 跑 check_preset_consistency**
+
+```bash
+python scripts/check_preset_consistency.py
+```
+Expected: `[ok] 18 preset 全部合规`,退出码 0。
+
+- [ ] **Step 4: 跑关卡 tag 工具 39 测试**
+
+```bash
+cd output/test-config/level-tags && python -m pytest tests/ -v 2>&1 | tail -5
+```
+Expected: 39 passed。
+
+- [ ] **Step 5: 跑关卡 tag 工具端到端冒烟**
+
+```bash
+cd output/test-config/level-tags && python apply_level_tags.py 2>&1 | tail -2
+```
+Expected: `[ok] 关卡 tag 产物写入: ... (贴 tag 关数 5/500)`(因 LevelTagCfg.xlsx 仍有 5 个样例 tag)。
+
+如某项失败,**回退最近的 commit 重做**;不要尝试在产物里手 patch。
+
+---
