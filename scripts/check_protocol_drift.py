@@ -32,6 +32,13 @@ PROTOCOL_TO_CONST: dict[str, str] = {
 }
 
 
+def _normalize_field(text: str) -> str:
+    """Normalize markdown labels so '球门宽度(立柱间距)' matches '球门宽度'."""
+    text = re.sub(r"\*\*", "", text).strip()
+    text = re.sub(r"[（(].*?[）)]", "", text).strip()
+    return text
+
+
 def parse_protocol_constants(path: Path) -> dict[str, float]:
     """从协议 markdown 抓「| 字段 | 数值 | 单位 |」三列。"""
     out: dict[str, float] = {}
@@ -45,24 +52,28 @@ def parse_protocol_constants(path: Path) -> dict[str, float]:
             continue
         m = pattern.match(line)
         if m:
-            field = m.group(1).strip()
+            field = _normalize_field(m.group(1))
             try:
                 out[field] = float(m.group(2))
             except ValueError:
                 pass
+        if "中圈半径" in line:
+            m_inline = re.search(r"中圈半径\s*=\s*\*\*([0-9.+\-]+)\s*m\*\*", line)
+            if m_inline:
+                out["中圈半径"] = float(m_inline.group(1))
     return out
 
 
 def parse_code_constants(path: Path) -> dict[str, float]:
     """从主生成器顶部常量段抓 NAME = literal 顶层赋值。"""
     text = path.read_text(encoding="utf-8")
-    start = text.find("# === 坐标系协议 v1 ===")
+    start = text.find("# 坐标系协议 v1")
     if start < 0:
         return {}
     rest = text[start:]
-    end_match = re.search(r"\n# ===", rest[len("# === 坐标系协议 v1 ==="):])
+    end_match = re.search(r"\n# === 协议常量段结束 ===", rest)
     if end_match:
-        rest = rest[: len("# === 坐标系协议 v1 ===") + end_match.start()]
+        rest = rest[:end_match.start()]
     out: dict[str, float] = {}
     try:
         tree = ast.parse(rest)

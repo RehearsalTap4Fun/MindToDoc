@@ -151,7 +151,7 @@
     },
     {
       "CfgID": 10135609,
-      "Comment": "待机移动速度(固定值,单位m/s TODO)",
+      "Comment": "待机移动速度(固定值,单位m/s)",
       "Constant": "ActvSoccer_move_speed_idle",
       "Val": "0",
       "Array": "[]",
@@ -277,9 +277,9 @@
     },
     {
       "CfgID": 10135623,
-      "Comment": "停球/控球距离(m TODO)",
+      "Comment": "停球/控球距离(m)",
       "Constant": "ActvSoccer_ball_control_distance",
-      "Val": "1.2",
+      "Val": "0.5",
       "Array": "[]",
       "Effects": "[]",
       "requirement": "{}"

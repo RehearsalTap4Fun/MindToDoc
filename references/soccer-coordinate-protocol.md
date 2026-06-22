@@ -5,7 +5,7 @@
 > **用途**:新增切片预设 / 切片实例 / patch 函数 涉及空间数据时,所有人(策划 / 程序 / AI Agent / 关卡 tag 工具)以本协议为准。
 >
 > **维护约定**:
-> - 协议 v1 确认后,**主生成器与现存 18 个 preset 数据需按 §12 派生改动清单同步重构**;未跟进前,产物不能在游戏内直接落地。
+> - 协议 v1 确认后,主生成器与现存 18 个 preset 数据已按 §12 派生改动清单同步重构;由 `scripts/check_protocol_drift.py` 与 `scripts/check_preset_consistency.py` 守护。
 > - 数值变更必须同步更新 `generate_activity_soccer_test_config.py:775` 的常量段。
 > - 跑 `python scripts/list_tbd.py` 查所有 references/*.md 的 TBD 当前状态;协议每填完 N 项后建议重跑刷新本头部计数。
 > - 本协议与 `2026世界杯主题活动-开发文档.md` §3.2(切片摆位/物理参数)交叉参考;若冲突,以主案为准并同步本协议。
@@ -239,7 +239,7 @@
 
 ## 12. 派生改动清单(代码侧必跟进)
 
-本协议 v1 确认后,主生成器与现存 18 个 preset 数据需要同步重构。**未跟进前,生成的产物不可在游戏内直接落地**。
+本协议 v1 确认后,主生成器与现存 18 个 preset 数据需要同步重构。当前 P0/P1 已跟进,生成产物需持续通过 `check_protocol_drift.py` / `check_preset_consistency.py` / `check_xlsx_drift.py`。
 
 | # | 改动 | 位置 | 优先级 | 说明 |
 |---|---|---|---|---|
@@ -255,4 +255,4 @@
 | 10 | 落 `scripts/check_preset_consistency.py` | `scripts/` | P1 | 协议 TBD-0a:校验所有 preset 与本协议合规 |
 | 11 | 关卡 tag 工具:`level_tag_lib.PatchContext.library` 字段补一个 `protocol_v1` 子键 | `level_tag_lib.py` | P2 | 未来 patch 写空间数据时直接读 |
 
-**P0 全部完成前**,主生成器产物 `ActivitySoccer.xlsx` 和关卡 tag 工具产物 `ActivitySoccer.LevelTagged.xlsx` 的空间字段(BallPos / PlayersInit / TargetPoint)均**不可信**。当前关卡 tag 工具不消费这些字段,所以本工具产物的 "tag 编排正确性" 不受影响 —— 但合并到主 xlsx 后整体落地仍需 P0 完成。
+当前 P0/P1 已完成并由脚本校验。后续若扩展 tag patch 写 BallPos / PlayersInit / TargetPoint,必须先消化本协议并补充对应校验用例。

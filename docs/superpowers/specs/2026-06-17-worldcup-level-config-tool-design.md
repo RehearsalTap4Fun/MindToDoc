@@ -1,7 +1,7 @@
 # 2026 世界杯活动 · 关卡 Tag 配置工具 设计文档
 
 **日期**: 2026-06-17
-**状态**: 已批准设计,待写实现计划
+**状态**: 已实现,待接入主配置合并流程
 **模板依据**: `templates/config-tool-spec.md`
 
 ---
@@ -10,7 +10,7 @@
 
 - **工具职责**:策划在 `LevelTagCfg.xlsx` 中按关贴语义 tag → 工具读 tag 在现有 tier 默认基础上做 patch → 输出关卡相关 8 张配置表的独立 xlsx。
 - **使用者**:数值/关卡策划。
-- **触发方式**:命令行,`python apply_level_tags.py`(单条命令一份产物)。
+- **触发方式**:命令行,`python3 output/test-config/level-tags/apply_level_tags.py`(单条命令一份产物)。
 - **不做的事**:
   - 不替换现有 `generate_activity_soccer_test_config.py`(主生成器仍是关卡以外所有表的真源)。
   - 不生成专属切片实例(只引用现有 120 库实例)。

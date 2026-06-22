@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""关卡 tag 配置工具入口(加载 + 校验阶段)。
-
-后续 Task 8 在本文件追加 patch 编排,Task 9 追加 xlsx 写出。
-"""
+"""关卡 tag 配置工具入口:读取 LevelTagCfg.xlsx,生成关卡 tag 产物。"""
 from __future__ import annotations
 
 import math

@@ -119,13 +119,19 @@ def _slice_type(sid: int) -> int:
 
 def _patch_set_piece(ctx: PatchContext) -> None:
     sl = json.loads(ctx.level_row["SliceList"])
-    has_fk = any(_slice_type(s) == 2 for s in sl)
-    has_pk = any(_slice_type(s) == 3 for s in sl)
-    if not has_fk:
-        sl.insert(0, _slice_id(ctx.tier, 2, 1))
-    if not has_pk:
-        sl.insert(1 if not has_fk else 0, _slice_id(ctx.tier, 3, 1))
-    sl = sl[:5]
+    additions: list[int] = []
+    if not any(_slice_type(s) == 2 for s in sl):
+        additions.append(_slice_id(ctx.tier, 2, 1))
+    if not any(_slice_type(s) == 3 for s in sl):
+        additions.append(_slice_id(ctx.tier, 3, 1))
+    sl = sl + additions
+    while len(sl) > 5:
+        for idx in range(len(sl) - len(additions) - 1, -1, -1):
+            if _slice_type(sl[idx]) not in (2, 3):
+                del sl[idx]
+                break
+        else:
+            del sl[-len(additions) - 1 if additions else -1]
     ctx.level_row["SliceList"] = json.dumps(sl)
 
 
@@ -253,4 +259,3 @@ def _register_ai_tags() -> None:
 
 
 _register_ai_tags()
-

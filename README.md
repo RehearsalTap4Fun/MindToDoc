@@ -25,6 +25,25 @@
 - 旧版（只读素材）：`output/2026世界杯主题活动-开发文档.md`
 - 定稿格式：`output/system-design-doc-samples/2026世界杯主题活动.md` 及配置表/界面标注派生
 
+## 世界杯测试配置工具
+
+首次运行先安装依赖:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+```
+
+常用命令:
+
+```bash
+python3 output/test-config/generate_activity_soccer_test_config.py
+python3 output/test-config/level-tags/apply_level_tags.py
+python3 scripts/check_protocol_drift.py
+python3 scripts/check_preset_consistency.py
+python3 scripts/check_xlsx_drift.py --summary
+python3 -m pytest output/test-config/level-tags/tests -q
+```
+
 ## 协作约定
 
 每次开展新工作前先 `git pull --ff-only`；完成有效改动后提交。
