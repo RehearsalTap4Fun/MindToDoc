@@ -772,11 +772,76 @@ V_PLAYER_INIT = "SoccerPlayerInit_V"
 V_SEASON_GOAL = "SoccerSeasonGoal_V"
 
 # SoccerPlayerInit_V: team, idx, duty(→PlayerAiDuty), pos, facing(°)
-# WARN(2026-06-18): GOAL_CENTER_Z=58 与已确认协议 references/soccer-coordinate-protocol.md 不一致。
-#   协议 v1:原点 = 对方球门中心,GOAL_CENTER_Z 应为 0,18 个 preset z 坐标系应反转为 [-60, 0] 量级。
-#   未跟进前生成的 PlayersInit/BallPos/TargetPoint 在游戏内不可直接落地。
-#   派生改动清单见协议 §12。
-GOAL_CENTER_X, GOAL_CENTER_Z = 0.0, 58.0
+
+# ============================================================
+# 坐标系协议 v1 (2026-06-18 确认)
+# 真相源:references/soccer-coordinate-protocol.md
+# 修改本段必须同步更新协议;两侧由 scripts/check_protocol_drift.py lint。
+# ============================================================
+
+# §1 基础:m / 右手系 / +z 进攻 / facing ∈ [-180, 180]
+COORD_UNIT = "m"
+
+# §2 场地边界
+FIELD_X_HALF = 18.0          # x ∈ [-18, 18]
+FIELD_Z_NEAR = 0.0           # 对方球门线
+FIELD_Z_MID = -60.0          # 中线
+FIELD_Z_FAR = -120.0         # 本方球门线
+
+# §3.1 球门
+AWAY_GOAL_CENTER = (0.0, 0.0, 0.0)
+HOME_GOAL_CENTER = (0.0, 0.0, -120.0)
+GOAL_WIDTH = 8.5
+GOAL_HEIGHT = 3.0
+DEAD_CORNER_THICKNESS = 0.2
+
+# §3.2 大禁区
+PENALTY_AREA_Z_FAR = -10.0
+PENALTY_AREA_X_HALF = 11.5
+
+# §3.3 小禁区
+GOAL_AREA_Z_FAR = -3.5
+
+# §3.4 点球
+PENALTY_SPOT = (0.0, 0.0, -11.0)
+PENALTY_FREE_RADIUS = 9.0    # 弧外球员距球 ≥ 9m
+
+# §3.5 角球
+CORNER_LEFT_BALL = (-17.0, 0.0, -1.0)
+CORNER_RIGHT_BALL = (17.0, 0.0, -1.0)
+CORNER_FLAG_X = 18.0
+CORNER_FREE_RADIUS = 9.0
+
+# §3.6 中圈
+CENTER_CIRCLE_CENTER = (0.0, 0.0, -60.0)
+CENTER_CIRCLE_RADIUS = 4.5
+
+# §4 物理
+PLAYER_RADIUS = 0.5
+BALL_RADIUS = 0.2
+BALL_CONTROL_DISTANCE = 0.5
+WALL_PLAYER_GAP_MIN = 2 * PLAYER_RADIUS + 2 * BALL_RADIUS  # 1.4m,人墙间距下限
+
+# §5 兼容:旧代码用 GOAL_CENTER_X/Z,保留指向 AWAY_GOAL_CENTER
+GOAL_CENTER_X, GOAL_CENTER_Z = AWAY_GOAL_CENTER[0], AWAY_GOAL_CENTER[2]
+
+
+def away_goal_target(y: float = 0.0) -> str:
+    """对方球门 + 指定 y(高度)的 TargetPoint JSON。"""
+    return json.dumps({"x": 0.0, "y": y, "z": AWAY_GOAL_CENTER[2]})
+
+
+def penalty_ball_pos() -> str:
+    """点球 BallPos JSON(协议 §3.4)。"""
+    return json.dumps({"x": PENALTY_SPOT[0], "y": 0.0, "z": PENALTY_SPOT[2]})
+
+
+def corner_ball_pos(side: str) -> str:
+    """角球 BallPos JSON,side='left'/'right'(协议 §3.5)。"""
+    pos = CORNER_LEFT_BALL if side == "left" else CORNER_RIGHT_BALL
+    return json.dumps({"x": pos[0], "y": 0.0, "z": pos[2]})
+
+# === 协议常量段结束 ===
 PLAYER_INIT_DEFAULT = (
     '[{"team":"home","idx":0,"duty":3,'
     '"pos":{"x":0,"y":0,"z":0},"facing":0}]'
