@@ -772,6 +772,10 @@ V_PLAYER_INIT = "SoccerPlayerInit_V"
 V_SEASON_GOAL = "SoccerSeasonGoal_V"
 
 # SoccerPlayerInit_V: team, idx, duty(→PlayerAiDuty), pos, facing(°)
+# WARN(2026-06-18): GOAL_CENTER_Z=58 与已确认协议 references/soccer-coordinate-protocol.md 不一致。
+#   协议 v1:原点 = 对方球门中心,GOAL_CENTER_Z 应为 0,18 个 preset z 坐标系应反转为 [-60, 0] 量级。
+#   未跟进前生成的 PlayersInit/BallPos/TargetPoint 在游戏内不可直接落地。
+#   派生改动清单见协议 §12。
 GOAL_CENTER_X, GOAL_CENTER_Z = 0.0, 58.0
 PLAYER_INIT_DEFAULT = (
     '[{"team":"home","idx":0,"duty":3,'
