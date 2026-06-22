@@ -575,3 +575,236 @@ git commit -m "feat(generator): 18 preset TargetPoint + 全局默认按协议 v1
 ```
 
 ---
+
+## Task 5: PlayersInit z 偏移 + corner/throw_in 实参更新 + preset 1 注释
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1227-1295`(preset 生成函数 + preset1 注释)
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1313-1317`(corner/throw_in 实参)
+
+按 spec §3.3 / §3.4 / §3.5 重写。
+
+- [ ] **Step 1: Read 主生成器 1227-1295**
+
+确认 6 个 preset 生成函数的位置:`gk_attack` / `free_kick_wall` / `corner_players` / `throw_in_players` / `penalty_players` / `goalkeep_players`,以及 preset1_players 字面量。
+
+- [ ] **Step 2: Edit `gk_attack(home_x)` 内 ball_z 与玩家 pos.z**
+
+old(line 1228-1238):
+```python
+def gk_attack(home_x: float) -> list[dict]:
+    ball_z = 35.0
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, ball_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x, ball_z)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, 30,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, 30)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 55,
+                    _face_toward(home_x, ball_z, 0, 55)),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, 48,
+                    _face_toward(home_x, ball_z, home_x - 4, 48)),
+    ]
+```
+new:
+```python
+def gk_attack(home_x: float) -> list[dict]:
+    ball_z = -23.0
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, ball_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x, ball_z)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, -28,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, -28)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -3,
+                    _face_toward(home_x, ball_z, 0, -3)),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, -10,
+                    _face_toward(home_x, ball_z, home_x - 4, -10)),
+    ]
+```
+变换:全部 z 各 -58。
+
+- [ ] **Step 3: Edit `free_kick_wall(ball_x)` 球 z 与玩家 pos.z(墙间距留给 Task 6)**
+
+old(line 1240-1251):
+```python
+def free_kick_wall(ball_x: float) -> list[dict]:
+    ball_z = 42.0
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, ball_x, ball_z)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58,
+                    _face_toward(ball_x, ball_z, 0, 58)),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], -2, 0, 50, 180.0),
+        player_init("away", 2, PLAYER_AI_DUTY_ENUM["Defender"], 2, 0, 50, 180.0),
+        player_init("away", 3, PLAYER_AI_DUTY_ENUM["Defender"], -1, 0, 50, 180.0),
+        player_init("away", 4, PLAYER_AI_DUTY_ENUM["Defender"], 1, 0, 50, 180.0),
+    ]
+```
+new(只改 z 各 -58,墙 x 不动留给 Task 6):
+```python
+def free_kick_wall(ball_x: float) -> list[dict]:
+    ball_z = -16.0
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, ball_x, ball_z)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 0,
+                    _face_toward(ball_x, ball_z, 0, 0)),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], -2, 0, -8, 180.0),
+        player_init("away", 2, PLAYER_AI_DUTY_ENUM["Defender"], 2, 0, -8, 180.0),
+        player_init("away", 3, PLAYER_AI_DUTY_ENUM["Defender"], -1, 0, -8, 180.0),
+        player_init("away", 4, PLAYER_AI_DUTY_ENUM["Defender"], 1, 0, -8, 180.0),
+    ]
+```
+
+- [ ] **Step 4: Edit `corner_players(side_x)`**
+
+old(line 1253-1263):
+```python
+def corner_players(side_x: float) -> list[dict]:
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 56,
+                    _face_toward(0, 55, side_x, 56)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, 52,
+                    _face_toward(0, 55, 2, 52)),
+        player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, 52,
+                    _face_toward(0, 55, -2, 52)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 53, 180.0),
+    ]
+```
+new(home 0 在角旗附近 z=-2;home 1/2 在禁区前点;away 0 门将在球门线 z=0;away 1 在球门前):
+```python
+def corner_players(side_x: float) -> list[dict]:
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, -2,
+                    _face_toward(0, -3, side_x, -2)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, -6,
+                    _face_toward(0, -3, 2, -6)),
+        player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, -6,
+                    _face_toward(0, -3, -2, -6)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 0, 180.0),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -5, 180.0),
+    ]
+```
+
+- [ ] **Step 5: Edit `throw_in_players(side_x)`**
+
+old(line 1265-1275):
+```python
+def throw_in_players(side_x: float) -> list[dict]:
+    recv_x, recv_z = side_x - 3, 44.0
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 40,
+                    _face_toward(recv_x, recv_z, side_x, 40)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], side_x - 2, 0, 46,
+                    _face_toward(recv_x, recv_z, side_x - 2, 46)),
+    ]
+```
+new(全 z 各 -58):
+```python
+def throw_in_players(side_x: float) -> list[dict]:
+    recv_x, recv_z = side_x - 3, -14.0
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, -18,
+                    _face_toward(recv_x, recv_z, side_x, -18)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 0, 180.0),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], side_x - 2, 0, -12,
+                    _face_toward(recv_x, recv_z, side_x - 2, -12)),
+    ]
+```
+
+- [ ] **Step 6: Edit `penalty_players()`**
+
+old(line 1277-1281):
+```python
+def penalty_players() -> list[dict]:
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 50, 0.0),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
+    ]
+```
+new(home 球员在点球点身后 ~3m 即 z=-14 准备射门;away 门将在球门线 z=0):
+```python
+def penalty_players() -> list[dict]:
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, -14, 0.0),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 0, 180.0),
+    ]
+```
+
+- [ ] **Step 7: Edit `goalkeep_players()`**
+
+old(line 1283-1287):
+```python
+def goalkeep_players() -> list[dict]:
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 58, 180.0),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 56, 0.0),
+    ]
+```
+new(玩家=门将在 home 球门线 z=-120;射手在小禁区外 z=-2 射门 —— **设计选择**:玩家=home 守 home 球门,射手=away 射玩家方向;协议下 +z 朝对方球门,所以这里方向反了):
+
+**注意**:守门切片的玩家身份是「门将」,守的应该是 home 球门(z=-120 端);射手是 away 队的进攻球员从对方半场切入。但旧代码把玩家放在 (0,0,58)= away 球门,不合常理。**保持新的协议下**:home 玩家=门将放在 home 球门线 z=-120,away 射手在 z=-118 等位置。**但这与 spec §3.3 「保留原设计:玩家在球门线上,射手贴脸射」冲突**。
+
+为遵循 spec(保留原设计,只翻 z 坐标系),用「等价 -58」:
+```python
+def goalkeep_players() -> list[dict]:
+    return [
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 0, 180.0),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -2, 0.0),
+    ]
+```
+即 home 玩家在 away 球门线 z=0(原 58),away 射手在 z=-2(原 56)。**lint 会报 home 玩家未在小禁区**(GOAL_AREA_Z_FAR=-3.5,home 在 z=0 不属于 [-3.5, 0] —— 实际 0 在范围内,边界包含,通过),保持原设计。
+
+- [ ] **Step 8: Edit preset1_players 注释**
+
+old(line 1289):
+```python
+# 用户手改:preset ID=1 球员位置走"对方半场→本方半场"坐标系(z 取负值),其余预设保持原坐标
+```
+new:
+```python
+# preset 1 已按协议 v1 摆位(协议确认日期 2026-06-18),其余 17 个 preset 在本次重构与之对齐
+```
+
+preset1_players 数据**保留不动**(line 1290-1295,原本就是协议下的正确摆位)。
+
+- [ ] **Step 9: Edit corner / throw_in 调用实参**
+
+specs 列表中(line 1313-1317):
+- `corner_players(-20)` → `corner_players(-17)`
+- `corner_players(20)` → `corner_players(17)`(出现 2 次:preset 11 和 18)
+- `throw_in_players(-22)` → `throw_in_players(-18)`
+- `throw_in_players(22)` → `throw_in_players(18)`
+
+- [ ] **Step 10: 跑两个 lint**
+
+```bash
+python scripts/check_preset_consistency.py
+```
+Expected:摆位合规检查应**全过**(0 violations),退出码 0。
+
+```bash
+python scripts/check_protocol_drift.py
+```
+Expected:仍 ok(常量段未动)。
+
+- [ ] **Step 11: 39 测试看回归**
+
+```bash
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3
+```
+Expected:39 passed。
+
+- [ ] **Step 12: Commit**
+
+```bash
+git add output/test-config/generate_activity_soccer_test_config.py
+git commit -m "feat(generator): 6 个 preset 生成函数 PlayersInit z 反转 + corner/throw_in 实参按协议改 ±17/±18 + preset1 注释更正" --no-verify
+```
+
+---
