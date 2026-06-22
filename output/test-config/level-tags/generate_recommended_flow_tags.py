@@ -30,7 +30,7 @@ def _base_tags(level_in_round: int, tier: int, round_id: int) -> tuple[list[str]
 
     if phase == 1:
         if tier <= 2:
-            return ["short_match", "free_run"], "恢复:短局免票,给玩家重新进入心流"
+            return ["short_match", "penalty_focus"], "恢复:短局点球确定性,给玩家重新进入心流"
         return ["short_match", "easy_minus"], "恢复:降低一档压力,避免连续挫败"
     if phase == 2:
         return ["set_piece"] if tier >= 3 else [], "技巧主题:任意球/点球基础复习"
@@ -85,7 +85,7 @@ def _adjust_for_macro_arc(tags: list[str], level_id: int, round_id: int, tier: i
     out = list(tags)
 
     if level_id == 1:
-        return ["tutorial", "free_run"]
+        return ["tutorial", "penalty_focus"]
 
     if tier >= 8 and level_id % 25 == 0 and "boss" not in out:
         out.append("must_win")

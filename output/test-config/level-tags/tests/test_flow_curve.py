@@ -18,6 +18,9 @@ def test_recommended_curve_has_target_coverage_and_valid_tags():
     for row in tagged:
         assert set(row["Tags"]).issubset(registry)
         assert row["Note"]
+        assert "free_run" not in row["Tags"]
+
+    assert any("penalty_focus" in r["Tags"] for r in rows)
 
 
 def test_recommended_curve_has_boss_checks_at_round_ends():

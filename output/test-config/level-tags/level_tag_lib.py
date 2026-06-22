@@ -78,10 +78,6 @@ def _patch_lenient(ctx: PatchContext) -> None:
     ctx.level_row["DrawThreshold"] = max(1, win - 1)
 
 
-def _patch_free_run(ctx: PatchContext) -> None:
-    ctx.level_row["TicketCost"] = 0
-
-
 def _patch_tutorial(ctx: PatchContext) -> None:
     ctx.level_row["IsTutorial"] = 1
     ctx.level_row["TicketCost"] = 0
@@ -90,7 +86,7 @@ def _patch_tutorial(ctx: PatchContext) -> None:
 
 
 def _register_level_only_tags() -> None:
-    """注册不依赖 SliceAi/SliceInstance 的 5 个 level-only tag。
+    """注册不依赖 SliceAi/SliceInstance 的 4 个 level-only tag。
     幂等:重复调用先清同名条目再注册。"""
     for name in ("boss", "must_win", "lenient", "free_run", "tutorial"):
         TAG_REGISTRY.pop(name, None)
@@ -100,8 +96,6 @@ def _register_level_only_tags() -> None:
                      "切片全胜才能赢", _patch_must_win))
     register(TagSpec("lenient", ("level",), "threshold",
                      "胜阈值降至 40%", _patch_lenient))
-    register(TagSpec("free_run", ("level",), None,
-                     "门票消耗 0", _patch_free_run))
     register(TagSpec("tutorial", ("level", "slice"), "tutorial",
                      "强制引导关 + [201,202,203]", _patch_tutorial))
 
@@ -132,6 +126,20 @@ def _patch_set_piece(ctx: PatchContext) -> None:
                 break
         else:
             del sl[-len(additions) - 1 if additions else -1]
+    ctx.level_row["SliceList"] = json.dumps(sl)
+
+
+def _patch_penalty_focus(ctx: PatchContext) -> None:
+    sl = json.loads(ctx.level_row["SliceList"])
+    if not any(_slice_type(s) == 3 for s in sl):
+        sl.append(_slice_id(ctx.tier, 3, 1))
+    while len(sl) > 5:
+        for idx in range(len(sl) - 2, -1, -1):
+            if _slice_type(sl[idx]) != 3:
+                del sl[idx]
+                break
+        else:
+            del sl[-2]
     ctx.level_row["SliceList"] = json.dumps(sl)
 
 
@@ -175,11 +183,13 @@ def _patch_all_v2(ctx: PatchContext) -> None:
 
 
 def _register_slice_tags() -> None:
-    for name in ("set_piece", "corner_focus", "gk_test",
+    for name in ("set_piece", "penalty_focus", "corner_focus", "gk_test",
                  "long_match", "short_match", "all_v2"):
         TAG_REGISTRY.pop(name, None)
     register(TagSpec("set_piece", ("slice",), None,
                      "保证至少 1 free_kick + 1 penalty", _patch_set_piece))
+    register(TagSpec("penalty_focus", ("slice",), None,
+                     "保证至少 1 penalty 切片", _patch_penalty_focus))
     register(TagSpec("corner_focus", ("slice",), None,
                      "末位强制 corner v2", _patch_corner_focus))
     register(TagSpec("gk_test", ("slice",), None,

@@ -90,12 +90,10 @@ def test_lenient_lowers_thresholds():
     assert ctx.level_row["DrawThreshold"] == 1
 
 
-def test_free_run_zeros_ticket():
+def test_free_run_is_removed_from_registry():
     import importlib, level_tag_lib as lib
     importlib.reload(lib); lib._register_level_only_tags()
-    ctx = _make_ctx()
-    lib.TAG_REGISTRY["free_run"].patch(ctx)
-    assert ctx.level_row["TicketCost"] == 0
+    assert "free_run" not in lib.TAG_REGISTRY
 
 
 def test_tutorial_marks_and_swaps_slices():
@@ -129,6 +127,19 @@ def test_set_piece_preserves_existing_slice_order_when_adding_missing_types():
     assert retained == [s for s in before if s in retained]
     assert any(s // 10 % 10 == 2 for s in after), f"无 free_kick: {after}"
     assert any(s // 10 % 10 == 3 for s in after), f"无 penalty: {after}"
+    assert len(after) <= 5
+
+
+def test_penalty_focus_adds_penalty_without_ticket_change():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    ctx.level_row["SliceList"] = "[541,551,561,511]"
+    before_ticket = ctx.level_row["TicketCost"]
+    lib.TAG_REGISTRY["penalty_focus"].patch(ctx)
+    after = json.loads(ctx.level_row["SliceList"])
+    assert any(s // 10 % 10 == 3 for s in after), f"无 penalty: {after}"
+    assert ctx.level_row["TicketCost"] == before_ticket
     assert len(after) <= 5
 
 

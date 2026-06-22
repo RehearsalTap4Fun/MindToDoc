@@ -66,6 +66,7 @@
 |---|---|---|---|
 | `tutorial` | slice, level | tutorial | 强制 IsTutorial=1,SliceList=[201,202,203],TicketCost=0 |
 | `set_piece` | slice | — | 强制至少 1 个 free_kick + 1 个 penalty 切片(顺序保留) |
+| `penalty_focus` | slice | — | 强制至少 1 个 penalty 切片(顺序保留),不改变 TicketCost |
 | `corner_focus` | slice | — | 末位强制 corner v2 |
 | `gk_test` | slice | — | 末位强制 goalkeep v2(守门考验) |
 | `long_match` | slice | length | 切片数 +1(上限 5) |
@@ -79,7 +80,6 @@
 | `boss` | level | — | OpponentTeamStar=5,WinThreshold=切片数(全胜) |
 | `must_win` | level | threshold | WinThreshold = 切片数,DrawThreshold = WinThreshold-1(无平局) |
 | `lenient` | level | threshold | WinThreshold = max(1, ceil(n*0.4)),DrawThreshold = max(1, win-1) |
-| `free_run` | level | — | TicketCost=0(不消耗门票) |
 
 ### 3.2 参数化
 
