@@ -289,7 +289,7 @@ def actv_soccer_const_rows() -> list[dict]:
             "ActvSoccer_config_overlay_order",
             "0",
         ),
-        _const(8, "待机移动速度(固定值,单位m/s TODO)", "ActvSoccer_move_speed_idle", "0"),
+        _const(8, "待机移动速度(固定值,单位m/s)", "ActvSoccer_move_speed_idle", "0"),
         _const(9, "慢走移动速度(固定值,单位m/s TODO)", "ActvSoccer_move_speed_walk", "2.5"),
         _const(10, "跑动速度下限;run=lerp(能力值,min,max)", "ActvSoccer_move_speed_run_min", "4"),
         _const(11, "跑动速度上限;run=lerp(能力值,min,max)", "ActvSoccer_move_speed_run_max", "8"),
@@ -303,7 +303,7 @@ def actv_soccer_const_rows() -> list[dict]:
         _const(19, "门将横移;相对run倍率,moving_keeper再乘params.speed", "ActvSoccer_move_speed_ratio_keeper_lateral", "0.9"),
         _const(20, "出球力量下限", "ActvSoccer_kick_force_min", "10"),
         _const(21, "出球力量上限", "ActvSoccer_kick_force_max", "25"),
-        _const(22, "停球/控球距离(m TODO)", "ActvSoccer_ball_control_distance", "1.2"),
+        _const(22, "停球/控球距离(m)", "ActvSoccer_ball_control_distance", str(BALL_CONTROL_DISTANCE)),
         _const(23, "可操作夹角宽度下限(°)", "ActvSoccer_operable_angle_span_min", "20"),
         _const(24, "可操作夹角宽度上限(°)", "ActvSoccer_operable_angle_span_max", "70"),
         _const(25, "联赛换约候选合同份数", "ActvSoccer_contract_offer_count", "3"),
@@ -872,6 +872,10 @@ def players_init_json(players: list[dict]) -> str:
     return json.dumps(players, ensure_ascii=False)
 
 
+def pos_json(x: float, y: float, z: float) -> str:
+    return json.dumps({"x": x, "y": y, "z": z})
+
+
 LC_PREFIX = "ActvSoccer"
 
 
@@ -1293,96 +1297,103 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     """~18 摆位预设，跨 tier 复用。1/2/3/4 沿用原测试预设，新增侧别/难度变体。
     四角度列存最宽基线(tier1)，逐 tier 收窄由实例 OverrideOperableAngle 实现。"""
 
-    def gk_attack(home_x: float) -> list[dict]:
-        ball_z = 35.0
+    def gk_attack(home_x: float, ball_z: float = -23.0) -> list[dict]:
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, ball_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x, ball_z)),
-            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, 30,
-                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, 30)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 55,
-                        _face_toward(home_x, ball_z, 0, 55)),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, 48,
-                        _face_toward(home_x, ball_z, home_x - 4, 48)),
+            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, ball_z - 7,
+                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, ball_z - 7)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -3,
+                        _face_toward(home_x, ball_z, 0, -3)),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, -10,
+                        _face_toward(home_x, ball_z, home_x - 4, -10)),
         ]
 
-    def free_kick_wall(ball_x: float) -> list[dict]:
-        ball_z = 42.0
+    def free_kick_wall(ball_x: float, ball_z: float = -16.0) -> list[dict]:
+        wall_z = min(-7.0, ball_z + 9.0)
+        wall_xs = (-3.0, -1.5, 0.0, 1.5)
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, ball_x, ball_z)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58,
-                        _face_toward(ball_x, ball_z, 0, 58)),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], -2, 0, 50, 180.0),
-            player_init("away", 2, PLAYER_AI_DUTY_ENUM["Defender"], 2, 0, 50, 180.0),
-            player_init("away", 3, PLAYER_AI_DUTY_ENUM["Defender"], -1, 0, 50, 180.0),
-            player_init("away", 4, PLAYER_AI_DUTY_ENUM["Defender"], 1, 0, 50, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2,
+                        _face_toward(ball_x, ball_z, 0, -2)),
+            *[
+                player_init("away", idx, PLAYER_AI_DUTY_ENUM["Defender"], wx, 0, wall_z,
+                            _face_toward(ball_x, ball_z, wx, wall_z))
+                for idx, wx in enumerate(wall_xs, start=1)
+            ],
         ]
 
     def corner_players(side_x: float) -> list[dict]:
+        ball_z = -1.0
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 56,
-                        _face_toward(0, 55, side_x, 56)),
-            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, 52,
-                        _face_toward(0, 55, 2, 52)),
-            player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, 52,
-                        _face_toward(0, 55, -2, 52)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 53, 180.0),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, ball_z,
+                        _face_toward(0, 0, side_x, ball_z)),
+            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, -6,
+                        _face_toward(0, 0, 2, -6)),
+            player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, -6,
+                        _face_toward(0, 0, -2, -6)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -8, 180.0),
         ]
 
     def throw_in_players(side_x: float) -> list[dict]:
-        recv_x, recv_z = side_x - 3, 44.0
+        recv_x = max(-16.0, min(16.0, side_x - (3 if side_x > 0 else -3)))
+        recv_z = -14.0
+        ball_z = -18.0
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, 40,
-                        _face_toward(recv_x, recv_z, side_x, 40)),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, ball_z,
+                        _face_toward(recv_x, recv_z, side_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], side_x - 2, 0, 46,
-                        _face_toward(recv_x, recv_z, side_x - 2, 46)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], recv_x, 0, -10,
+                        _face_toward(recv_x, recv_z, recv_x, -10)),
         ]
 
     def penalty_players() -> list[dict]:
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 50, 0.0),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 58, 180.0),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, PENALTY_SPOT[2], 0.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, 0, 180.0),
         ]
 
     def goalkeep_players() -> list[dict]:
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, 58, 180.0),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, 56, 0.0),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 0, 0, -2, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -18, 0.0),
         ]
 
-    # 用户手改:preset ID=1 球员位置走"对方半场→本方半场"坐标系(z 取负值),其余预设保持原坐标
     preset1_players = [
-        {"team": "home", "idx": 0, "duty": 3, "pos": {"x": 12, "y": 0, "z": -23.0}, "facing": -27.6},
-        {"team": "home", "idx": 1, "duty": 3, "pos": {"x": 10, "y": 0, "z": -30}, "facing": -19.7},
-        {"team": "away", "idx": 0, "duty": 1, "pos": {"x": 0, "y": 0, "z": -5}, "facing": 180.0},
-        {"team": "away", "idx": 1, "duty": 2, "pos": {"x": 8, "y": 0, "z": -12}, "facing": 162.9},
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 12, 0, -23.0,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 12, -23.0)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 10, 0, -30,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 10, -30)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -5,
+                    _face_toward(12, -23.0, 0, -5)),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 8, 0, -12,
+                    _face_toward(12, -23.0, 8, -12)),
     ]
 
     # (id, slice_type, name, tags, ball_pos, ball_vector, ball_owner, players, fov, target, op_angle, type_payload, rec_modes)
     specs = [
-        (1, "attack", "右路单刀", '["side","easy"]', '{"x":12,"y":0,"z":35}', '{"x":0,"y":0,"z":1}', 0, preset1_players, 45, '{"x":12,"y":0,"z":58}', 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
-        (5, "attack", "左路单刀", '["side"]', '{"x":-12,"y":0,"z":35}', '{"x":0,"y":0,"z":1}', 0, gk_attack(-12), 45, '{"x":-12,"y":0,"z":58}', 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
-        (6, "attack", "中路突破", '["center"]', '{"x":0,"y":0,"z":36}', '{"x":0,"y":0,"z":1}', 0, gk_attack(0), 44, '{"x":0,"y":0,"z":58}', 35.0, '{"keeper_weight":5200,"angle":35}', '["draw_line","slingshot"]'),
-        (16, "attack", "中路吊射", '["center","lob"]', '{"x":0,"y":0,"z":30}', '{"x":0,"y":0,"z":1}', 0, gk_attack(0), 46, '{"x":0,"y":1.5,"z":58}', 32.0, '{"keeper_weight":5400,"angle":32}', '["draw_line","slingshot"]'),
-        (2, "free_kick", "中路任意球", '["center"]', '{"x":0,"y":0,"z":42}', '{"x":0,"y":0,"z":1}', 0, free_kick_wall(0), 42, '{"x":0,"y":1.8,"z":58}', 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
-        (7, "free_kick", "左侧任意球", '["side"]', '{"x":-10,"y":0,"z":44}', '{"x":0,"y":0,"z":1}', 0, free_kick_wall(-10), 42, '{"x":-2,"y":1.8,"z":58}', 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
-        (8, "free_kick", "右侧任意球", '["side"]', '{"x":10,"y":0,"z":44}', '{"x":0,"y":0,"z":1}', 0, free_kick_wall(10), 42, '{"x":2,"y":1.8,"z":58}', 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
-        (17, "free_kick", "弧线任意球", '["center","curve"]', '{"x":4,"y":0,"z":40}', '{"x":0,"y":0,"z":1}', 0, free_kick_wall(4), 41, '{"x":-3,"y":2.0,"z":58}', 26.0, '{"wall_count":5,"keeper_weight":4800}', '["draw_line"]'),
-        (3, "penalty", "标准点球", '["penalty"]', '{"x":0,"y":0,"z":50}', '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, '{"x":0,"y":0.5,"z":58}', 0.0, '{"keeper_dirs":[2500,2500,2500,2500]}', '["draw_line","slingshot"]'),
-        (9, "penalty", "加压点球", '["penalty","hard"]', '{"x":0,"y":0,"z":50}', '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, '{"x":0,"y":0.5,"z":58}', 0.0, '{"keeper_dirs":[2000,3000,3000,2000]}', '["draw_line","slingshot"]'),
-        (10, "corner", "左角球", '["corner","left"]', '{"x":-20,"y":0,"z":58}', '{"x":1,"y":0,"z":-1}', 0, corner_players(-20), 48, '{"x":0,"y":2.0,"z":55}', 30.0, '{"first_point_weight":5000}', '["draw_line"]'),
-        (11, "corner", "右角球", '["corner","right"]', '{"x":20,"y":0,"z":58}', '{"x":-1,"y":0,"z":-1}', 0, corner_players(20), 48, '{"x":0,"y":2.0,"z":55}', 30.0, '{"first_point_weight":5000}', '["draw_line"]'),
-        (18, "corner", "后点包抄", '["corner","far"]', '{"x":20,"y":0,"z":58}', '{"x":-1,"y":0,"z":-1}', 0, corner_players(20), 48, '{"x":-6,"y":2.0,"z":54}', 28.0, '{"first_point_weight":4500,"far_post":1}', '["draw_line"]'),
-        (12, "throw_in", "左界外球", '["throw_in","left"]', '{"x":-22,"y":0,"z":40}', '{"x":1,"y":0,"z":0}', 0, throw_in_players(-22), 44, '{"x":-10,"y":0,"z":44}', 34.0, '{"second_attack":1}', '["draw_line"]'),
-        (13, "throw_in", "右界外球", '["throw_in","right"]', '{"x":22,"y":0,"z":40}', '{"x":-1,"y":0,"z":0}', 0, throw_in_players(22), 44, '{"x":10,"y":0,"z":44}', 34.0, '{"second_attack":1}', '["draw_line"]'),
-        (4, "goalkeep", "基础守门", '["gk"]', '{"x":0,"y":0,"z":56}', '{"x":0,"y":0,"z":-1}', 0, goalkeep_players(), 50, None, 0.0, '{"shot_dirs":[3000,3000,4000],"reaction_ms":2500}', '["draw_line"]'),
-        (14, "goalkeep", "大范围守门", '["gk","wide"]', '{"x":0,"y":0,"z":56}', '{"x":0,"y":0,"z":-1}', 0, goalkeep_players(), 52, None, 0.0, '{"shot_dirs":[3500,3500,3000],"reaction_ms":2200}', '["draw_line"]'),
-        (15, "goalkeep", "近距扑点", '["gk","penalty"]', '{"x":0,"y":0,"z":54}', '{"x":0,"y":0,"z":-1}', 0, goalkeep_players(), 50, None, 0.0, '{"shot_dirs":[4000,4000,2000],"reaction_ms":1800}', '["draw_line"]'),
+        (1, "attack", "右路单刀", '["side","easy"]', pos_json(12, 0, -23), '{"x":0,"y":0,"z":1}', 0, preset1_players, 45, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
+        (5, "attack", "左路单刀", '["side"]', pos_json(-12, 0, -23), '{"x":0,"y":0,"z":1}', 0, gk_attack(-12), 45, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
+        (6, "attack", "中路突破", '["center"]', pos_json(0, 0, -22), '{"x":0,"y":0,"z":1}', 0, gk_attack(0, -22), 44, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5200,"angle":35}', '["draw_line","slingshot"]'),
+        (16, "attack", "中路吊射", '["center","lob"]', pos_json(0, 0, -28), '{"x":0,"y":0,"z":1}', 0, gk_attack(0, -28), 46, pos_json(0, 1.5, 0), 32.0, '{"keeper_weight":5400,"angle":32}', '["draw_line","slingshot"]'),
+        (2, "free_kick", "中路任意球", '["center"]', pos_json(0, 0, -16), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(0, -16), 42, pos_json(0, 1.8, 0), 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
+        (7, "free_kick", "左侧任意球", '["side"]', pos_json(-10, 0, -14), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(-10, -14), 42, pos_json(-2, 1.8, 0), 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
+        (8, "free_kick", "右侧任意球", '["side"]', pos_json(10, 0, -14), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(10, -14), 42, pos_json(2, 1.8, 0), 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
+        (17, "free_kick", "弧线任意球", '["center","curve"]', pos_json(4, 0, -18), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(4, -18), 41, pos_json(-3, 2.0, 0), 26.0, '{"wall_count":5,"keeper_weight":4800}', '["draw_line"]'),
+        (3, "penalty", "标准点球", '["penalty"]', penalty_ball_pos(), '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(0, 0.5, 0), 0.0, '{"keeper_dirs":[2500,2500,2500,2500]}', '["draw_line","slingshot"]'),
+        (9, "penalty", "加压点球", '["penalty","hard"]', penalty_ball_pos(), '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(0, 0.5, 0), 0.0, '{"keeper_dirs":[2000,3000,3000,2000]}', '["draw_line","slingshot"]'),
+        (10, "corner", "左角球", '["corner","left"]', corner_ball_pos("left"), '{"x":1,"y":0,"z":1}', 0, corner_players(CORNER_LEFT_BALL[0]), 48, pos_json(0, 2.0, 0), 30.0, '{"first_point_weight":5000}', '["draw_line"]'),
+        (11, "corner", "右角球", '["corner","right"]', corner_ball_pos("right"), '{"x":-1,"y":0,"z":1}', 0, corner_players(CORNER_RIGHT_BALL[0]), 48, pos_json(0, 2.0, 0), 30.0, '{"first_point_weight":5000}', '["draw_line"]'),
+        (18, "corner", "后点包抄", '["corner","far"]', corner_ball_pos("right"), '{"x":-1,"y":0,"z":1}', 0, corner_players(CORNER_RIGHT_BALL[0]), 48, pos_json(-6, 2.0, 0), 28.0, '{"first_point_weight":4500,"far_post":1}', '["draw_line"]'),
+        (12, "throw_in", "左界外球", '["throw_in","left"]', pos_json(-18, 0, -18), '{"x":1,"y":0,"z":0}', 0, throw_in_players(-20), 44, pos_json(-10, 0, -14), 34.0, '{"second_attack":1}', '["draw_line"]'),
+        (13, "throw_in", "右界外球", '["throw_in","right"]', pos_json(18, 0, -18), '{"x":-1,"y":0,"z":0}', 0, throw_in_players(20), 44, pos_json(10, 0, -14), 34.0, '{"second_attack":1}', '["draw_line"]'),
+        (4, "goalkeep", "基础守门", '["gk"]', pos_json(0, 0, -18), '{"x":0,"y":0,"z":1}', 0, goalkeep_players(), 50, None, 0.0, '{"shot_dirs":[3000,3000,4000],"reaction_ms":2500}', '["draw_line"]'),
+        (14, "goalkeep", "大范围守门", '["gk","wide"]', pos_json(0, 0, -18), '{"x":0,"y":0,"z":1}', 0, goalkeep_players(), 52, None, 0.0, '{"shot_dirs":[3500,3500,3000],"reaction_ms":2200}', '["draw_line"]'),
+        (15, "goalkeep", "近距扑点", '["gk","penalty"]', pos_json(0, 0, -11), '{"x":0,"y":0,"z":1}', 0, goalkeep_players(), 50, None, 0.0, '{"shot_dirs":[4000,4000,2000],"reaction_ms":1800}', '["draw_line"]'),
     ]
 
     rows = []
@@ -1543,13 +1554,13 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("Style", "string", "默认球员风格", "", "Balanced/Playmaker/Dribbler/TargetMan"),
             ("DecisionMinMs", "int", "最早决策时间;预计触球前多少ms开始允许生成决策"),
             ("DecisionMaxMs", "int", "最晚决策时间;预计触球前多少ms内必须已有决策"),
-            ("SafeDistance", "int", "安全距离;最近防守人大于该距离视为低压(mm)"),
-            ("HighPressureDistance", "int", "高压距离;最近防守人小于该距离视为高压(mm)"),
-            ("ForwardProbeDistance", "int", "前方空间探测距离(mm)"),
-            ("SideProbeDistance", "int", "左右空间探测距离(mm)"),
-            ("BackwardProbeDistance", "int", "身后空间探测距离(mm)"),
-            ("HighBallHeight", "int", "高空球高度阈值;超过后表现层优先胸停/头球(mm)"),
-            ("FastBallSpeed", "int", "高速来球速度阈值;超过后提高停球权重(mm/s)"),
+            ("SafeDistance", "float", "安全距离;最近防守人大于该距离视为低压(m)"),
+            ("HighPressureDistance", "float", "高压距离;最近防守人小于该距离视为高压(m)"),
+            ("ForwardProbeDistance", "float", "前方空间探测距离(m)"),
+            ("SideProbeDistance", "float", "左右空间探测距离(m)"),
+            ("BackwardProbeDistance", "float", "身后空间探测距离(m)"),
+            ("HighBallHeight", "float", "高空球高度阈值;超过后表现层优先胸停/头球(m)"),
+            ("FastBallSpeed", "float", "高速来球速度阈值;超过后提高停球权重(m/s)"),
             ("StopWeight", "int", "停球权重(100=标准)"),
             ("PushForwardWeight", "int", "顺势向前领球权重(100=标准)"),
             ("PushSideWeight", "int", "左右领球权重(100=标准)"),
@@ -1565,10 +1576,10 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 5001, "Style": "Balanced", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3500, "HighPressureDistance": 1600, "ForwardProbeDistance": 5000, "SideProbeDistance": 3500, "BackwardProbeDistance": 2500, "HighBallHeight": 900, "FastBallSpeed": 16000, "StopWeight": 100, "PushForwardWeight": 100, "PushSideWeight": 100, "HalfTurnWeight": 100, "ShieldWeight": 100, "OneTouchPassWeight": 100, "OneTouchShotWeight": 100, "SpaceGainWeight": 100, "GoalProgressWeight": 100, "SafetyWeight": 100, "FlowWeight": 100, "StyleBonusWeight": 100, "Remark": "通用默认"},
-            {"ID": 5002, "Style": "Playmaker", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3500, "HighPressureDistance": 1700, "ForwardProbeDistance": 4500, "SideProbeDistance": 3500, "BackwardProbeDistance": 2500, "HighBallHeight": 900, "FastBallSpeed": 16000, "StopWeight": 90, "PushForwardWeight": 90, "PushSideWeight": 90, "HalfTurnWeight": 100, "ShieldWeight": 80, "OneTouchPassWeight": 140, "OneTouchShotWeight": 100, "SpaceGainWeight": 90, "GoalProgressWeight": 110, "SafetyWeight": 100, "FlowWeight": 130, "StyleBonusWeight": 130, "Remark": "组织核心,倾向一脚传球"},
-            {"ID": 5003, "Style": "Dribbler", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3200, "HighPressureDistance": 1500, "ForwardProbeDistance": 5500, "SideProbeDistance": 4000, "BackwardProbeDistance": 2500, "HighBallHeight": 900, "FastBallSpeed": 16000, "StopWeight": 80, "PushForwardWeight": 140, "PushSideWeight": 130, "HalfTurnWeight": 120, "ShieldWeight": 90, "OneTouchPassWeight": 80, "OneTouchShotWeight": 110, "SpaceGainWeight": 130, "GoalProgressWeight": 120, "SafetyWeight": 90, "FlowWeight": 120, "StyleBonusWeight": 130, "Remark": "突破手,倾向顺势领球"},
-            {"ID": 5004, "Style": "TargetMan", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3000, "HighPressureDistance": 1400, "ForwardProbeDistance": 4000, "SideProbeDistance": 3000, "BackwardProbeDistance": 3000, "HighBallHeight": 900, "FastBallSpeed": 15000, "StopWeight": 120, "PushForwardWeight": 80, "PushSideWeight": 80, "HalfTurnWeight": 110, "ShieldWeight": 150, "OneTouchPassWeight": 100, "OneTouchShotWeight": 120, "SpaceGainWeight": 80, "GoalProgressWeight": 100, "SafetyWeight": 140, "FlowWeight": 110, "StyleBonusWeight": 130, "Remark": "支点,倾向护球和背身处理"},
+            {"ID": 5001, "Style": "Balanced", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3.5, "HighPressureDistance": 1.6, "ForwardProbeDistance": 5.0, "SideProbeDistance": 3.5, "BackwardProbeDistance": 2.5, "HighBallHeight": 0.9, "FastBallSpeed": 16.0, "StopWeight": 100, "PushForwardWeight": 100, "PushSideWeight": 100, "HalfTurnWeight": 100, "ShieldWeight": 100, "OneTouchPassWeight": 100, "OneTouchShotWeight": 100, "SpaceGainWeight": 100, "GoalProgressWeight": 100, "SafetyWeight": 100, "FlowWeight": 100, "StyleBonusWeight": 100, "Remark": "通用默认"},
+            {"ID": 5002, "Style": "Playmaker", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3.5, "HighPressureDistance": 1.7, "ForwardProbeDistance": 4.5, "SideProbeDistance": 3.5, "BackwardProbeDistance": 2.5, "HighBallHeight": 0.9, "FastBallSpeed": 16.0, "StopWeight": 90, "PushForwardWeight": 90, "PushSideWeight": 90, "HalfTurnWeight": 100, "ShieldWeight": 80, "OneTouchPassWeight": 140, "OneTouchShotWeight": 100, "SpaceGainWeight": 90, "GoalProgressWeight": 110, "SafetyWeight": 100, "FlowWeight": 130, "StyleBonusWeight": 130, "Remark": "组织核心,倾向一脚传球"},
+            {"ID": 5003, "Style": "Dribbler", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3.2, "HighPressureDistance": 1.5, "ForwardProbeDistance": 5.5, "SideProbeDistance": 4.0, "BackwardProbeDistance": 2.5, "HighBallHeight": 0.9, "FastBallSpeed": 16.0, "StopWeight": 80, "PushForwardWeight": 140, "PushSideWeight": 130, "HalfTurnWeight": 120, "ShieldWeight": 90, "OneTouchPassWeight": 80, "OneTouchShotWeight": 110, "SpaceGainWeight": 130, "GoalProgressWeight": 120, "SafetyWeight": 90, "FlowWeight": 120, "StyleBonusWeight": 130, "Remark": "突破手,倾向顺势领球"},
+            {"ID": 5004, "Style": "TargetMan", "DecisionMinMs": 300, "DecisionMaxMs": 1000, "SafeDistance": 3.0, "HighPressureDistance": 1.4, "ForwardProbeDistance": 4.0, "SideProbeDistance": 3.0, "BackwardProbeDistance": 3.0, "HighBallHeight": 0.9, "FastBallSpeed": 15.0, "StopWeight": 120, "PushForwardWeight": 80, "PushSideWeight": 80, "HalfTurnWeight": 110, "ShieldWeight": 150, "OneTouchPassWeight": 100, "OneTouchShotWeight": 120, "SpaceGainWeight": 80, "GoalProgressWeight": 100, "SafetyWeight": 140, "FlowWeight": 110, "StyleBonusWeight": 130, "Remark": "支点,倾向护球和背身处理"},
         ],
     )
 

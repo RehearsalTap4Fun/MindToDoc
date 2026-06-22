@@ -1120,7 +1120,7 @@ Expected: 7 FAIL on `apply_level_tags` 不存在
 # -*- coding: utf-8 -*-
 """关卡 tag 配置工具入口(加载 + 校验阶段)。
 
-后续 Task 8 在本文件追加 patch 编排,Task 9 追加 xlsx 写出。
+本文件负责加载、校验、patch 编排、xlsx 写出与 CLI 入口。
 """
 from __future__ import annotations
 
@@ -1760,7 +1760,7 @@ Expected: 全套测试 passed(level_tag_lib 19 + template 4 + apply 16)
 
 Run:
 ```bash
-cd output/test-config/level-tags && python apply_level_tags.py
+python3 output/test-config/level-tags/apply_level_tags.py
 ```
 
 Expected stdout:
@@ -1811,7 +1811,7 @@ print('samples written')
 
 Run:
 ```bash
-cd output/test-config/level-tags && python apply_level_tags.py
+python3 output/test-config/level-tags/apply_level_tags.py
 ```
 
 Expected:

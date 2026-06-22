@@ -118,6 +118,20 @@ def test_set_piece_inserts_freekick_and_penalty():
     assert any(s // 10 % 10 == 3 for s in sl), f"无 penalty: {sl}"
 
 
+def test_set_piece_preserves_existing_slice_order_when_adding_missing_types():
+    import importlib, level_tag_lib as lib
+    importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
+    ctx = _make_ctx()
+    before = json.loads(ctx.level_row["SliceList"])
+    lib.TAG_REGISTRY["set_piece"].patch(ctx)
+    after = json.loads(ctx.level_row["SliceList"])
+    retained = [s for s in after if s in before]
+    assert retained == [s for s in before if s in retained]
+    assert any(s // 10 % 10 == 2 for s in after), f"无 free_kick: {after}"
+    assert any(s // 10 % 10 == 3 for s in after), f"无 penalty: {after}"
+    assert len(after) <= 5
+
+
 def test_corner_focus_makes_last_corner_v2():
     import importlib, level_tag_lib as lib
     importlib.reload(lib); lib._register_level_only_tags(); lib._register_slice_tags()
