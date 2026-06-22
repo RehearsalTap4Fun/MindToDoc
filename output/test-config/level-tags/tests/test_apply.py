@@ -127,7 +127,7 @@ def test_orchestrate_no_tags_returns_default_dataset(tmp_path):
     dataset = app.build_dataset(rows)
     assert len(dataset["levels"]) == 500
     assert len(dataset["seasons"]) == 50
-    assert len(dataset["slice_instances"]) == 126
+    assert len(dataset["slice_instances"]) == 186
     assert all(r["ID"] < 90000 for r in dataset["slice_instances"])
 
 

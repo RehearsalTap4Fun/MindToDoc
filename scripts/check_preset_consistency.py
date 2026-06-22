@@ -202,7 +202,7 @@ def main() -> int:
         for e in errors:
             print(f"  - {e}", file=sys.stderr)
         return 1
-    print(f"[ok] 18 preset 全部合规")
+    print(f"[ok] {len(_workbook_presets())} preset 全部合规")
     return 0
 
 

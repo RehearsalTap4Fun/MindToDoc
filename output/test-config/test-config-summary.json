@@ -33,7 +33,7 @@
     "ActvSoccerBetStakeTierCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
-  "language_entry_count": 166,
+  "language_entry_count": 198,
   "sheets_program_only": [
     "ActvSoccerSliceTypeDefCfg",
     "ActvSoccerPlayerAiDutyEnumCfg",

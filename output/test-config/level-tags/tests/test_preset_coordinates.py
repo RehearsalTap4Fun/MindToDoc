@@ -1,5 +1,6 @@
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -11,6 +12,25 @@ def _slice_preset_rows():
 
     wb = g.build_workbook(g.LcRegistry())
     ws = wb["ActvSoccerSlicePresetCfg"]
+    fields = [ws.cell(3, col).value for col in range(1, ws.max_column + 1)]
+    rows = []
+    for row_idx in range(9, ws.max_row + 1):
+        row = {
+            field: ws.cell(row_idx, col_idx).value
+            for col_idx, field in enumerate(fields, start=1)
+            if field
+        }
+        if row.get("ID") is None:
+            continue
+        rows.append(row)
+    return g, rows
+
+
+def _sheet_rows(sheet_name):
+    import generate_activity_soccer_test_config as g
+
+    wb = g.build_workbook(g.LcRegistry())
+    ws = wb[sheet_name]
     fields = [ws.cell(3, col).value for col in range(1, ws.max_column + 1)]
     rows = []
     for row_idx in range(9, ws.max_row + 1):
@@ -90,3 +110,59 @@ def test_slice_preset_fields_are_complete_and_parseable():
         assert isinstance(json.loads(row["TypePayload"]), dict), row
         assert set(json.loads(row["RecommendedModes"])).issubset(valid_modes), row
         assert isinstance(row["Remark"], str) and len(row["Remark"]) >= 20, row
+
+
+def test_slice_preset_library_has_production_distribution():
+    _, rows = _slice_preset_rows()
+    assert len(rows) == 50
+    assert Counter(row["SliceType"] for row in rows) == {
+        "attack": 14,
+        "free_kick": 9,
+        "penalty": 5,
+        "corner": 10,
+        "throw_in": 8,
+        "goalkeep": 4,
+    }
+
+
+def test_instance_library_has_three_perceivable_variants_per_tier_type():
+    _, rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
+    legacy_ids = {101, 102, 103, 201, 202, 203}
+    regular_rows = [row for row in rows if row["ID"] not in legacy_ids and row["ID"] < 90000]
+    by_tier_type = {}
+    for row in regular_rows:
+        tier = row["ID"] // 100
+        stype = (row["ID"] // 10) % 10
+        variant = row["ID"] % 10
+        by_tier_type.setdefault((tier, stype), set()).add(variant)
+
+    assert len(by_tier_type) == 60
+    assert all(variants >= {1, 2, 3} for variants in by_tier_type.values())
+
+
+def test_narrow_angle_skips_zero_angle_slice_types():
+    _, inst_rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
+    _, ai_rows = _sheet_rows("ActvSoccerSliceAiCfg")
+    instance_by_id = {row["ID"]: row for row in inst_rows}
+    offenders = []
+    for ai_row in ai_rows:
+        if ai_row["ModifierID"] != 4006:
+            continue
+        inst = instance_by_id[ai_row["SliceID"]]
+        if inst["SliceType"] in {"penalty", "goalkeep"}:
+            offenders.append(inst)
+    assert offenders == []
+
+
+def test_free_kick_wall_count_matches_players_init():
+    _, rows = _slice_preset_rows()
+    for row in rows:
+        if row["SliceType"] != "free_kick":
+            continue
+        payload = json.loads(row["TypePayload"])
+        players = json.loads(row["PlayersInit"])
+        defenders = [
+            player for player in players
+            if player["team"] == "away" and int(player["duty"]) == 2
+        ]
+        assert payload["wall_count"] == len(defenders), row
