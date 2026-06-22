@@ -441,3 +441,137 @@ git commit -m "feat(generator): 顶部加协议 v1 常量段 + 3 helper(GOAL_CEN
 ```
 
 ---
+
+## Task 3: 18 个 preset BallPos 重写
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1303-1320`(specs 列表中的 BallPos 列)
+
+按 spec §3.1 表逐行重写。**只改 BallPos**;TargetPoint / PlayersInit 留给 Task 4-5。
+
+- [ ] **Step 1: Read 主生成器 1303-1320 行**
+
+确认 specs 元组的索引位置(BallPos 是第 5 列,即元组索引 4)。
+
+- [ ] **Step 2: Edit 替换 18 行 BallPos**
+
+按下表逐行 Edit(只改 BallPos 字段,**TargetPoint 列暂时保留旧值,Task 4 一起改**):
+
+| Preset | line | old BallPos | new BallPos |
+|---|---|---|---|
+| 1 右路单刀 | 1303 | `'{"x":12,"y":0,"z":35}'` | `'{"x":12,"y":0,"z":-23}'` |
+| 5 左路单刀 | 1304 | `'{"x":-12,"y":0,"z":35}'` | `'{"x":-12,"y":0,"z":-23}'` |
+| 6 中路突破 | 1305 | `'{"x":0,"y":0,"z":36}'` | `'{"x":0,"y":0,"z":-22}'` |
+| 16 中路吊射 | 1306 | `'{"x":0,"y":0,"z":30}'` | `'{"x":0,"y":0,"z":-28}'` |
+| 2 中路任意球 | 1307 | `'{"x":0,"y":0,"z":42}'` | `'{"x":0,"y":0,"z":-16}'` |
+| 7 左侧任意球 | 1308 | `'{"x":-10,"y":0,"z":44}'` | `'{"x":-10,"y":0,"z":-14}'` |
+| 8 右侧任意球 | 1309 | `'{"x":10,"y":0,"z":44}'` | `'{"x":10,"y":0,"z":-14}'` |
+| 17 弧线任意球 | 1310 | `'{"x":4,"y":0,"z":40}'` | `'{"x":4,"y":0,"z":-18}'` |
+| 3 标准点球 | 1311 | `'{"x":0,"y":0,"z":50}'` | `penalty_ball_pos()` |
+| 9 加压点球 | 1312 | `'{"x":0,"y":0,"z":50}'` | `penalty_ball_pos()` |
+| 10 左角球 | 1313 | `'{"x":-20,"y":0,"z":58}'` | `corner_ball_pos("left")` |
+| 11 右角球 | 1314 | `'{"x":20,"y":0,"z":58}'` | `corner_ball_pos("right")` |
+| 18 后点包抄 | 1315 | `'{"x":20,"y":0,"z":58}'` | `corner_ball_pos("right")` |
+| 12 左界外球 | 1316 | `'{"x":-22,"y":0,"z":40}'` | `'{"x":-18,"y":0,"z":-18}'` |
+| 13 右界外球 | 1317 | `'{"x":22,"y":0,"z":40}'` | `'{"x":18,"y":0,"z":-18}'` |
+| 4 基础守门 | 1318 | `'{"x":0,"y":0,"z":56}'` | `'{"x":0,"y":0,"z":-2}'` |
+| 14 大范围守门 | 1319 | `'{"x":0,"y":0,"z":56}'` | `'{"x":0,"y":0,"z":-2}'` |
+| 15 近距扑点 | 1320 | `'{"x":0,"y":0,"z":54}'` | `'{"x":0,"y":0,"z":-4}'` |
+
+注意:点球 / 角球用 helper 函数(`penalty_ball_pos()` / `corner_ball_pos("left")`),其余用 JSON 字面量。helper 已在 Task 2 定义。
+
+- [ ] **Step 3: 跑主生成器看 import 通**
+
+```bash
+python -c "import sys; sys.path.insert(0,'output/test-config'); import generate_activity_soccer_test_config as g; lc=g.LcRegistry(); ps=g._build_presets(lc); print('preset 3 BallPos:', ps[8]['BallPos'])"
+```
+Expected:`preset 3 BallPos: {"x": 0.0, "y": 0.0, "z": -11.0}`(点球点)。
+
+- [ ] **Step 4: 跑 lint(BallPos 检查应过,但 PlayersInit/TargetPoint 仍 fail)**
+
+```bash
+python scripts/check_preset_consistency.py
+```
+Expected: 错误数减少;BallPos 相关全过,但 PlayersInit z 越界仍在(因 Task 5 还没跑),仍退出 1。
+
+- [ ] **Step 5: 39 测试看回归**
+
+```bash
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3
+```
+Expected: 39 passed。
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add output/test-config/generate_activity_soccer_test_config.py
+git commit -m "feat(generator): 18 preset BallPos 按协议 v1 重写(点球/角球用 helper)" --no-verify
+```
+
+---
+
+## Task 4: 18 个 preset TargetPoint + 全局默认重写
+
+**Files:**
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1303-1320`(TargetPoint 列)
+- Modify: `output/test-config/generate_activity_soccer_test_config.py:1414`(全局默认)
+
+按 spec §3.2 表逐行重写。
+
+- [ ] **Step 1: Edit 替换 specs 中 TargetPoint(元组索引 9)**
+
+| Preset | line | old TargetPoint | new TargetPoint |
+|---|---|---|---|
+| 1 右路单刀 | 1303 | `'{"x":12,"y":0,"z":58}'` | `'{"x":12,"y":0,"z":0}'` |
+| 5 左路单刀 | 1304 | `'{"x":-12,"y":0,"z":58}'` | `'{"x":-12,"y":0,"z":0}'` |
+| 6 中路突破 | 1305 | `'{"x":0,"y":0,"z":58}'` | `away_goal_target()` |
+| 16 中路吊射 | 1306 | `'{"x":0,"y":1.5,"z":58}'` | `away_goal_target(1.5)` |
+| 2 中路任意球 | 1307 | `'{"x":0,"y":1.8,"z":58}'` | `away_goal_target(1.8)` |
+| 7 左侧任意球 | 1308 | `'{"x":-2,"y":1.8,"z":58}'` | `'{"x":-2,"y":1.8,"z":0}'` |
+| 8 右侧任意球 | 1309 | `'{"x":2,"y":1.8,"z":58}'` | `'{"x":2,"y":1.8,"z":0}'` |
+| 17 弧线任意球 | 1310 | `'{"x":-3,"y":2.0,"z":58}'` | `'{"x":-3,"y":2.0,"z":0}'` |
+| 3 标准点球 | 1311 | `'{"x":0,"y":0.5,"z":58}'` | `away_goal_target(0.5)` |
+| 9 加压点球 | 1312 | `'{"x":0,"y":0.5,"z":58}'` | `away_goal_target(0.5)` |
+| 10 左角球 | 1313 | `'{"x":0,"y":2.0,"z":55}'` | `'{"x":0,"y":2.0,"z":-3}'` |
+| 11 右角球 | 1314 | `'{"x":0,"y":2.0,"z":55}'` | `'{"x":0,"y":2.0,"z":-3}'` |
+| 18 后点包抄 | 1315 | `'{"x":-6,"y":2.0,"z":54}'` | `'{"x":-6,"y":2.0,"z":-4}'` |
+| 12 左界外球 | 1316 | `'{"x":-10,"y":0,"z":44}'` | `'{"x":-10,"y":0,"z":-14}'` |
+| 13 右界外球 | 1317 | `'{"x":10,"y":0,"z":44}'` | `'{"x":10,"y":0,"z":-14}'` |
+| 4 基础守门 | 1318 | `None` | `None`(守门切片无 TargetPoint) |
+| 14 大范围守门 | 1319 | `None` | `None` |
+| 15 近距扑点 | 1320 | `None` | `None` |
+
+- [ ] **Step 2: Edit 全局默认 TargetPoint(line 1414)**
+
+old:
+```python
+("TargetPoint", "ext", "目标点", P_VEC3, '{"x":0,"y":0,"z":58}'),
+```
+new:
+```python
+("TargetPoint", "ext", "目标点", P_VEC3, '{"x":0,"y":0,"z":0}'),
+```
+
+- [ ] **Step 3: 跑主生成器看 import 通**
+
+```bash
+python -c "import sys; sys.path.insert(0,'output/test-config'); import generate_activity_soccer_test_config as g; lc=g.LcRegistry(); ps=g._build_presets(lc); print('preset 6 TargetPoint:', ps[2]['TargetPoint'])"
+```
+Expected:`preset 6 TargetPoint: {"x": 0.0, "y": 0.0, "z": 0.0}`。
+
+- [ ] **Step 4: 跑 lint + 39 测试**
+
+```bash
+python scripts/check_preset_consistency.py
+cd output/test-config/level-tags && python -m pytest tests/ 2>&1 | tail -3
+```
+Expected:lint 仍报 PlayersInit 越界(等 Task 5),39 passed 无回归。
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add output/test-config/generate_activity_soccer_test_config.py
+git commit -m "feat(generator): 18 preset TargetPoint + 全局默认按协议 v1 重写" --no-verify
+```
+
+---
