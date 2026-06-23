@@ -766,7 +766,6 @@ def c(*specs: tuple | dict) -> list[dict]:
 P_TYIDVAL = "TypIDVal_P_cspb"
 P_VEC3 = "PositionTuple_P"
 V_TYPE_PAYLOAD = "SoccerTypePayload_V"
-V_OBJECTIVE = "SoccerObjective_V"
 V_MODIFIER = "SoccerModifier_V"
 V_PLAYER_INIT = "SoccerPlayerInit_V"
 V_SEASON_GOAL = "SoccerSeasonGoal_V"
@@ -1092,19 +1091,21 @@ def _guide_instance_ai_cols(
 
 
 def _build_instance_library() -> list[dict]:
-    """180 库实例 = 10 tier × 6 type × 3 variant；旧 6 行(101-203)前置保留。"""
+    """180 库实例 = 10 tier × 6 type × 3 variant；旧 6 行(101-203)前置保留。
+    切片胜利条件由 SliceType 决定(attack/free_kick/penalty/corner/throw_in→进球;
+    goalkeep→不被进球),不在实例层覆盖。"""
     legacy = [
-        {"ID": 101, "SliceType": "attack", "PresetID": 1, "ObjectiveType": "score", "Remark": "试训-进攻",
+        {"ID": 101, "SliceType": "attack", "PresetID": 1, "Remark": "试训-进攻",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 102, "SliceType": "free_kick", "PresetID": 2, "ObjectiveType": "score", "Remark": "试训-任意球",
+        {"ID": 102, "SliceType": "free_kick", "PresetID": 2, "Remark": "试训-任意球",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 103, "SliceType": "penalty", "PresetID": 3, "ObjectiveType": "score", "Remark": "试训-点球",
+        {"ID": 103, "SliceType": "penalty", "PresetID": 3, "Remark": "试训-点球",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 201, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 30, "ObjectiveType": "score", "Remark": "引导关1",
+        {"ID": 201, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 30, "Remark": "引导关1",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 202, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 28, "ExtraObjectives": '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]', "Remark": "引导关2-助攻",
+        {"ID": 202, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 28, "Remark": "引导关2",
          **_guide_instance_ai_cols(1001, 2001, 2002, 0, 1200)},
-        {"ID": 203, "SliceType": "goalkeep", "PresetID": 4, "ObjectiveType": "survive", "Remark": "引导关3-守门",
+        {"ID": 203, "SliceType": "goalkeep", "PresetID": 4, "Remark": "引导关3-守门",
          **_guide_instance_ai_cols(1002, 0, 0, 2003, 900)},
     ]
     lib: list[dict] = []
@@ -1123,21 +1124,6 @@ def _build_instance_library() -> list[dict]:
                     "Modifiers": _instance_modifiers_json(tier, stype, variant),
                     "Remark": f"库 tier{tier} {type_name} v{variant}",
                 }
-                if variant in (1, 3):
-                    row["ObjectiveType"] = "survive" if stype == 6 else "score"
-                    row["ExtraObjectives"] = "[]"
-                else:
-                    if stype in (1, 4, 5):  # 进攻/角球/界外球：复合(助攻)
-                        row["ObjectiveType"] = ""
-                        row["ExtraObjectives"] = (
-                            '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]'
-                        )
-                    elif stype == 6:  # 守门
-                        row["ObjectiveType"] = "survive"
-                        row["ExtraObjectives"] = "[]"
-                    else:  # 任意球/点球加压
-                        row["ObjectiveType"] = "score"
-                        row["ExtraObjectives"] = "[]"
                 row.update(_instance_ai_cols(iid, stype))
                 lib.append(row)
     return legacy + lib
@@ -1652,8 +1638,6 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("SliceType", "string", "切片类型"),
             ("PresetID", "int", "preset_id"),
             ("OverrideOperableAngle", "float", "覆盖可操作夹角(0=不覆盖)"),
-            ("ObjectiveType", "string", "单一胜利目标(score/survive等)"),
-            ("ExtraObjectives", "ext[]", "复合胜利目标", V_OBJECTIVE, '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]'),
             ("Modifiers", "ext[]", "切片机制", V_MODIFIER, '[{"id":"moving_keeper","params":{"speed":1.0}}]'),
             ("AiProfileID", "int", "难度档→ActvSoccerAiProfileCfg"),
             ("GoalkeeperAiID", "int", "门将AI"),
@@ -2220,7 +2204,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "单切片AI字段已并入ActvSoccerSliceInstanceCfg,移动门将归属切片级Modifier",
             "回溯后RewindRandom=1,种子含rewind_count",
             "参数叠加: preset→instance→ai_profile→modifier",
-            "JSON字段使用ext/ext[]类型,第5行标注proto(如TypIDVal_P_cspb/SoccerObjective_V)",
+            "JSON字段使用ext/ext[]类型,第5行标注proto(如TypIDVal_P_cspb/SoccerModifier_V)",
             "ext/ext[]数据行不得留空: ext默认{}, ext[]默认[]; 有列示例时优先用第7行示例作默认值",
             "仅含单个参数时用int/float/string等基础类型,不用ext",
             "第1行读取端: 能确定仅前端c/仅后端s,拿不准或双端用cs; 见SHEET_DEFAULT_READ/READ_OVERRIDES",
@@ -2235,7 +2219,6 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "TypIDVal_P_cspb": ["SeasonReward", "SignReward", "FreeReward", "PaidReward", "Reward"],
             "PositionTuple_P": ["BallPos", "BallVector", "TargetPoint"],
             "SoccerTypePayload_V": ["TypePayload"],
-            "SoccerObjective_V": ["ExtraObjectives"],
             "SoccerModifier_V": ["Modifiers"],
             "SoccerPlayerInit_V": ["PlayersInit(team,idx,duty,pos,facing)"],
             "SoccerSeasonGoal_V": ["SeasonGoal"],
@@ -2244,7 +2227,6 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "DefaultCameraFov": "原DefaultCamera.fov",
             "CameraFov": "原Camera.fov",
             "OverrideOperableAngle": "原Overrides.operable_angle",
-            "ObjectiveType": "原Objectives单目标type",
             "ActvSoccerFameGrowthLevelCfg/ActvSoccerLifeGrowthLevelCfg": "原ActvSoccerGrowthLevelCfg按养成线拆分",
             "RewardFame/ContractStarLicReward/TicketCap等": "原LevelUpReward/LevelUpEffect拆列",
             "PlayerRating": "仅知名度等级表投放；读当前知名度档位行.PlayerRating；生活等级不参与",

@@ -218,8 +218,7 @@ def _make_ctx_with_slice_ai():
         },
         slice_instance_rows=[
             {"ID": sid, "SliceType": "x", "PresetID": 1,
-             "OverrideOperableAngle": 32.0, "ObjectiveType": "score",
-             "ExtraObjectives": "[]", "Modifiers": "[]",
+             "OverrideOperableAngle": 32.0, "Modifiers": "[]",
              "AiProfileID": 1005, "GoalkeeperAiID": 2031,
              "DefenderAiID": 2032, "ShooterAiID": 0,
              "ModifierID": 4002, "IsGuideAi": 0, "RewindRandom": 1,

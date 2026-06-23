@@ -551,7 +551,7 @@
     "单切片AI字段已并入ActvSoccerSliceInstanceCfg,移动门将归属切片级Modifier",
     "回溯后RewindRandom=1,种子含rewind_count",
     "参数叠加: preset→instance→ai_profile→modifier",
-    "JSON字段使用ext/ext[]类型,第5行标注proto(如TypIDVal_P_cspb/SoccerObjective_V)",
+    "JSON字段使用ext/ext[]类型,第5行标注proto(如TypIDVal_P_cspb/SoccerModifier_V)",
     "ext/ext[]数据行不得留空: ext默认{}, ext[]默认[]; 有列示例时优先用第7行示例作默认值",
     "仅含单个参数时用int/float/string等基础类型,不用ext",
     "第1行读取端: 能确定仅前端c/仅后端s,拿不准或双端用cs; 见SHEET_DEFAULT_READ/READ_OVERRIDES",
@@ -626,9 +626,6 @@
     "SoccerTypePayload_V": [
       "TypePayload"
     ],
-    "SoccerObjective_V": [
-      "ExtraObjectives"
-    ],
     "SoccerModifier_V": [
       "Modifiers"
     ],
@@ -643,7 +640,6 @@
     "DefaultCameraFov": "原DefaultCamera.fov",
     "CameraFov": "原Camera.fov",
     "OverrideOperableAngle": "原Overrides.operable_angle",
-    "ObjectiveType": "原Objectives单目标type",
     "ActvSoccerFameGrowthLevelCfg/ActvSoccerLifeGrowthLevelCfg": "原ActvSoccerGrowthLevelCfg按养成线拆分",
     "RewardFame/ContractStarLicReward/TicketCap等": "原LevelUpReward/LevelUpEffect拆列",
     "PlayerRating": "仅知名度等级表投放；读当前知名度档位行.PlayerRating；生活等级不参与",

@@ -239,7 +239,6 @@ _SHEET_SCHEMA: dict[str, list[tuple[str, str, str]]] = {
     "ActvSoccerSliceInstanceCfg": [
         ("cs", "int", "ID"), ("cs", "string", "SliceType"),
         ("cs", "int", "PresetID"), ("c", "float", "OverrideOperableAngle"),
-        ("cs", "string", "ObjectiveType"), ("cs", "ext[]", "ExtraObjectives"),
         ("cs", "ext[]", "Modifiers"),
         ("cs", "int", "AiProfileID"), ("cs", "int", "GoalkeeperAiID"),
         ("cs", "int", "DefenderAiID"), ("cs", "int", "ShooterAiID"),
