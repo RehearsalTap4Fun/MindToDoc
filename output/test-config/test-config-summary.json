@@ -33,7 +33,7 @@
     "ActvSoccerBetStakeTierCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
-  "language_entry_count": 295,
+  "language_entry_count": 233,
   "sheets_program_only": [
     "ActvSoccerSliceTypeDefCfg",
     "ActvSoccerPlayerAiDutyEnumCfg",
@@ -534,7 +534,7 @@
   },
   "test_flow": [
     "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
-    "试训/主界面/第一关引导步骤读取ActvSoccerGuideStepCfg;文案与手势描述走ActvSoccerLanguageCfg",
+    "试训/主界面/第一关引导步骤读取ActvSoccerGuideStepCfg;对话文案走ActvSoccerLanguageCfg,手势描述直接写中文",
     "引导关201/202/203 (进攻+助攻+守门射手)",
     "正式关301移动门将 (Modifier4001) / 302点球",
     "困难关复用301 (Profile1003+Modifier4002)",
@@ -613,9 +613,7 @@
     "PhaseLcKey",
     "DayContentLcKey",
     "DescLcKey",
-    "ChapterLcKey",
-    "DialogueLcKey",
-    "GestureDescLcKey"
+    "DialogueLcKey"
   ],
   "ext_proto_map": {
     "TypIDVal_P_cspb": [
