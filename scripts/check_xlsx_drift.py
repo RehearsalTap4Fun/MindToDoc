@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """检测测试配置生成脚本与 xlsx 是否漂移。
 
-用户经常直接手改 `output/test-config/ActivitySoccer.xlsx`(改成项目真实数据),
+用户经常直接手改 `output/test-config/ActivitySoccer_preview.xlsx`(改成项目真实数据),
 导致脚本与 xlsx 长期偏离。等到下一次跑脚本时一覆盖,手改全丢。
 
 本脚本:
   1. 在临时位置用 generate_activity_soccer_test_config.py 生成一份新 xlsx
-  2. 与当前 ActivitySoccer.xlsx 逐 sheet/字段/行做 diff
+  2. 与当前 ActivitySoccer_preview.xlsx 逐 sheet/字段/行做 diff
   3. 报告漂移(只在 user xlsx 里、只在 script xlsx 里、字段不一致、行内容不同)
   4. 退出码:0=完全一致 / 1=有漂移(适合 pre-commit hook 或 CI)
 
@@ -49,7 +49,7 @@ import openpyxl
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "output" / "test-config" / "generate_activity_soccer_test_config.py"
-XLSX = ROOT / "output" / "test-config" / "ActivitySoccer.xlsx"
+XLSX = ROOT / "output" / "test-config" / "ActivitySoccer_preview.xlsx"
 
 
 def load_workbook_dict(path: Path) -> dict:

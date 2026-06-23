@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Generate ActivitySoccer.xlsx test config from 2026 World Cup DingTalk doc.
+"""Generate ActivitySoccer_preview.xlsx test config from 2026 World Cup DingTalk doc.
 
 新增一张 sheet 时,以下位置必须同步更新(否则 summary/读取端/分组会漏):
   1. build_workbook(): 在合适的 # --- 分节注释下加 make_sheet(...)
@@ -19,7 +19,7 @@ from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 OUT_DIR = Path(__file__).parent
-OUTPUT_FILE = OUT_DIR / "ActivitySoccer.xlsx"
+OUTPUT_FILE = OUT_DIR / "ActivitySoccer_preview.xlsx"
 OUTPUT_LC_FILE = OUT_DIR / "ActivitySoccerLanguage.xlsx"
 # 追加到 dataconfig/ConstConfig.xlsx 的 CfgID 段（当前线上最大约 10135564）
 ACTV_SOCCER_CONST_CFGID_BASE = 10135601
@@ -795,6 +795,20 @@ GOAL_WIDTH = 8.5
 GOAL_HEIGHT = 3.0
 DEAD_CORNER_THICKNESS = 0.2
 
+# 对方门将站位 z（贴近球门线；游戏比例下门将不大幅出迎）
+AWAY_KEEPER_Z_DEFAULT = -0.5
+AWAY_KEEPER_Z_PENALTY = 0.0
+AWAY_KEEPER_Z_LONG_ATTACK = -1.0
+LONG_ATTACK_BALL_Z = -28.0   # 球点 z ≤ 此值视为远距进攻
+
+
+def away_keeper_z(slice_type: str, ball_z: float | None = None) -> float:
+    if slice_type == "penalty":
+        return AWAY_KEEPER_Z_PENALTY
+    if slice_type == "attack" and ball_z is not None and ball_z <= LONG_ATTACK_BALL_Z:
+        return AWAY_KEEPER_Z_LONG_ATTACK
+    return AWAY_KEEPER_Z_DEFAULT
+
 # §3.2 大禁区
 PENALTY_AREA_Z_FAR = -10.0
 PENALTY_AREA_X_HALF = 11.5
@@ -1318,13 +1332,14 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     四角度列存最宽基线(tier1)，逐 tier 收窄由实例 OverrideOperableAngle 实现。"""
 
     def gk_attack(home_x: float, ball_z: float = -23.0) -> list[dict]:
+        keeper_z = away_keeper_z("attack", ball_z)
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, ball_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, ball_z - 7,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, ball_z - 7)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -3,
-                        _face_toward(home_x, ball_z, 0, -3)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(home_x, ball_z, 0, keeper_z)),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, -10,
                         _face_toward(home_x, ball_z, home_x - 4, -10)),
         ]
@@ -1332,11 +1347,12 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     def free_kick_wall(ball_x: float, ball_z: float = -16.0) -> list[dict]:
         wall_z = min(-7.0, ball_z + 9.0)
         wall_xs = (-3.0, -1.5, 0.0, 1.5)
+        keeper_z = away_keeper_z("free_kick", ball_z)
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, ball_x, ball_z)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2,
-                        _face_toward(ball_x, ball_z, 0, -2)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(ball_x, ball_z, 0, keeper_z)),
             *[
                 player_init("away", idx, PLAYER_AI_DUTY_ENUM["Defender"], wx, 0, wall_z,
                             _face_toward(ball_x, ball_z, wx, wall_z))
@@ -1346,6 +1362,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
 
     def corner_players(side_x: float) -> list[dict]:
         ball_z = -1.0
+        keeper_z = away_keeper_z("corner")
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, ball_z,
                         _face_toward(0, 0, side_x, ball_z)),
@@ -1353,7 +1370,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                         _face_toward(0, 0, 2, -6)),
             player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, -6,
                         _face_toward(0, 0, -2, -6)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -8, 180.0),
         ]
 
@@ -1362,12 +1379,13 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         recv_x = max(-16.0, min(16.0, throw_x - (3 if throw_x > 0 else -3)))
         recv_z = -14.0
         ball_z = -18.0
+        keeper_z = away_keeper_z("throw_in")
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], throw_x, 0, ball_z,
                         _face_toward(recv_x, recv_z, throw_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], recv_x, 0, -10,
                         _face_toward(recv_x, recv_z, recv_x, -10)),
         ]
@@ -1394,18 +1412,20 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         support_z = max(FIELD_Z_FAR, ball_z - 7)
         defender_x = max(-FIELD_X_HALF, min(FIELD_X_HALF, ball_x * 0.55))
         defender_z = min(FIELD_Z_NEAR, max(PENALTY_AREA_Z_FAR, ball_z + 10))
+        keeper_z = away_keeper_z("attack", ball_z)
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], ball_x, 0, ball_z,
                         _face_toward(target_x, 0, ball_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], support_x, 0, support_z,
                         _face_toward(target_x, 0, support_x, support_z)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -3,
-                        _face_toward(ball_x, ball_z, 0, -3)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(ball_x, ball_z, 0, keeper_z)),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], defender_x, 0, defender_z,
                         _face_toward(ball_x, ball_z, defender_x, defender_z)),
         ]
 
     def corner_setup(side_x: float, target_x: float, target_z: float = 0.0) -> list[dict]:
+        keeper_z = away_keeper_z("corner")
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, -1,
                         _face_toward(target_x, target_z, side_x, -1)),
@@ -1413,7 +1433,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                         _face_toward(target_x, target_z, target_x, -6)),
             player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -target_x if target_x else 3, 0, -7,
                         _face_toward(target_x, target_z, -target_x if target_x else 3, -7)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], target_x * 0.5, 0, -8,
                         _face_toward(target_x, target_z, target_x * 0.5, -8)),
         ]
@@ -1421,6 +1441,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     def throw_in_setup(side_x: float, ball_z: float, target_x: float, target_z: float) -> list[dict]:
         throw_x = max(-FIELD_X_HALF, min(FIELD_X_HALF, side_x))
         support_x = max(-16.0, min(16.0, target_x * 0.5))
+        keeper_z = away_keeper_z("throw_in")
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], throw_x, 0, ball_z,
                         _face_toward(target_x, target_z, throw_x, ball_z)),
@@ -1428,7 +1449,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, target_x, target_z)),
             player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], support_x, 0, target_z - 6,
                         _face_toward(target_x, target_z, support_x, target_z - 6)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -2, 180.0),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], target_x, 0, min(-3, target_z + 4),
                         _face_toward(target_x, target_z, target_x, min(-3, target_z + 4))),
         ]
@@ -1446,8 +1467,8 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                     _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 12, -23.0)),
         player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 10, 0, -30,
                     _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 10, -30)),
-        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, -5,
-                    _face_toward(12, -23.0, 0, -5)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, away_keeper_z("attack", -23.0),
+                    _face_toward(12, -23.0, 0, away_keeper_z("attack", -23.0))),
         player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 8, 0, -12,
                     _face_toward(12, -23.0, 8, -12)),
     ]
@@ -2099,7 +2120,7 @@ def build_workbook(lc: LcRegistry) -> Workbook:
 
 def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict]) -> None:
     summary = {
-        "file": "ActivitySoccer.xlsx",
+        "file": "ActivitySoccer_preview.xlsx",
         "language_file": "ActivitySoccerLanguage.xlsx",
         "sources": SOURCE_DOCS,
         "sheets": sheets,
@@ -2260,7 +2281,7 @@ def main() -> None:
     try:
         wb.save(target)
     except PermissionError:
-        target = OUT_DIR / "ActivitySoccer.generated.xlsx"
+        target = OUT_DIR / "ActivitySoccer_preview.generated.xlsx"
         wb.save(target)
         print(f"WARN: {OUTPUT_FILE} 被占用，已写入 {target}")
 

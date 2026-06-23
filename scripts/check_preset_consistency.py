@@ -11,11 +11,14 @@
 6. 守门 preset:home 玩家 pos.z ∈ [GOAL_AREA_Z_FAR, FIELD_Z_NEAR]
 7. 任意球 preset:防守墙连续两人 |Δx| ≥ WALL_PLAYER_GAP_MIN - 0.001
 8. 方向、角度、枚举、JSON、控球索引、备注等基础字段均可解析且在约束内
+9. 对方门将(away.duty=Goalkeeper) z 取值必须落在三档常量之一,且与切片类型一致
+10. 主生成器源代码中 keeper z 不得散布硬编码,必须通过 away_keeper_z()/常量取
 
 退出码 0 / 1 / 2(主生成器缺常量返回 2)。
 """
 from __future__ import annotations
 
+import ast
 import json
 import sys
 from pathlib import Path
@@ -191,12 +194,101 @@ def check_presets() -> list[str]:
             if (b - a) < g.WALL_PLAYER_GAP_MIN - GAP_TOL:
                 errors.append(f"preset {pid} 任意球人墙 Δx={b-a:.2f} < {g.WALL_PLAYER_GAP_MIN} (球员重叠或球穿不过)")
 
+    for p in presets:
+        pid = p["ID"]
+        stype = p["SliceType"]
+        keeper_zs = [
+            float(pl["pos"]["z"])
+            for pl in json.loads(p["PlayersInit"])
+            if pl["team"] == "away" and pl["duty"] == g.PLAYER_AI_DUTY_ENUM["Goalkeeper"]
+        ]
+        if not keeper_zs:
+            continue
+        allowed = {g.AWAY_KEEPER_Z_DEFAULT, g.AWAY_KEEPER_Z_PENALTY, g.AWAY_KEEPER_Z_LONG_ATTACK}
+        for kz in keeper_zs:
+            if kz not in allowed:
+                errors.append(
+                    f"preset {pid} 对方门将 z={kz} 不在三档常量 {sorted(allowed)}"
+                )
+                continue
+            bz = _parse_pos(p["BallPos"])[2]
+            expect = g.away_keeper_z(stype, bz)
+            if kz != expect:
+                errors.append(
+                    f"preset {pid} ({stype}, ball_z={bz}) 对方门将 z={kz} 与档位规则期望 {expect} 不符"
+                )
+
+    return errors
+
+
+KEEPER_Z_ALLOWED_NAMES = {
+    "AWAY_KEEPER_Z_DEFAULT",
+    "AWAY_KEEPER_Z_PENALTY",
+    "AWAY_KEEPER_Z_LONG_ATTACK",
+}
+
+
+def _is_keeper_init_call(call: ast.Call) -> bool:
+    if not (isinstance(call.func, ast.Name) and call.func.id == "player_init"):
+        return False
+    if len(call.args) < 6:
+        return False
+    team_arg = call.args[0]
+    duty_arg = call.args[2]
+    if not (isinstance(team_arg, ast.Constant) and team_arg.value == "away"):
+        return False
+    if isinstance(duty_arg, ast.Subscript):
+        # PLAYER_AI_DUTY_ENUM["Goalkeeper"]
+        sl = duty_arg.slice
+        if isinstance(sl, ast.Constant) and sl.value == "Goalkeeper":
+            return True
+    return False
+
+
+def _z_arg_is_allowed(z_node: ast.AST) -> bool:
+    """允许:常量 0(占位) / AWAY_KEEPER_Z_* 常量名 / away_keeper_z(...) 调用 / 局部 keeper_z 变量。"""
+    if isinstance(z_node, ast.Constant) and z_node.value == 0:
+        return True  # 0 同时是 PENALTY 档常量值,放行
+    if isinstance(z_node, ast.Name):
+        if z_node.id in KEEPER_Z_ALLOWED_NAMES:
+            return True
+        if z_node.id == "keeper_z":
+            return True  # helper 内部局部变量,helper 自己取自 away_keeper_z()
+        return False
+    if isinstance(z_node, ast.Call):
+        if isinstance(z_node.func, ast.Name) and z_node.func.id == "away_keeper_z":
+            return True
+    return False
+
+
+def check_keeper_z_hardcode() -> list[str]:
+    """扫主生成器源代码:player_init(..., Goalkeeper, x, y, <z>, ...) 中第 6 参 z
+    必须是 away_keeper_z()/AWAY_KEEPER_Z_* 常量/局部 keeper_z 变量,
+    禁止散布数字字面量(0 例外:它本身就是 PENALTY 档值)。"""
+    src_path = ROOT / "output" / "test-config" / "generate_activity_soccer_test_config.py"
+    text = src_path.read_text(encoding="utf-8")
+    tree = ast.parse(text, filename=str(src_path))
+    errors: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not _is_keeper_init_call(node):
+            continue
+        z_node = node.args[5]
+        if _z_arg_is_allowed(z_node):
+            continue
+        snippet = ast.unparse(z_node)
+        errors.append(
+            f"{src_path.name}:{node.lineno} 对方门将 z 参数 `{snippet}` 不合规;"
+            f"应为 away_keeper_z(slice_type, ball_z) / AWAY_KEEPER_Z_* / keeper_z 局部变量"
+        )
     return errors
 
 
 def main() -> int:
     try:
         errors = check_presets()
+        errors.extend(check_keeper_z_hardcode())
     except AttributeError as e:
         print(f"[error] 主生成器缺少协议常量(尚未重构?): {e}", file=sys.stderr)
         return 2

@@ -5,6 +5,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Excel 临时锁文件(打开 xlsx 时生成)
+~$*.xlsx
+~$*.xls
+
 # 钉钉同步/源料 中间产物(每次任务期短期使用,不进版本)
 output/dingtalk-sync/
 output/dingtalk-source/
@@ -14,7 +18,7 @@ output/scripts/
 .diff-tmp/
 
 # 测试配置生成失败时的备用产物
-output/test-config/ActivitySoccer.generated.xlsx
+output/test-config/ActivitySoccer_preview.generated.xlsx
 output/test-config/ActivitySoccerLanguage.generated.xlsx
 
 # 关卡 tag 工具产物(由 apply_level_tags.py 生成)

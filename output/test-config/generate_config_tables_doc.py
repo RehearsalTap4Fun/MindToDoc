@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""从 ActivitySoccer.xlsx 生成数值策划填表派生文档。"""
+"""从 ActivitySoccer_preview.xlsx 生成数值策划填表派生文档。"""
 from __future__ import annotations
 
 import json
@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 
 OUT_DIR = Path(__file__).parent
 PROJECT_OUT = OUT_DIR.parent
-XLSX = OUT_DIR / "ActivitySoccer.xlsx"
+XLSX = OUT_DIR / "ActivitySoccer_preview.xlsx"
 LC_XLSX = OUT_DIR / "ActivitySoccerLanguage.xlsx"
 SUMMARY = OUT_DIR / "test-config-summary.json"
 OUTPUT = PROJECT_OUT / "2026世界杯主题活动-配置表结构.md"
