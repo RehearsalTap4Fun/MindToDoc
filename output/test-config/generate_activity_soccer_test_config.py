@@ -80,6 +80,11 @@ READ_OVERRIDES: dict[str, dict[str, str]] = {
     "ActvSoccerCharacterCfg": {"AppearanceKey": "c", "DisplayPower": "c"},
     "ActvSoccerNationalityCfg": {"NameLcKey": "c", "ContractPool": "s"},
     "ActvSoccerTutorialCfg": {"SliceInstanceID": "cs", "DescLcKey": "c"},
+    "ActvSoccerGuideStepCfg": {
+        "ChapterLcKey": "c", "DialogueLcKey": "c", "TextStyle": "c",
+        "FocusTarget": "c", "MaskType": "c", "GestureDescLcKey": "c",
+        "WaitType": "c", "WaitTarget": "c", "SkipPolicy": "c",
+    },
     "ActvSoccerSlicePresetCfg": {
         "NameLcKey": "c", "Tags": "c", "BallPos": "c", "BallVector": "c", "BallOwner": "c",
         "PlayersInit": "c", "CameraFov": "c", "TargetPoint": "c", "RecommendedModes": "c",
@@ -932,6 +937,104 @@ def build_language_workbook(registry: LcRegistry) -> Workbook:
     return wb
 
 
+def build_guide_step_rows(lc: LcRegistry) -> list[dict]:
+    """合并试训、签约后主界面强引导、第一关引导关的步骤配置。"""
+
+    def text(step_id: int, kind: str, cn: str) -> str:
+        return lc.add(lc_key("guide", kind, str(step_id)), cn, f"GuideStepCfg/{step_id}")
+
+    def row(
+        step_id: int,
+        guide_id: str,
+        chapter: str,
+        step_index: int,
+        phase: str,
+        trigger: str,
+        level_id: int,
+        slice_id: int,
+        dialogue: str,
+        text_style: str,
+        focus_target: str,
+        mask_type: str,
+        gesture: str,
+        wait_type: str,
+        wait_target: str,
+        pass_condition: str,
+        fail_action: str,
+        save_scope: str,
+        save_key: str,
+        save_value: str,
+        save_timing: str,
+        next_id: int,
+        skip_policy: str,
+        remark: str = "",
+    ) -> dict:
+        return {
+            "ID": step_id,
+            "GuideID": guide_id,
+            "ChapterLcKey": text(step_id, "chapter", chapter),
+            "StepIndex": step_index,
+            "Phase": phase,
+            "Trigger": trigger,
+            "LevelID": level_id,
+            "SliceID": slice_id,
+            "DialogueLcKey": text(step_id, "dialogue", dialogue) if dialogue else "",
+            "TextStyle": text_style,
+            "FocusTarget": focus_target,
+            "MaskType": mask_type,
+            "GestureDescLcKey": text(step_id, "gesture", gesture) if gesture else "",
+            "WaitType": wait_type,
+            "WaitTarget": wait_target,
+            "PassCondition": pass_condition,
+            "FailAction": fail_action,
+            "SaveScope": save_scope,
+            "SaveKey": save_key,
+            "SaveValue": save_value,
+            "SaveTiming": save_timing,
+            "NextID": next_id,
+            "SkipPolicy": skip_policy,
+            "Remark": remark,
+        }
+
+    return [
+        row(1001, "trial", "试训入口", 1, "trial", "on_confirm_character_nationality", 0, 0, "先完成一次试训，熟悉比赛中的射门操作。", "bottom_bar", "screen_center", "none", "", "auto_delay", "1.0s", "delay_end", "none", "profile", "trial_state", "started", "step_complete", 1010, "cannot_skip", "进入试训前说明"),
+        row(1010, "trial", "试训关卡", 2, "trial", "on_trial_slice_enter", 0, 101, "按住球员脚下区域，画出你想踢出的路线。", "bottom_bar", "player_operate_area", "spotlight", "白色手指从球员脚下按住，沿推荐轨迹拖向白色目标框，轨迹线循环播放。", "drag", "player_operate_area", "player_drag_start", "retry_step", "profile", "trial_step", "1", "step_complete", 1011, "cannot_skip", "试训1:进攻划线"),
+        row(1011, "trial", "试训关卡", 3, "trial", "on_player_drag_start", 0, 101, "松手后，球会沿着轨迹飞出。", "bottom_bar", "predicted_trajectory", "spotlight", "手指沿轨迹到达目标框后松开，展示释放射门。", "release", "target_goal_frame", "player_release_ball", "retry_step", "", "", "", "", 1012, "cannot_skip", "试训1:松手射门"),
+        row(1012, "trial", "试训关卡", 4, "trial", "on_slice_101_success", 0, 101, "做得好！继续下一项训练。", "toast", "target_goal_frame", "none", "", "auto_delay", "0.8s", "delay_end", "none", "profile", "trial_step_1_done", "true", "step_complete", 1020, "cannot_skip", "试训1成功"),
+        row(1013, "trial", "试训关卡", 5, "trial", "on_slice_101_fail", 0, 101, "再试一次，把路线画向白色目标框。", "bottom_bar", "target_goal_frame", "spotlight", "重复播放从球员脚下划向目标框的轨迹手势。", "drag", "player_operate_area", "player_release_ball", "retry_step", "", "", "", "", 1011, "cannot_skip", "试训1失败重试"),
+        row(1020, "trial", "试训关卡", 6, "trial", "on_trial_slice_enter", 0, 102, "任意球需要避开人墙。拖动来选择方向和力量。", "bottom_bar", "free_kick_target_area", "spotlight", "手指从球向后拖拽，出现弹弓方向线和力度百分比。", "drag", "power_angle_area", "player_drag_power", "retry_step", "profile", "trial_step", "2", "step_complete", 1021, "cannot_skip", "试训2:任意球方向和力度"),
+        row(1021, "trial", "试训关卡", 7, "trial", "on_player_drag_power", 0, 102, "力量控制在65%左右，更容易命中目标。", "bottom_bar", "power_percent_ui", "spotlight", "手指拖动到推荐力度点，力度数值从49%动到65%附近。", "release", "power_percent_ui", "power_in_range_or_release", "retry_step", "", "", "", "", 1022, "cannot_skip", "试训2:力度教学"),
+        row(1022, "trial", "试训关卡", 8, "trial", "on_slice_102_success", 0, 102, "很好，任意球训练完成。", "toast", "goal_target", "none", "", "auto_delay", "0.8s", "delay_end", "none", "profile", "trial_step_2_done", "true", "step_complete", 1030, "cannot_skip", "试训2成功"),
+        row(1023, "trial", "试训关卡", 9, "trial", "on_slice_102_fail_power_low", 0, 102, "力量太小了，再向后拖动一些。", "bottom_bar", "power_percent_ui", "spotlight", "重复播放向后拖拽至65%附近的力度手势。", "drag", "power_angle_area", "player_release_ball", "retry_step", "", "", "", "", 1021, "cannot_skip", "任意球力量太小"),
+        row(1024, "trial", "试训关卡", 10, "trial", "on_slice_102_fail_power_high", 0, 102, "力量太大了，稍微收一点力。", "bottom_bar", "power_percent_ui", "spotlight", "重复播放力度回收到65%附近的手势。", "drag", "power_angle_area", "player_release_ball", "retry_step", "", "", "", "", 1021, "cannot_skip", "任意球力量太大"),
+        row(1025, "trial", "试训关卡", 11, "trial", "on_slice_102_fail_angle", 0, 102, "角度偏离目标，再调整射门方向。", "bottom_bar", "angle_sector", "spotlight", "重复播放拖动方向线进入黄色允许角度范围的手势。", "drag", "power_angle_area", "player_release_ball", "retry_step", "", "", "", "", 1021, "cannot_skip", "任意球角度偏离"),
+        row(1030, "trial", "试训关卡", 12, "trial", "on_trial_slice_enter", 0, 103, "试训中可以自由切换操作方式，选择你更顺手的模式。", "bottom_bar", "mode_toggle_button", "spotlight", "点击手指点按模式切换按钮，按钮在划线/弹弓之间切换。", "tap", "mode_toggle_button", "mode_toggle_clicked_or_delay", "none", "profile", "trial_step", "3", "step_complete", 1031, "auto_after_delay", "试训3:模式切换"),
+        row(1031, "trial", "试训关卡", 13, "trial", "on_mode_toggle_done", 0, 103, "现在把球踢向高亮区域。", "bottom_bar", "penalty_goal_target", "spotlight", "按玩家当前模式播放对应手势：划线轨迹或弹弓拖拽。", "release", "penalty_goal_target", "player_release_ball", "retry_step", "", "", "", "", 1032, "cannot_skip", "试训3:点球射门"),
+        row(1032, "trial", "试训关卡", 14, "trial", "on_slice_103_success", 0, 103, "点球训练完成。", "toast", "penalty_goal_target", "none", "", "auto_delay", "0.8s", "delay_end", "none", "profile", "trial_step_3_done", "true", "step_complete", 1040, "cannot_skip", "试训3成功"),
+        row(1033, "trial", "试训关卡", 15, "trial", "on_slice_103_fail", 0, 103, "再试一次，瞄准高亮区域射门。", "bottom_bar", "penalty_goal_target", "spotlight", "按当前操作模式重复播放点球射门手势。", "release", "penalty_goal_target", "player_release_ball", "retry_step", "", "", "", "", 1031, "cannot_skip", "点球失败重试"),
+        row(1040, "trial", "试训完成", 16, "trial", "on_trial_all_slices_done", 0, 0, "试训完成。球队给你发来了邀请，挑选一支作为职业生涯起点。", "popup", "trial_complete_confirm", "full", "点击手指循环点按确认按钮。", "tap", "trial_complete_confirm", "button_clicked", "none", "profile", "trial_done", "true", "button_clicked", 0, "cannot_skip", "试训完成进入选队"),
+        row(2001, "main_to_level1", "主界面强引导", 1, "main", "on_first_contract_signed", 0, 0, "第一场比赛已经准备好了，先从基础比赛开始。", "bubble", "main_next_match_button", "spotlight", "点击手指点按主界面下一场比赛按钮。", "tap", "main_next_match_button", "button_clicked", "none", "profile", "main_guide_step", "enter_level1", "step_complete", 2010, "cannot_skip", "签约后强引导点下一场"),
+        row(2010, "main_to_level1", "战前页引导", 2, "pre_battle", "on_level1_prebattle_enter", 1, 0, "这里可以看到本场比赛目标。", "bubble", "level_goal_bar", "spotlight", "", "auto_delay", "1.2s", "delay_end", "none", "profile", "main_guide_step", "prebattle_goal_seen", "step_complete", 2011, "cannot_skip", "说明战前页目标条"),
+        row(2011, "main_to_level1", "战前页引导", 3, "pre_battle", "after_goal_bar_tip", 1, 0, "点击开球，开始你的第一场比赛。", "bubble", "kickoff_button", "spotlight", "点击手指点按黄色开球按钮。", "tap", "kickoff_button", "button_clicked", "none", "runtime", "level1_attempt_started", "true", "button_clicked", 0, "cannot_skip", "点击开球创建attempt"),
+        row(3001, "level1_tutorial", "第一关入场", 1, "level", "on_level1_attempt_started", 1, 0, "比赛即将开始。", "bottom_bar", "stadium_entry", "none", "", "none", "auto", "entry_camera_end", "none", "runtime", "guide_level_step", "entry_done", "step_complete", 3010, "cannot_skip", "入场/开球/黑幕转切片"),
+        row(3010, "level1_tutorial", "第一关切片201", 2, "level", "on_slice_201_enter", 1, 201, "黄色光圈表示当前由你操作的球员。", "bubble", "controlled_player_ring", "spotlight", "", "tap", "guide_confirm_button", "button_clicked", "none", "runtime", "guide_level_step", "201_player_focus_done", "step_complete", 3011, "cannot_skip", "当前操作球员"),
+        row(3011, "level1_tutorial", "第一关切片201", 3, "level", "after_player_ring_tip", 1, 201, "这个标志表示这个方向上有你的队友。", "bubble", "teammate_indicator", "spotlight", "点击手指点按明白了按钮。", "tap", "guide_confirm_button", "button_clicked", "none", "runtime", "guide_level_step", "201_teammate_indicator_done", "step_complete", 3012, "cannot_skip", "队友方向浮标"),
+        row(3012, "level1_tutorial", "第一关切片201", 4, "level", "after_teammate_indicator_tip", 1, 201, "在屏幕上半部分左右滑动，可以移动相机观察场上情况。", "bottom_bar", "camera_swipe_area", "spotlight", "手指在上半屏左右滑动一次，循环播放。", "swipe", "camera_swipe_area", "camera_swiped_or_delay", "none", "runtime", "guide_level_step", "201_camera_done", "step_complete", 3013, "auto_after_delay", "视角滑动教学"),
+        row(3013, "level1_tutorial", "第一关切片201", 5, "level", "after_camera_tip", 1, 201, "现在把球踢向白色目标区域。", "bottom_bar", "slice_201_target", "spotlight", "按当前锁定前模式播放射门手势：划线或弹弓。", "release", "slice_201_target", "player_release_ball", "show_rewind", "runtime", "guide_level_step", "201_shoot_done", "step_complete", 3014, "cannot_skip", "基础射门;首个非守门切片锁模式"),
+        row(3014, "level1_tutorial", "第一关切片201", 6, "level", "on_slice_201_success", 1, 201, "进攻完成，点击继续。", "toast", "replay_continue_button", "none", "点击手指点按继续按钮。", "click_continue", "replay_continue_button", "button_clicked", "none", "attempt", "slice_201_done", "true", "click_continue", 3020, "cannot_skip", "成功回放后继续"),
+        row(3015, "level1_tutorial", "第一关切片201", 7, "level", "on_slice_201_fail", 1, 201, "错过这次机会可能会影响比赛结果，可以使用回溯重试。", "bubble", "rewind_popup", "spotlight", "点击手指点按免费回溯按钮。", "tap", "rewind_free_button", "button_clicked", "continue_as_failed", "profile", "rewind_tutorial_seen", "true", "button_clicked", 3013, "cannot_skip", "第一次失败教回溯"),
+        row(3020, "level1_tutorial", "第一关切片202", 8, "level", "on_slice_202_enter", 1, 202, "有些机会需要先传给队友。把球传到队友脚下。", "bottom_bar", "teammate_target", "spotlight", "手指从主角脚下拖向队友目标区域。", "drag", "teammate_target", "pass_released_to_teammate_area", "show_rewind", "runtime", "guide_level_step", "202_pass_prompt_done", "step_complete", 3021, "cannot_skip", "助攻教学"),
+        row(3021, "level1_tutorial", "第一关切片202", 9, "level", "on_pass_to_teammate_success", 1, 202, "传球成功后，队友会完成射门，这会计为你的助攻。", "bottom_bar", "teammate_shoot_target", "spotlight", "", "none", "auto", "teammate_shot_end", "none", "runtime", "guide_level_step", "202_teammate_shot_seen", "step_complete", 3022, "cannot_skip", "队友自动射门表现"),
+        row(3022, "level1_tutorial", "第一关切片202", 10, "level", "on_slice_202_success", 1, 202, "助攻完成，点击继续。", "toast", "replay_continue_button", "none", "点击手指点按继续按钮。", "click_continue", "replay_continue_button", "button_clicked", "none", "attempt", "slice_202_done", "true", "click_continue", 3030, "cannot_skip", "助攻成功继续"),
+        row(3023, "level1_tutorial", "第一关切片202", 11, "level", "on_slice_202_fail", 1, 202, "传球没有到位，可以回溯后再试一次。", "bubble", "rewind_popup", "spotlight", "点击手指点按回溯按钮；若玩家放弃则按失败继续。", "tap", "rewind_free_or_confirm_button", "button_clicked_or_give_up", "continue_as_failed", "", "", "", "", 3020, "allow_skip_if_seen", "助攻失败可回溯"),
+        row(3030, "level1_tutorial", "第一关切片203", 12, "level", "on_slice_203_enter", 1, 203, "现在轮到你防守。看准射门方向，划线完成扑救。", "bottom_bar", "goalkeeper", "spotlight", "手指从门将位置滑向来球方向。", "swipe", "save_direction_area", "goalkeep_swipe_finished", "show_rewind", "runtime", "guide_level_step", "203_goalkeep_prompt_done", "step_complete", 3031, "cannot_skip", "守门强制划线"),
+        row(3031, "level1_tutorial", "第一关切片203", 13, "level", "on_slice_203_success", 1, 203, "扑救完成，点击继续。", "toast", "replay_continue_button", "none", "点击手指点按继续按钮。", "click_continue", "replay_continue_button", "button_clicked", "none", "attempt", "slice_203_done", "true", "click_continue", 3040, "cannot_skip", "守门成功继续"),
+        row(3032, "level1_tutorial", "第一关切片203", 14, "level", "on_slice_203_fail", 1, 203, "再试一次，沿着来球方向滑动。", "bubble", "save_direction_area", "spotlight", "重复播放门将滑向来球方向的手势；若玩家放弃则按失败继续。", "swipe", "save_direction_area", "goalkeep_swipe_finished_or_give_up", "continue_as_failed", "", "", "", "", 3030, "allow_skip_if_seen", "守门失败提示"),
+        row(3040, "level1_tutorial", "第一关结算", 15, "settlement", "on_level1_all_slices_done", 1, 0, "比赛结束，查看本场奖励。", "popup", "level_settlement_confirm", "full", "点击手指点按结算确认按钮。", "tap", "level_settlement_confirm", "button_clicked", "none", "attempt", "level1_settlement_confirmed", "true", "button_clicked", 3041, "cannot_skip", "关卡结算确认"),
+        row(3041, "level1_tutorial", "第一关结算", 16, "settlement", "on_rank_settlement_show", 1, 0, "这里会展示本轮后的排名变化。", "popup", "rank_settlement_confirm", "full", "点击手指点按排名结算确认按钮。", "tap", "rank_settlement_confirm", "button_clicked", "none", "profile", "first_level_tutorial_done", "true", "button_clicked", 0, "cannot_skip", "排名确认，引导完成"),
+    ]
+
+
 # =====================================================================
 # 关卡设计 · 参数化生成（50 轮 × 10 关 = 500 关；分层可复用切片实例库）
 # 详见 output/关卡设计方案.md。tier = ceil(round/5)，每档 5 轮。
@@ -1603,6 +1706,38 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         ],
     )
 
+    make_sheet(
+        wb,
+        "ActvSoccerGuideStepCfg",
+        c(
+            id_col("int", "引导步骤ID"),
+            ("GuideID", "string", "引导组ID:trial/main_to_level1/level1_tutorial"),
+            ("ChapterLcKey", "string", "引导章节名→ActvSoccerLanguageCfg"),
+            ("StepIndex", "int", "组内步骤序号"),
+            ("Phase", "string", "阶段:trial/main/pre_battle/level/settlement"),
+            ("Trigger", "string", "触发事件或状态条件"),
+            ("LevelID", "int", "绑定关卡ID;非关卡步骤填0"),
+            ("SliceID", "int", "绑定切片实例ID;非切片步骤填0"),
+            ("DialogueLcKey", "string", "引导文案→ActvSoccerLanguageCfg"),
+            ("TextStyle", "string", "文案表现:bubble/bottom_bar/popup/toast"),
+            ("FocusTarget", "string", "高亮对象:UINode或局内tag"),
+            ("MaskType", "string", "遮罩:none/full/spotlight/bottom_safe"),
+            ("GestureDescLcKey", "string", "手势动画描述→ActvSoccerLanguageCfg;无手势留空"),
+            ("WaitType", "string", "等待类型:none/tap/drag/swipe/release/click_continue/auto_delay"),
+            ("WaitTarget", "string", "等待目标:UI节点/操作区域/切片目标"),
+            ("PassCondition", "string", "通过条件:事件名或判定表达"),
+            ("FailAction", "string", "失败处理:none/retry_step/show_rewind/continue_as_failed"),
+            ("SaveScope", "string", "保存域:profile/runtime/attempt;无保存留空"),
+            ("SaveKey", "string", "保存字段;无保存留空"),
+            ("SaveValue", "string", "保存值;无保存留空"),
+            ("SaveTiming", "string", "保存时机:step_complete/button_clicked/click_continue"),
+            ("NextID", "int", "下一步骤ID;0=结束"),
+            ("SkipPolicy", "string", "跳过策略:cannot_skip/auto_after_delay/allow_skip_if_seen"),
+            ("Remark", "string", "备注"),
+        ),
+        build_guide_step_rows(lc),
+    )
+
     # --- 3.2 切片 ---
     make_sheet(
         wb,
@@ -2143,6 +2278,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
         "sheet_groups": {
             "玩法基础": [
                 "ActvSoccerCharacterCfg", "ActvSoccerNationalityCfg", "ActvSoccerTutorialCfg",
+                "ActvSoccerGuideStepCfg",
                 "ActvSoccerSlicePresetCfg", "ActvSoccerSliceInstanceCfg",
                 "ActvSoccerLevelCfg", "ActvSoccerSeasonCfg",
             ],
@@ -2181,9 +2317,11 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
             "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
             "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300",
+            "GuideStep": "1001-1040=试训;2001-2011=签约后主界面到第一关;3001-3041=第一关固定脚本引导",
         },
         "test_flow": [
             "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
+            "试训/主界面/第一关引导步骤读取ActvSoccerGuideStepCfg;文案与手势描述走ActvSoccerLanguageCfg",
             "引导关201/202/203 (进攻+助攻+守门射手)",
             "正式关301移动门将 (Modifier4001) / 302点球",
             "困难关复用301 (Profile1003+Modifier4002)",
@@ -2214,6 +2352,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
         "lc_id_format": "ActvSoccer_{category}_{semantic}_{seq}",
         "lc_fields": [
             "NameLcKey", "TitleLcKey", "LeagueNameLcKey", "PhaseLcKey", "DayContentLcKey", "DescLcKey",
+            "ChapterLcKey", "DialogueLcKey", "GestureDescLcKey",
         ],
         "ext_proto_map": {
             "TypIDVal_P_cspb": ["SeasonReward", "SignReward", "FreeReward", "PaidReward", "Reward"],
