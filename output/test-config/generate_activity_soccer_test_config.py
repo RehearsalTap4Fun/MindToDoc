@@ -996,7 +996,7 @@ def build_guide_step_rows(lc: LcRegistry) -> list[dict]:
             "Remark": remark,
         }
 
-    return [
+    source_rows = [
         row(1001, "trial", "试训入口", 1, "trial", "on_confirm_character_nationality", 0, 0, "先完成一次试训，熟悉比赛中的射门操作。", "bottom_bar", "screen_center", "none", "", "auto_delay", "1.0s", "delay_end", "none", "profile", "trial_state", "started", "step_complete", 1010, "cannot_skip", "进入试训前说明"),
         row(1010, "trial", "试训关卡", 2, "trial", "on_trial_slice_enter", 0, 101, "按住球员脚下区域，画出你想踢出的路线。", "bottom_bar", "player_operate_area", "spotlight", "白色手指从球员脚下按住，沿推荐轨迹拖向白色目标框，轨迹线循环播放。", "drag", "player_operate_area", "player_drag_start", "retry_step", "profile", "trial_step", "1", "step_complete", 1011, "cannot_skip", "试训1:进攻划线"),
         row(1011, "trial", "试训关卡", 3, "trial", "on_player_drag_start", 0, 101, "松手后，球会沿着轨迹飞出。", "bottom_bar", "predicted_trajectory", "spotlight", "手指沿轨迹到达目标框后松开，展示释放射门。", "release", "target_goal_frame", "player_release_ball", "retry_step", "", "", "", "", 1012, "cannot_skip", "试训1:松手射门"),
@@ -1033,6 +1033,54 @@ def build_guide_step_rows(lc: LcRegistry) -> list[dict]:
         row(3040, "level1_tutorial", "第一关结算", 15, "settlement", "on_level1_all_slices_done", 1, 0, "比赛结束，查看本场奖励。", "popup", "level_settlement_confirm", "full", "点击手指点按结算确认按钮。", "tap", "level_settlement_confirm", "button_clicked", "none", "attempt", "level1_settlement_confirmed", "true", "button_clicked", 3041, "cannot_skip", "关卡结算确认"),
         row(3041, "level1_tutorial", "第一关结算", 16, "settlement", "on_rank_settlement_show", 1, 0, "这里会展示本轮后的排名变化。", "popup", "rank_settlement_confirm", "full", "点击手指点按排名结算确认按钮。", "tap", "rank_settlement_confirm", "button_clicked", "none", "profile", "first_level_tutorial_done", "true", "button_clicked", 0, "cannot_skip", "排名确认，引导完成"),
     ]
+
+    def first_expanded_id(source_id: int) -> int:
+        return source_id * 10 + 1
+
+    def remap_next(source_next_id: int) -> int:
+        return first_expanded_id(source_next_id) if source_next_id else 0
+
+    expanded_rows: list[dict] = []
+    for src in source_rows:
+        source_id = int(src["ID"])
+        has_dialogue = bool(src.get("DialogueLcKey"))
+        has_gesture = bool(src.get("GestureDescLcKey"))
+        if has_dialogue and has_gesture:
+            dialogue_row = src.copy()
+            dialogue_row["ID"] = first_expanded_id(source_id)
+            dialogue_row["GestureDescLcKey"] = ""
+            dialogue_row["WaitType"] = "tap"
+            dialogue_row["WaitTarget"] = "guide_confirm_button"
+            dialogue_row["PassCondition"] = "button_clicked"
+            dialogue_row["FailAction"] = "none"
+            dialogue_row["SaveScope"] = ""
+            dialogue_row["SaveKey"] = ""
+            dialogue_row["SaveValue"] = ""
+            dialogue_row["SaveTiming"] = ""
+            dialogue_row["NextID"] = source_id * 10 + 2
+            dialogue_row["Remark"] = f"{src.get('Remark', '')};对话步骤".strip(";")
+            expanded_rows.append(dialogue_row)
+
+            gesture_row = src.copy()
+            gesture_row["ID"] = source_id * 10 + 2
+            gesture_row["DialogueLcKey"] = ""
+            gesture_row["TextStyle"] = ""
+            gesture_row["NextID"] = remap_next(int(src["NextID"]))
+            gesture_row["Remark"] = f"{src.get('Remark', '')};手势/等待操作步骤".strip(";")
+            expanded_rows.append(gesture_row)
+        else:
+            expanded_row = src.copy()
+            expanded_row["ID"] = first_expanded_id(source_id)
+            expanded_row["NextID"] = remap_next(int(src["NextID"]))
+            expanded_rows.append(expanded_row)
+
+    step_index_by_guide: dict[str, int] = {}
+    for expanded_row in expanded_rows:
+        guide_id = expanded_row["GuideID"]
+        step_index_by_guide[guide_id] = step_index_by_guide.get(guide_id, 0) + 1
+        expanded_row["StepIndex"] = step_index_by_guide[guide_id]
+
+    return expanded_rows
 
 
 # =====================================================================
@@ -2317,7 +2365,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
             "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
             "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300",
-            "GuideStep": "1001-1040=试训;2001-2011=签约后主界面到第一关;3001-3041=第一关固定脚本引导",
+            "GuideStep": "源步骤ID×10+1=对话/单步;源步骤ID×10+2=手势/等待操作;10011-10402=试训;20011-20112=签约后主界面到第一关;30011-30412=第一关固定脚本引导",
         },
         "test_flow": [
             "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
