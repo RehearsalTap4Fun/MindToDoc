@@ -18,7 +18,6 @@
     "ActvSoccerLevelCfg",
     "ActvSoccerAiProfileCfg",
     "ActvSoccerEnemyAiCfg",
-    "ActvSoccerSliceAiCfg",
     "ActvSoccerAiModifierCfg",
     "ActvSoccerSliceFlowCfg",
     "ActvSoccerFameGrowthLevelCfg",
@@ -489,7 +488,6 @@
     "FSM_BT_AI": [
       "ActvSoccerAiProfileCfg",
       "ActvSoccerEnemyAiCfg",
-      "ActvSoccerSliceAiCfg",
       "ActvSoccerAiModifierCfg",
       "ActvSoccerSliceFlowCfg"
     ],
@@ -521,22 +519,21 @@
     "AiProfile": "1001-1010=tier1-10难度档(easy/normal/hard),单调递增,DeadCorner固定0",
     "PlayerAiDuty": "1=Goalkeeper守门员,2=Defender后卫(对方非门将),3=Forward前锋(我方含玩家)",
     "EnemyAi": "2001-2003=band1(tier1-3);20X1/20X2/20X3=bandX门将/后卫/射手(X=2,3,4)",
-    "SliceAi": "3001-3006=试训/引导切片101-203;3100+=库实例(每库实例一行)",
     "Modifier": "4001/4002/4005=移动门将(普通/困难/极限),4003=无辅助线,4004=固定人墙,4006=收窄夹角,4007=随机扑救",
     "ReceiveDecision": "5001-5004=接球决策风格(Balanced/Playmaker/Dribbler/TargetMan)",
     "PlayerStyle": "5101-5104=球员风格(Balanced/Playmaker/Dribbler/TargetMan);CharacterCfg.PlayerStyleCfgID引用",
     "FirstTouchAnim": "5201+=第一脚触球表现映射(Action×BallHeight×Direction×Pressure)",
-    "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-2);101-203=试训/引导",
+    "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-3);101-203=试训/引导;AI字段已并入本表",
     "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
     "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
     "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
     "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300"
   },
   "test_flow": [
-    "创角→试训切片101/102/103 (SliceAi 3001-3003, easy档)",
-    "引导关201/202/203 (3004-3006: 进攻+助攻+守门射手)",
-    "正式关301移动门将 (3007+Modifier4001) / 302点球 (3008)",
-    "困难关复用301 (3009+Profile1003+Modifier4002)",
+    "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
+    "引导关201/202/203 (进攻+助攻+守门射手)",
+    "正式关301移动门将 (Modifier4001) / 302点球",
+    "困难关复用301 (Profile1003+Modifier4002)",
     "切片FSM: SliceFlowCfg按类型读流程; 角色动画映射见客户端CharacterStateCfg(不进策划xlsx)"
   ],
   "notes": [
@@ -551,7 +548,7 @@
     "局内道具与玩法常量: 见配置表结构文档附录；常量合并 dataconfig/ConstConfig.xlsx",
     "知名度等级表可拆分为更细档位(行数>当前测试7档)；生活等级保持小量级不参与主角评分",
     "AI难度只控成功率; 死角球见ConstConfig ActvSoccer_dead_corner_can_save",
-    "单切片AI在ActvSoccerSliceAiCfg配置,移动门将归属切片级Modifier",
+    "单切片AI字段已并入ActvSoccerSliceInstanceCfg,移动门将归属切片级Modifier",
     "回溯后RewindRandom=1,种子含rewind_count",
     "参数叠加: preset→instance→ai_profile→modifier",
     "JSON字段使用ext/ext[]类型,第5行标注proto(如TypIDVal_P_cspb/SoccerObjective_V)",

@@ -14,7 +14,6 @@ def _make_ctx(slice_count=4, tier=5, level_in_round=5):
             "TicketCost": 1, "OpponentTeamID": 3025, "OpponentTeamStar": 3,
             "SeasonID": 25, "Remark": "",
         },
-        slice_ai_rows=[],
         slice_instance_rows=[],
         new_id_alloc=lambda: 99999,
         level_in_round=level_in_round,
@@ -200,7 +199,7 @@ def test_all_v2_flips_last_digit():
 
 
 def _make_ctx_with_slice_ai():
-    """构造带 SliceList 对应 SliceAi 行的 ctx,模拟 apply 层的现实输入。"""
+    """构造带 SliceList 对应实例行的 ctx,模拟 apply 层的现实输入。"""
     import importlib, level_tag_lib as lib
     importlib.reload(lib)
     lib._register_level_only_tags(); lib._register_slice_tags(); lib._register_ai_tags()
@@ -217,17 +216,14 @@ def _make_ctx_with_slice_ai():
             "TicketCost": 1, "OpponentTeamID": 3025, "OpponentTeamStar": 3,
             "SeasonID": 25, "Remark": "",
         },
-        slice_ai_rows=[
-            {"ID": 3100+i, "SliceID": sid, "AiProfileID": 1005,
-             "GoalkeeperAiID": 2031, "DefenderAiID": 2032, "ShooterAiID": 0,
-             "ModifierID": 4002, "IsGuideAi": 0, "RewindRandom": 1,
-             "OverrideReactionTimeMs": 950, "Remark": ""}
-            for i, sid in enumerate(sl_ids)
-        ],
         slice_instance_rows=[
             {"ID": sid, "SliceType": "x", "PresetID": 1,
              "OverrideOperableAngle": 32.0, "ObjectiveType": "score",
-             "ExtraObjectives": "[]", "Modifiers": "[]", "Remark": ""}
+             "ExtraObjectives": "[]", "Modifiers": "[]",
+             "AiProfileID": 1005, "GoalkeeperAiID": 2031,
+             "DefenderAiID": 2032, "ShooterAiID": 0,
+             "ModifierID": 4002, "IsGuideAi": 0, "RewindRandom": 1,
+             "OverrideReactionTimeMs": 950, "Remark": ""}
             for sid in sl_ids
         ],
         new_id_alloc=alloc, level_in_round=5, tier=5,
@@ -263,32 +259,30 @@ def test_easy_minus_floors_at_1001_and_star1():
     assert ctx.level_row["OpponentTeamStar"] == 1
 
 
-def test_extreme_keeper_appends_virtual_slice_ai_and_instance():
+def test_extreme_keeper_appends_virtual_instance_with_modifier():
     ctx = _make_ctx_with_slice_ai()
     instances_before = len(ctx.slice_instance_rows)
-    slice_ais_before = len(ctx.slice_ai_rows)
     import level_tag_lib as lib
     lib.TAG_REGISTRY["extreme_keeper"].patch(ctx)
     sl = json.loads(ctx.level_row["SliceList"])
     assert all(s >= 90000 for s in sl), f"SliceList 仍含原 ID: {sl}"
     assert len(ctx.slice_instance_rows) == instances_before + len(sl)
-    assert len(ctx.slice_ai_rows) == slice_ais_before + len(sl)
-    new_ais = ctx.slice_ai_rows[slice_ais_before:]
-    assert all(r["ModifierID"] == 4005 for r in new_ais)
+    new_instances = ctx.slice_instance_rows[instances_before:]
+    assert all(r["ModifierID"] == 4005 for r in new_instances)
 
 
 def test_no_modifier_zeroes_modifier_in_virtual_rows():
     ctx = _make_ctx_with_slice_ai()
     import level_tag_lib as lib
     lib.TAG_REGISTRY["no_modifier"].patch(ctx)
-    new_ais = [r for r in ctx.slice_ai_rows if r["ID"] >= 90000]
-    assert len(new_ais) > 0
-    assert all(r["ModifierID"] == 0 for r in new_ais)
+    new_instances = [r for r in ctx.slice_instance_rows if r["ID"] >= 90000]
+    assert len(new_instances) > 0
+    assert all(r["ModifierID"] == 0 for r in new_instances)
 
 
 def test_narrow_angle_sets_4006():
     ctx = _make_ctx_with_slice_ai()
     import level_tag_lib as lib
     lib.TAG_REGISTRY["narrow_angle"].patch(ctx)
-    new_ais = [r for r in ctx.slice_ai_rows if r["ID"] >= 90000]
-    assert all(r["ModifierID"] == 4006 for r in new_ais)
+    new_instances = [r for r in ctx.slice_instance_rows if r["ID"] >= 90000]
+    assert all(r["ModifierID"] == 4006 for r in new_instances)

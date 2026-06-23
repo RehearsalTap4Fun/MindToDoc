@@ -6,10 +6,10 @@
 1. BallPos / pos.z ∈ [-120, 0]
 2. BallPos.x / pos.x ∈ [-18, 18]
 3. BallPos.y ∈ [0, GOAL_HEIGHT]
-4. 点球 preset(3, 9):BallPos == PENALTY_SPOT
-5. 角球 preset(10, 11, 18):BallPos in {CORNER_LEFT_BALL, CORNER_RIGHT_BALL}
-6. 守门 preset(4, 14, 15):home 玩家 pos.z ∈ [GOAL_AREA_Z_FAR, FIELD_Z_NEAR]
-7. 任意球 preset(2, 7, 8, 17):防守墙连续两人 |Δx| ≥ WALL_PLAYER_GAP_MIN - 0.001
+4. 点球 preset:BallPos == PENALTY_SPOT
+5. 角球 preset:BallPos in {CORNER_LEFT_BALL, CORNER_RIGHT_BALL}
+6. 守门 preset:home 玩家 pos.z ∈ [GOAL_AREA_Z_FAR, FIELD_Z_NEAR]
+7. 任意球 preset:防守墙连续两人 |Δx| ≥ WALL_PLAYER_GAP_MIN - 0.001
 8. 方向、角度、枚举、JSON、控球索引、备注等基础字段均可解析且在约束内
 
 退出码 0 / 1 / 2(主生成器缺常量返回 2)。
@@ -150,37 +150,41 @@ def check_presets() -> list[str]:
         if not isinstance(p.get("Remark"), str) or len(p["Remark"]) < 20:
             errors.append(f"preset {pid} Remark 过短或为空")
 
-    for pid in (3, 9):
-        if pid not in by_id:
+    for p in presets:
+        if p["SliceType"] != "penalty":
             continue
-        bx, _, bz = _parse_pos(by_id[pid]["BallPos"])
+        pid = p["ID"]
+        bx, _, bz = _parse_pos(p["BallPos"])
         if (bx, bz) != (g.PENALTY_SPOT[0], g.PENALTY_SPOT[2]):
             errors.append(f"preset {pid} BallPos 应在 PENALTY_SPOT={g.PENALTY_SPOT},实际 ({bx},{bz})")
 
-    for pid in (10, 11, 18):
-        if pid not in by_id:
+    for p in presets:
+        if p["SliceType"] != "corner":
             continue
-        bx, _, bz = _parse_pos(by_id[pid]["BallPos"])
+        pid = p["ID"]
+        bx, _, bz = _parse_pos(p["BallPos"])
         ok = (bx, bz) in {(g.CORNER_LEFT_BALL[0], g.CORNER_LEFT_BALL[2]),
                           (g.CORNER_RIGHT_BALL[0], g.CORNER_RIGHT_BALL[2])}
         if not ok:
             errors.append(f"preset {pid} BallPos 不在角球点;实际 ({bx},{bz})")
 
-    for pid in (4, 14, 15):
-        if pid not in by_id:
+    for p in presets:
+        if p["SliceType"] != "goalkeep":
             continue
-        for pl in json.loads(by_id[pid]["PlayersInit"]):
+        pid = p["ID"]
+        for pl in json.loads(p["PlayersInit"]):
             if pl["team"] == "home":
                 pz = float(pl["pos"]["z"])
                 if not (g.GOAL_AREA_Z_FAR <= pz <= g.FIELD_Z_NEAR):
                     errors.append(f"preset {pid}(守门) home 玩家 pos.z={pz} 不在小禁区 [{g.GOAL_AREA_Z_FAR}, {g.FIELD_Z_NEAR}]")
 
-    for pid in (2, 7, 8, 17):
-        if pid not in by_id:
+    for p in presets:
+        if p["SliceType"] != "free_kick":
             continue
+        pid = p["ID"]
         wall_xs = sorted(
             float(pl["pos"]["x"])
-            for pl in json.loads(by_id[pid]["PlayersInit"])
+            for pl in json.loads(p["PlayersInit"])
             if pl["team"] == "away" and pl["duty"] == g.PLAYER_AI_DUTY_ENUM["Defender"]
         )
         for a, b in zip(wall_xs, wall_xs[1:]):

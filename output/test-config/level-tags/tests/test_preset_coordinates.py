@@ -125,6 +125,15 @@ def test_slice_preset_library_has_production_distribution():
     }
 
 
+def test_every_slice_preset_is_referenced_by_an_instance():
+    _, presets = _slice_preset_rows()
+    _, instances = _sheet_rows("ActvSoccerSliceInstanceCfg")
+    preset_ids = {row["ID"] for row in presets}
+    used_preset_ids = {row["PresetID"] for row in instances}
+
+    assert preset_ids <= used_preset_ids
+
+
 def test_instance_library_has_three_perceivable_variants_per_tier_type():
     _, rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
     legacy_ids = {101, 102, 103, 201, 202, 203}
@@ -142,16 +151,26 @@ def test_instance_library_has_three_perceivable_variants_per_tier_type():
 
 def test_narrow_angle_skips_zero_angle_slice_types():
     _, inst_rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
-    _, ai_rows = _sheet_rows("ActvSoccerSliceAiCfg")
-    instance_by_id = {row["ID"]: row for row in inst_rows}
     offenders = []
-    for ai_row in ai_rows:
-        if ai_row["ModifierID"] != 4006:
+    for inst in inst_rows:
+        if inst["ModifierID"] != 4006:
             continue
-        inst = instance_by_id[ai_row["SliceID"]]
         if inst["SliceType"] in {"penalty", "goalkeep"}:
             offenders.append(inst)
     assert offenders == []
+
+
+def test_slice_instance_contains_merged_ai_fields_and_no_slice_ai_sheet():
+    g, rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
+    required_fields = {
+        "AiProfileID", "GoalkeeperAiID", "DefenderAiID", "ShooterAiID",
+        "ModifierID", "IsGuideAi", "RewindRandom", "OverrideReactionTimeMs",
+    }
+    assert rows
+    assert required_fields.issubset(rows[0].keys())
+
+    wb = g.build_workbook(g.LcRegistry())
+    assert "ActvSoccerSliceAiCfg" not in wb.sheetnames
 
 
 def test_free_kick_wall_count_matches_players_init():
@@ -166,3 +185,20 @@ def test_free_kick_wall_count_matches_players_init():
             if player["team"] == "away" and int(player["duty"]) == 2
         ]
         assert payload["wall_count"] == len(defenders), row
+
+
+def test_slice_type_specific_field_invariants_apply_to_all_matching_presets():
+    g, rows = _slice_preset_rows()
+    for row in rows:
+        ball = _pos(row["BallPos"])
+        if row["SliceType"] == "penalty":
+            assert (float(ball["x"]), float(ball["z"])) == (g.PENALTY_SPOT[0], g.PENALTY_SPOT[2]), row
+        if row["SliceType"] == "corner":
+            assert (float(ball["x"]), float(ball["z"])) in {
+                (g.CORNER_LEFT_BALL[0], g.CORNER_LEFT_BALL[2]),
+                (g.CORNER_RIGHT_BALL[0], g.CORNER_RIGHT_BALL[2]),
+            }, row
+        if row["SliceType"] == "goalkeep":
+            for player in json.loads(row["PlayersInit"]):
+                if player["team"] == "home":
+                    assert g.GOAL_AREA_Z_FAR <= float(player["pos"]["z"]) <= g.FIELD_Z_NEAR, (row, player)

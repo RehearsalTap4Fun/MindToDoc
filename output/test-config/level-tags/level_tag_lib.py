@@ -14,7 +14,6 @@ from typing import Callable
 class PatchContext:
     """单关 patch 上下文,patch 函数读写本对象的 mutable 字段。"""
     level_row: dict
-    slice_ai_rows: list[dict]            # 该 level SliceList 对应的 SliceAi 行(可改/追加)
     slice_instance_rows: list[dict]      # 该 level SliceList 引用的 SliceInstance 行(可追加)
     new_id_alloc: Callable[[], int]      # 9xxx 段虚拟 ID 分配器
     level_in_round: int
@@ -86,7 +85,7 @@ def _patch_tutorial(ctx: PatchContext) -> None:
 
 
 def _register_level_only_tags() -> None:
-    """注册不依赖 SliceAi/SliceInstance 的 4 个 level-only tag。
+    """注册不依赖 SliceInstance 的 4 个 level-only tag。
     幂等:重复调用先清同名条目再注册。"""
     for name in ("boss", "must_win", "lenient", "free_run", "tutorial"):
         TAG_REGISTRY.pop(name, None)
@@ -216,10 +215,8 @@ def _patch_easy_minus(ctx: PatchContext) -> None:
 
 
 def _virtualize_slice_modifier(ctx: PatchContext, new_modifier_id: int) -> None:
-    """对 SliceList 中每个槽位:复制原 SliceInstance + 原 SliceAi 各一份(用 new_id_alloc),
-    新 SliceAi.ModifierID = new_modifier_id,SliceList 改指向新 instance ID。"""
+    """对 SliceList 中每个槽位复制原 SliceInstance,修改新实例的 ModifierID。"""
     sl = json.loads(ctx.level_row["SliceList"])
-    ai_by_sid = {r["SliceID"]: r for r in ctx.slice_ai_rows}
     inst_by_id = {r["ID"]: r for r in ctx.slice_instance_rows}
     new_sl: list[int] = []
     for original_sid in sl:
@@ -227,15 +224,9 @@ def _virtualize_slice_modifier(ctx: PatchContext, new_modifier_id: int) -> None:
         if original_sid in inst_by_id:
             new_inst = dict(inst_by_id[original_sid])
             new_inst["ID"] = new_id
+            new_inst["ModifierID"] = new_modifier_id
             new_inst["Remark"] = (new_inst.get("Remark", "") + f" tag-virtual lvl{ctx.level_row['ID']}").strip()
             ctx.slice_instance_rows.append(new_inst)
-        if original_sid in ai_by_sid:
-            new_ai = dict(ai_by_sid[original_sid])
-            new_ai["ID"] = new_id
-            new_ai["SliceID"] = new_id
-            new_ai["ModifierID"] = new_modifier_id
-            new_ai["Remark"] = (new_ai.get("Remark", "") + f" tag-virtual lvl{ctx.level_row['ID']}").strip()
-            ctx.slice_ai_rows.append(new_ai)
         new_sl.append(new_id)
     ctx.level_row["SliceList"] = json.dumps(new_sl)
 

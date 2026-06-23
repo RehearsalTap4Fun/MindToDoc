@@ -147,14 +147,12 @@ def _build_default_dataset() -> dict:
     lc = g.LcRegistry()
     presets = g._build_presets(lc)
     instances = g._build_instance_library()
-    slice_ais = g._slice_ai_for_library(instances)
     levels = g._build_levels(lc)
     seasons = g._build_seasons(lc)
     teams = g._build_theme_teams(lc)
     return {
         "presets": presets,
         "slice_instances": instances,
-        "slice_ais": slice_ais,
         "ai_profiles": g._build_ai_profiles(),
         "enemy_ais": g._build_enemy_ai(),
         "ai_modifiers": g._build_ai_modifiers(),
@@ -177,8 +175,7 @@ def build_dataset(tag_rows: list[dict]) -> dict:
     ds = _build_default_dataset()
     levels_by_id = {r["ID"]: r for r in ds["levels"]}
     insts_by_id = {r["ID"]: r for r in ds["slice_instances"]}
-    ais_by_sid = {r["SliceID"]: r for r in ds["slice_ais"]}
-    library_snapshot = {"insts": insts_by_id, "ais": ais_by_sid}
+    library_snapshot = {"insts": insts_by_id}
 
     for trow in tag_rows:
         if not trow["Tags"]:
@@ -187,7 +184,6 @@ def build_dataset(tag_rows: list[dict]) -> dict:
         level_row = levels_by_id[lid]
         ctx = level_tag_lib.PatchContext(
             level_row=level_row,
-            slice_ai_rows=ds["slice_ais"],
             slice_instance_rows=ds["slice_instances"],
             new_id_alloc=_slot_alloc(lid),
             level_in_round=trow["LevelInRound"],
@@ -219,10 +215,6 @@ def validate_dataset(ds: dict) -> None:
         if not (1001 <= r["AiProfileID"] <= 1010):
             errors.append(f"level {r['ID']} AiProfileID 越界: {r['AiProfileID']}")
 
-    for r in ds["slice_ais"]:
-        if r["SliceID"] not in inst_ids:
-            errors.append(f"SliceAi {r['ID']} 引用未注册 SliceInstance: {r['SliceID']}")
-
     if errors:
         raise ValidationError(errors)
 
@@ -244,25 +236,11 @@ _SHEET_SCHEMA: dict[str, list[tuple[str, str, str]]] = {
         ("cs", "int", "OpponentTeamStar"), ("cs", "int", "SeasonID"),
         ("-", "string", "Remark"),
     ],
-    "ActvSoccerSlicePresetCfg": [
-        ("cs", "int", "ID"), ("cs", "string", "SliceType"),
-        ("c", "string", "NameLcKey"), ("c", "string[]", "Tags"),
-        ("c", "ext", "BallPos"), ("c", "ext", "BallVector"),
-        ("c", "int", "BallOwner"), ("c", "ext[]", "PlayersInit"),
-        ("c", "float", "CameraFov"), ("c", "ext", "TargetPoint"),
-        ("cs", "float", "OperableAngle"), ("c", "float", "AngleSpanMin"),
-        ("c", "float", "AngleSpanMax"), ("c", "float", "AngleMaxCenterShift"),
-        ("c", "float", "AngleMargin"), ("cs", "ext", "TypePayload"),
-        ("c", "string[]", "RecommendedModes"), ("-", "string", "Remark"),
-    ],
     "ActvSoccerSliceInstanceCfg": [
         ("cs", "int", "ID"), ("cs", "string", "SliceType"),
         ("cs", "int", "PresetID"), ("c", "float", "OverrideOperableAngle"),
         ("cs", "string", "ObjectiveType"), ("cs", "ext[]", "ExtraObjectives"),
-        ("cs", "ext[]", "Modifiers"), ("-", "string", "Remark"),
-    ],
-    "ActvSoccerSliceAiCfg": [
-        ("cs", "int", "ID"), ("cs", "int", "SliceID"),
+        ("cs", "ext[]", "Modifiers"),
         ("cs", "int", "AiProfileID"), ("cs", "int", "GoalkeeperAiID"),
         ("cs", "int", "DefenderAiID"), ("cs", "int", "ShooterAiID"),
         ("cs", "int", "ModifierID"), ("cs", "bool", "IsGuideAi"),
@@ -317,20 +295,17 @@ def _write_sheet(wb, name: str, schema: list[tuple[str, str, str]], rows: list[d
 
 
 def write_outputs(ds: dict, tag_rows: list[dict], target: Path, summary_path: Path) -> Path:
-    """写 9 表 xlsx + summary.json。文件被占用时回退 *.generated.xlsx。"""
+    """写 3 表 xlsx + summary.json。文件被占用时回退 *.generated.xlsx。
+
+    tag 工具只输出关卡 tag 会直接修改或追加虚拟行的表。基础模板、AI 定义、
+    modifier 定义、球队与赛季表均由主配置生成器维护，避免改 tag 时重写。
+    """
     from openpyxl import Workbook
     target = Path(target); summary_path = Path(summary_path)
 
     wb = Workbook(); wb.remove(wb.active)
-    _write_sheet(wb, "ActvSoccerSeasonCfg", _SHEET_SCHEMA["ActvSoccerSeasonCfg"], ds["seasons"])
     _write_sheet(wb, "ActvSoccerLevelCfg", _SHEET_SCHEMA["ActvSoccerLevelCfg"], ds["levels"])
-    _write_sheet(wb, "ActvSoccerSlicePresetCfg", _SHEET_SCHEMA["ActvSoccerSlicePresetCfg"], ds["presets"])
     _write_sheet(wb, "ActvSoccerSliceInstanceCfg", _SHEET_SCHEMA["ActvSoccerSliceInstanceCfg"], ds["slice_instances"])
-    _write_sheet(wb, "ActvSoccerSliceAiCfg", _SHEET_SCHEMA["ActvSoccerSliceAiCfg"], ds["slice_ais"])
-    _write_sheet(wb, "ActvSoccerAiProfileCfg", _SHEET_SCHEMA["ActvSoccerAiProfileCfg"], ds["ai_profiles"])
-    _write_sheet(wb, "ActvSoccerEnemyAiCfg", _SHEET_SCHEMA["ActvSoccerEnemyAiCfg"], ds["enemy_ais"])
-    _write_sheet(wb, "ActvSoccerAiModifierCfg", _SHEET_SCHEMA["ActvSoccerAiModifierCfg"], ds["ai_modifiers"])
-    _write_sheet(wb, "ActvSoccerTeamCfg", _SHEET_SCHEMA["ActvSoccerTeamCfg"], ds["teams"])
 
     actual = target
     try:
@@ -352,7 +327,6 @@ def write_outputs(ds: dict, tag_rows: list[dict], target: Path, summary_path: Pa
         "levels_total": len(ds["levels"]),
         "levels_with_tags": levels_with_tags,
         "virtual_slice_instance_count": sum(1 for r in ds["slice_instances"] if r["ID"] >= 90000),
-        "virtual_slice_ai_count": sum(1 for r in ds["slice_ais"] if r["ID"] >= 90000),
         "tag_hits": {k: sorted(v) for k, v in sorted(tag_hits.items())},
     }
     summary_path.write_text(_json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")

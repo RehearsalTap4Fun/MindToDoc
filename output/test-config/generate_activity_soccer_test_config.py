@@ -957,7 +957,7 @@ KNOCKOUT_OPEN_LEVEL = (KNOCKOUT_OPEN_ROUND - 1) * LEVELS_PER_ROUND + 1
 
 
 def _tier_specs() -> dict[int, dict]:
-    """10 档单一真源：AiProfile / Level / SliceAi / 角度 override 共用。"""
+    """10 档单一真源：AiProfile / Level / SliceInstance AI字段 / 角度 override 共用。"""
     gk = [25, 30, 36, 42, 48, 54, 60, 66, 72, 78]
     dfn = [12, 18, 24, 30, 36, 42, 48, 54, 60, 66]
     sht = [30, 36, 42, 48, 54, 60, 66, 72, 78, 84]
@@ -990,7 +990,7 @@ TIER = _tier_specs()
 
 
 def _tier_primary_modifier(tier: int, slice_type: int | None = None) -> int:
-    """SliceAi.ModifierID 单一主机制（0=无）。"""
+    """SliceInstanceCfg.ModifierID 单一主机制（0=无）。"""
     if tier <= 2:
         return 0
     if tier <= 4:
@@ -1036,15 +1036,62 @@ def _instance_modifiers_json(tier: int, slice_type: int, variant: int) -> str:
     return json.dumps(mods, ensure_ascii=False) if mods else "[]"
 
 
+def _instance_ai_cols(iid: int, slice_type: int, *, is_guide: int = 0) -> dict:
+    """返回并入 SliceInstanceCfg 的 AI 字段。"""
+    tier = iid // 100
+    s = TIER.get(tier, TIER[1])
+    if slice_type == 6:        # 守门：玩家为门将，对方后卫射门
+        gk_ai, def_ai, shooter_ai, mod = 0, 0, _enemy_id(tier, 3), 0
+    elif slice_type == 3:      # 点球：有对方门将，无后卫
+        gk_ai, def_ai, shooter_ai, mod = _enemy_id(tier, 1), 0, 0, _tier_primary_modifier(tier, slice_type)
+    else:                      # 进攻/任意球/角球/界外球
+        gk_ai, def_ai, shooter_ai, mod = _enemy_id(tier, 1), _enemy_id(tier, 2), 0, _tier_primary_modifier(tier, slice_type)
+    return {
+        "AiProfileID": s["ai_profile_id"],
+        "GoalkeeperAiID": gk_ai,
+        "DefenderAiID": def_ai,
+        "ShooterAiID": shooter_ai,
+        "ModifierID": mod,
+        "IsGuideAi": is_guide,
+        "RewindRandom": 1,
+        "OverrideReactionTimeMs": s["react_ms"],
+    }
+
+
+def _guide_instance_ai_cols(
+    ai_profile_id: int,
+    goalkeeper_ai_id: int,
+    defender_ai_id: int,
+    shooter_ai_id: int,
+    override_reaction_time_ms: int,
+) -> dict:
+    return {
+        "AiProfileID": ai_profile_id,
+        "GoalkeeperAiID": goalkeeper_ai_id,
+        "DefenderAiID": defender_ai_id,
+        "ShooterAiID": shooter_ai_id,
+        "ModifierID": 0,
+        "IsGuideAi": 1,
+        "RewindRandom": 1,
+        "OverrideReactionTimeMs": override_reaction_time_ms,
+    }
+
+
 def _build_instance_library() -> list[dict]:
     """180 库实例 = 10 tier × 6 type × 3 variant；旧 6 行(101-203)前置保留。"""
     legacy = [
-        {"ID": 101, "SliceType": "attack", "PresetID": 1, "ObjectiveType": "score", "Remark": "试训-进攻"},
-        {"ID": 102, "SliceType": "free_kick", "PresetID": 2, "ObjectiveType": "score", "Remark": "试训-任意球"},
-        {"ID": 103, "SliceType": "penalty", "PresetID": 3, "ObjectiveType": "score", "Remark": "试训-点球"},
-        {"ID": 201, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 30, "ObjectiveType": "score", "Remark": "引导关1"},
-        {"ID": 202, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 28, "ExtraObjectives": '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]', "Remark": "引导关2-助攻"},
-        {"ID": 203, "SliceType": "goalkeep", "PresetID": 4, "ObjectiveType": "survive", "Remark": "引导关3-守门"},
+        {"ID": 101, "SliceType": "attack", "PresetID": 1, "ObjectiveType": "score", "Remark": "试训-进攻",
+         **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
+        {"ID": 102, "SliceType": "free_kick", "PresetID": 2, "ObjectiveType": "score", "Remark": "试训-任意球",
+         **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
+        {"ID": 103, "SliceType": "penalty", "PresetID": 3, "ObjectiveType": "score", "Remark": "试训-点球",
+         **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
+        {"ID": 201, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 30, "ObjectiveType": "score", "Remark": "引导关1",
+         **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
+        {"ID": 202, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 28, "ExtraObjectives": '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]', "Remark": "引导关2-助攻",
+         **_guide_instance_ai_cols(1001, 2001, 2002, 0, 1200)},
+        {"ID": 203, "SliceType": "goalkeep", "PresetID": 4, "ObjectiveType": "survive", "Remark": "引导关3-守门",
+         **_guide_instance_ai_cols(1002, 0, 0, 2003, 900)},
     ]
     lib: list[dict] = []
     for tier in range(1, TIERS_TOTAL + 1):
@@ -1052,7 +1099,7 @@ def _build_instance_library() -> list[dict]:
             pool = PRESET_POOL[stype]
             type_name = SLICE_TYPE_NAME[stype]
             for variant in (1, 2, 3):
-                preset_id = pool[(tier + variant - 2) % len(pool)]
+                preset_id = pool[((tier - 1) * 3 + (variant - 1)) % len(pool)]
                 iid = tier * 100 + stype * 10 + variant
                 row: dict = {
                     "ID": iid,
@@ -1077,6 +1124,7 @@ def _build_instance_library() -> list[dict]:
                     else:  # 任意球/点球加压
                         row["ObjectiveType"] = "score"
                         row["ExtraObjectives"] = "[]"
+                row.update(_instance_ai_cols(iid, stype))
                 lib.append(row)
     return legacy + lib
 
@@ -1140,41 +1188,6 @@ def _build_ai_modifiers() -> list[dict]:
         {"ID": 4006, "ModifierType": "narrow_angle", "Param1Key": "shrink", "Param1Value": "0.7", "Remark": "收窄可操作夹角"},
         {"ID": 4007, "ModifierType": "random_dive", "Param1Key": "randomness", "Param1Value": "0.6", "Remark": "门将随机扑救方向"},
     ]
-
-
-def _slice_ai_for_library(lib_rows: list[dict]) -> list[dict]:
-    """每库实例一行(id 从 3100)；旧 3001-3006(引导/试训)前置保留。"""
-    legacy = [
-        {"ID": 3001, "SliceID": 101, "AiProfileID": 1001, "GoalkeeperAiID": 2001, "DefenderAiID": 0, "ShooterAiID": 0, "ModifierID": 0, "IsGuideAi": 1, "RewindRandom": 1, "OverrideReactionTimeMs": 1200, "Remark": "试训-进攻"},
-        {"ID": 3002, "SliceID": 102, "AiProfileID": 1001, "GoalkeeperAiID": 2001, "DefenderAiID": 0, "ShooterAiID": 0, "ModifierID": 0, "IsGuideAi": 1, "RewindRandom": 1, "OverrideReactionTimeMs": 1200, "Remark": "试训-任意球"},
-        {"ID": 3003, "SliceID": 103, "AiProfileID": 1001, "GoalkeeperAiID": 2001, "DefenderAiID": 0, "ShooterAiID": 0, "ModifierID": 0, "IsGuideAi": 1, "RewindRandom": 1, "OverrideReactionTimeMs": 1200, "Remark": "试训-点球"},
-        {"ID": 3004, "SliceID": 201, "AiProfileID": 1001, "GoalkeeperAiID": 2001, "DefenderAiID": 0, "ShooterAiID": 0, "ModifierID": 0, "IsGuideAi": 1, "RewindRandom": 1, "OverrideReactionTimeMs": 1200, "Remark": "引导关切片1-进攻"},
-        {"ID": 3005, "SliceID": 202, "AiProfileID": 1001, "GoalkeeperAiID": 2001, "DefenderAiID": 2002, "ShooterAiID": 0, "ModifierID": 0, "IsGuideAi": 1, "RewindRandom": 1, "OverrideReactionTimeMs": 1200, "Remark": "引导关切片2-助攻"},
-        {"ID": 3006, "SliceID": 203, "AiProfileID": 1002, "GoalkeeperAiID": 0, "DefenderAiID": 0, "ShooterAiID": 2003, "ModifierID": 0, "IsGuideAi": 1, "RewindRandom": 1, "OverrideReactionTimeMs": 900, "Remark": "引导关切片3-守门"},
-    ]
-    rows = list(legacy)
-    sid = 3100
-    legacy_ids = {101, 102, 103, 201, 202, 203}
-    for inst in lib_rows:
-        if inst["ID"] in legacy_ids:
-            continue
-        tier = inst["ID"] // 100
-        stype = (inst["ID"] // 10) % 10
-        s = TIER[tier]
-        if stype == 6:        # 守门：玩家为门将，对方后卫射门
-            gk_ai, def_ai, shooter_ai, mod = 0, 0, _enemy_id(tier, 3), 0
-        elif stype == 3:      # 点球：有对方门将，无后卫
-            gk_ai, def_ai, shooter_ai, mod = _enemy_id(tier, 1), 0, 0, _tier_primary_modifier(tier, stype)
-        else:                 # 进攻/任意球/角球/界外球
-            gk_ai, def_ai, shooter_ai, mod = _enemy_id(tier, 1), _enemy_id(tier, 2), 0, _tier_primary_modifier(tier, stype)
-        rows.append({
-            "ID": sid, "SliceID": inst["ID"], "AiProfileID": s["ai_profile_id"],
-            "GoalkeeperAiID": gk_ai, "DefenderAiID": def_ai, "ShooterAiID": shooter_ai,
-            "ModifierID": mod, "IsGuideAi": 0, "RewindRandom": 1,
-            "OverrideReactionTimeMs": s["react_ms"], "Remark": f"库AI tier{tier}",
-        })
-        sid += 1
-    return rows
 
 
 def _theme_team_pool(tier: int) -> list[int]:
@@ -1621,6 +1634,14 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("ObjectiveType", "string", "单一胜利目标(score/survive等)"),
             ("ExtraObjectives", "ext[]", "复合胜利目标", V_OBJECTIVE, '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]'),
             ("Modifiers", "ext[]", "切片机制", V_MODIFIER, '[{"id":"moving_keeper","params":{"speed":1.0}}]'),
+            ("AiProfileID", "int", "难度档→ActvSoccerAiProfileCfg"),
+            ("GoalkeeperAiID", "int", "门将AI"),
+            ("DefenderAiID", "int", "防守AI"),
+            ("ShooterAiID", "int", "射手AI"),
+            ("ModifierID", "int", "机制→ActvSoccerAiModifierCfg"),
+            ("IsGuideAi", "bool", "引导关AI"),
+            ("RewindRandom", "bool", "回溯后重随机"),
+            ("OverrideReactionTimeMs", "int", "覆盖反应时间(0=默认)"),
             ("Remark", "string", "备注"),
         ),
         _build_instance_library(),
@@ -1800,25 +1821,6 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("Remark", "string", "备注"),
         ),
         _build_enemy_ai(),
-    )
-
-    make_sheet(
-        wb,
-        "ActvSoccerSliceAiCfg",
-        c(
-            id_col("int", "单切片AI配置ID"),
-            ("SliceID", "int", "切片实例ID→ActvSoccerSliceInstanceCfg"),
-            ("AiProfileID", "int", "难度档→ActvSoccerAiProfileCfg"),
-            ("GoalkeeperAiID", "int", "门将AI"),
-            ("DefenderAiID", "int", "防守AI"),
-            ("ShooterAiID", "int", "射手AI"),
-            ("ModifierID", "int", "机制→ActvSoccerAiModifierCfg"),
-            ("IsGuideAi", "bool", "引导关AI"),
-            ("RewindRandom", "bool", "回溯后重随机"),
-            ("OverrideReactionTimeMs", "int", "覆盖反应时间(0=默认)"),
-            ("Remark", "string", "备注"),
-        ),
-        _slice_ai_for_library(_build_instance_library()),
     )
 
     make_sheet(
@@ -2140,7 +2142,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
                 "ActvSoccerLevelCfg", "ActvSoccerSeasonCfg",
             ],
             "FSM_BT_AI": [
-                "ActvSoccerAiProfileCfg", "ActvSoccerEnemyAiCfg", "ActvSoccerSliceAiCfg",
+                "ActvSoccerAiProfileCfg", "ActvSoccerEnemyAiCfg",
                 "ActvSoccerAiModifierCfg", "ActvSoccerSliceFlowCfg",
             ],
             "养成与合同": [
@@ -2165,22 +2167,21 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "AiProfile": "1001-1010=tier1-10难度档(easy/normal/hard),单调递增,DeadCorner固定0",
             "PlayerAiDuty": "1=Goalkeeper守门员,2=Defender后卫(对方非门将),3=Forward前锋(我方含玩家)",
             "EnemyAi": "2001-2003=band1(tier1-3);20X1/20X2/20X3=bandX门将/后卫/射手(X=2,3,4)",
-            "SliceAi": "3001-3006=试训/引导切片101-203;3100+=库实例(每库实例一行)",
             "Modifier": "4001/4002/4005=移动门将(普通/困难/极限),4003=无辅助线,4004=固定人墙,4006=收窄夹角,4007=随机扑救",
             "ReceiveDecision": "5001-5004=接球决策风格(Balanced/Playmaker/Dribbler/TargetMan)",
             "PlayerStyle": "5101-5104=球员风格(Balanced/Playmaker/Dribbler/TargetMan);CharacterCfg.PlayerStyleCfgID引用",
             "FirstTouchAnim": "5201+=第一脚触球表现映射(Action×BallHeight×Direction×Pressure)",
-            "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-2);101-203=试训/引导",
+            "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-3);101-203=试训/引导;AI字段已并入本表",
             "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
             "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
             "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
             "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300",
         },
         "test_flow": [
-            "创角→试训切片101/102/103 (SliceAi 3001-3003, easy档)",
-            "引导关201/202/203 (3004-3006: 进攻+助攻+守门射手)",
-            "正式关301移动门将 (3007+Modifier4001) / 302点球 (3008)",
-            "困难关复用301 (3009+Profile1003+Modifier4002)",
+            "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
+            "引导关201/202/203 (进攻+助攻+守门射手)",
+            "正式关301移动门将 (Modifier4001) / 302点球",
+            "困难关复用301 (Profile1003+Modifier4002)",
             "切片FSM: SliceFlowCfg按类型读流程; 角色动画映射见客户端CharacterStateCfg(不进策划xlsx)",
         ],
         "notes": [
@@ -2195,7 +2196,7 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "局内道具与玩法常量: 见配置表结构文档附录；常量合并 dataconfig/ConstConfig.xlsx",
             "知名度等级表可拆分为更细档位(行数>当前测试7档)；生活等级保持小量级不参与主角评分",
             "AI难度只控成功率; 死角球见ConstConfig ActvSoccer_dead_corner_can_save",
-            "单切片AI在ActvSoccerSliceAiCfg配置,移动门将归属切片级Modifier",
+            "单切片AI字段已并入ActvSoccerSliceInstanceCfg,移动门将归属切片级Modifier",
             "回溯后RewindRandom=1,种子含rewind_count",
             "参数叠加: preset→instance→ai_profile→modifier",
             "JSON字段使用ext/ext[]类型,第5行标注proto(如TypIDVal_P_cspb/SoccerObjective_V)",

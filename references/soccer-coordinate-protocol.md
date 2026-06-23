@@ -196,7 +196,7 @@
 | 字段 | 值 | 单位 |
 |---|---|---|
 | `AiProfileCfg.ReactionTimeMs` | 1300 → 640(tier 1→10 单调下降) | ms |
-| `SliceAiCfg.OverrideReactionTimeMs` | 同上,单切片覆盖 | ms |
+| `SliceInstanceCfg.OverrideReactionTimeMs` | 同上,单切片覆盖 | ms |
 | `SliceFlowCfg.WaitInputTimeMs` | 守门切片填反应时长,其余 0 | ms |
 | `SliceFlowCfg.SaveAngleThresholdDeg` | 15 | 度 |
 | `SliceFlowCfg.MaxSaveDistance` | 3 | m |

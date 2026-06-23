@@ -153,9 +153,8 @@ def test_orchestrate_extreme_keeper_appends_virtual_rows(tmp_path):
     app.validate_loaded(rows, td_tags=td_tags)
     dataset = app.build_dataset(rows)
     virt_inst = [r for r in dataset["slice_instances"] if r["ID"] >= 90000]
-    virt_ai = [r for r in dataset["slice_ais"] if r["ID"] >= 90000]
-    assert len(virt_inst) > 0 and len(virt_inst) == len(virt_ai)
-    assert all(r["ModifierID"] == 4005 for r in virt_ai)
+    assert len(virt_inst) > 0
+    assert all(r["ModifierID"] == 4005 for r in virt_inst)
     levels = {r["ID"]: r for r in dataset["levels"]}
     import json as _json
     assert all(s >= 90000 for s in _json.loads(levels[250]["SliceList"]))
@@ -172,7 +171,7 @@ def test_post_validate_catches_threshold_violation(tmp_path):
         app.validate_loaded(rows, td_tags=td_tags)
 
 
-def test_write_outputs_xlsx_with_9_sheets(tmp_path):
+def test_write_outputs_xlsx_without_base_slice_preset_sheet(tmp_path):
     out = _make_minimal_xlsx(tmp_path)
     import apply_level_tags as app
     importlib.reload(app)
@@ -190,13 +189,11 @@ def test_write_outputs_xlsx_with_9_sheets(tmp_path):
     from openpyxl import load_workbook
     wb = load_workbook(target)
     expected = {
-        "ActvSoccerSeasonCfg", "ActvSoccerLevelCfg",
-        "ActvSoccerSlicePresetCfg", "ActvSoccerSliceInstanceCfg",
-        "ActvSoccerSliceAiCfg", "ActvSoccerAiProfileCfg",
-        "ActvSoccerEnemyAiCfg", "ActvSoccerAiModifierCfg",
-        "ActvSoccerTeamCfg",
+        "ActvSoccerLevelCfg",
+        "ActvSoccerSliceInstanceCfg",
     }
-    assert expected.issubset(set(wb.sheetnames))
+    assert set(wb.sheetnames) == expected
+    assert "ActvSoccerSlicePresetCfg" not in wb.sheetnames
 
 
 def test_summary_records_tag_hits(tmp_path):
