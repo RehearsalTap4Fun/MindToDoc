@@ -973,6 +973,11 @@ def pos_json(x: float, y: float, z: float) -> str:
     return json.dumps({"x": x, "y": y, "z": z})
 
 
+def _forward_from_facing(facing: float) -> tuple[float, float]:
+    yaw = math.radians(facing)
+    return math.sin(yaw), math.cos(yaw)
+
+
 LC_PREFIX = "ActvSoccer"
 
 
@@ -1682,6 +1687,28 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                         _face_toward(0, -2, shot_x, shot_z)),
         ]
 
+    def align_ball_with_owner(
+        stype: str,
+        ball_pos: str,
+        owner: int,
+        players: list[dict],
+    ) -> tuple[str, list[dict]]:
+        if stype == "goalkeep":
+            return ball_pos, players
+        ball = json.loads(ball_pos)
+        owner_player = next(
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) == int(owner)
+        )
+        forward_x, forward_z = _forward_from_facing(float(owner_player["facing"]))
+        if stype in {"free_kick", "penalty", "corner"}:
+            owner_player["pos"]["x"] = round(float(ball["x"]) - forward_x * BALL_CONTROL_DISTANCE, 3)
+            owner_player["pos"]["z"] = round(float(ball["z"]) - forward_z * BALL_CONTROL_DISTANCE, 3)
+            return json.dumps(ball), players
+        ball["x"] = round(float(owner_player["pos"]["x"]) + forward_x * BALL_CONTROL_DISTANCE, 3)
+        ball["z"] = round(float(owner_player["pos"]["z"]) + forward_z * BALL_CONTROL_DISTANCE, 3)
+        return json.dumps(ball), players
+
     preset1_players = [
         player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 12, 0, -13.0,
                     _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 12, -13.0)),
@@ -1758,6 +1785,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         "goalkeep": "守门扑救基础站位",
     }
     for (pid, stype, name, tags, ball_pos, ball_vec, owner, players, fov, target, op_angle, payload, rec) in specs:
+        ball_pos, players = align_ball_with_owner(stype, ball_pos, owner, players)
         target_desc = target if target else "无固定目标点"
         row = {
             "ID": pid, "SliceType": stype,

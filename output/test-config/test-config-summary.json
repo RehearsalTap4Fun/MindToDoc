@@ -8,10 +8,14 @@
   "sheets": [
     "ActvSoccerCharacterCfg",
     "ActvSoccerNationalityCfg",
-    "ActvSoccerAchieveCfg",
+    "ActvSoccerTutorialCfg",
+    "ActvSoccerGuideStepCfg",
     "ActvSoccerSlicePresetCfg",
     "ActvSoccerSliceInstanceCfg",
     "ActvSoccerHapticCfg",
+    "ActvSoccerReceiveDecisionCfg",
+    "ActvSoccerPlayerStyleCfg",
+    "ActvSoccerFirstTouchAnimCfg",
     "ActvSoccerLevelCfg",
     "ActvSoccerAiProfileCfg",
     "ActvSoccerEnemyAiCfg",
@@ -26,12 +30,7 @@
     "ActvSoccerKnockoutCfg",
     "ActvSoccerKnockoutPhaseCfg",
     "ActvSoccerBetMultiplierCfg",
-    "ActvSoccerBetStakeTierCfg",
-    "ActvSoccerMatchRewardCfg",
-    "ActvSoccerReceiveDecisionCfg",
-    "ActvSoccerPlayerStyleCfg",
-    "ActvSoccerReplayCfg",
-    "ActvSoccerRankCfg"
+    "ActvSoccerBetStakeTierCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
   "language_entry_count": 233,
@@ -481,6 +480,8 @@
     "玩法基础": [
       "ActvSoccerCharacterCfg",
       "ActvSoccerNationalityCfg",
+      "ActvSoccerTutorialCfg",
+      "ActvSoccerGuideStepCfg",
       "ActvSoccerSlicePresetCfg",
       "ActvSoccerSliceInstanceCfg",
       "ActvSoccerLevelCfg",
@@ -512,13 +513,8 @@
     ],
     "接球决策": [
       "ActvSoccerReceiveDecisionCfg",
-      "ActvSoccerPlayerStyleCfg"
-    ],
-    "Other": [
-      "ActvSoccerAchieveCfg",
-      "ActvSoccerMatchRewardCfg",
-      "ActvSoccerReplayCfg",
-      "ActvSoccerRankCfg"
+      "ActvSoccerPlayerStyleCfg",
+      "ActvSoccerFirstTouchAnimCfg"
     ]
   },
   "id_cross_ref": {

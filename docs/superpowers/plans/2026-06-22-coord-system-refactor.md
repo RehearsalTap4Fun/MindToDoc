@@ -21,7 +21,7 @@
 | `scripts/check_preset_consistency.py` | 加载 `_build_presets`,对每个 preset 跑摆位合规断言(z 范围 / 点球点 / 角球 / 守门 / 任意球人墙间距) |
 | `references/soccer-coordinate-protocol.md` | §12 派生改动清单加状态机 + 状态列;头部状态升 v1.1;commit hash 索引 |
 
-不改:`output/test-config/level-tags/`、`output/test-config/generate_worldcup_test_config.py`、其它 reference。
+不改:`output/test-config/level-tags/`、其它 reference。旧版 `output/test-config/generate_worldcup_test_config.py` 已在后续清理中移除。
 
 ---
 

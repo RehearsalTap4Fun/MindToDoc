@@ -30,7 +30,7 @@
 ### 1.3 不包含
 
 - 关卡 tag 工具(`output/test-config/level-tags/`)及 39 测试不动。重构后 **39 测试必须 passing 0 回归**。
-- 旧版 `generate_worldcup_test_config.py` 不动(不属本协议覆盖范围)。
+- 旧版 `generate_worldcup_test_config.py` 已移除；当前配置源只保留 `generate_activity_soccer_test_config.py`。
 - §12 #11(`level_tag_lib.PatchContext.library` 加 `protocol_v1` 子键)归 P2,不在本次。
 - TBD-18(控球距离起算锚点)等程序方,不在本次。
 

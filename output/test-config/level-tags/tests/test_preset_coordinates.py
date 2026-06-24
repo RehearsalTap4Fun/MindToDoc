@@ -1,4 +1,5 @@
 import json
+import math
 import sys
 from collections import Counter
 from pathlib import Path
@@ -70,6 +71,25 @@ def test_slice_preset_coordinates_are_inside_protocol_bounds():
             assert -g.FIELD_X_HALF <= float(player_pos["x"]) <= g.FIELD_X_HALF, (row, player)
             assert 0 <= float(player_pos["y"]) <= g.GOAL_HEIGHT, (row, player)
             assert g.FIELD_Z_FAR <= float(player_pos["z"]) <= g.FIELD_Z_NEAR, (row, player)
+
+
+def test_non_goalkeep_ball_is_offset_in_owner_facing_direction():
+    g, rows = _slice_preset_rows()
+    for row in rows:
+        if row["SliceType"] == "goalkeep":
+            continue
+        ball = _pos(row["BallPos"])
+        players = json.loads(row["PlayersInit"])
+        owner_idx = int(row["BallOwner"])
+        owner = next(
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) == owner_idx
+        )
+        yaw = math.radians(float(owner["facing"]))
+        expected_x = float(owner["pos"]["x"]) + math.sin(yaw) * g.BALL_CONTROL_DISTANCE
+        expected_z = float(owner["pos"]["z"]) + math.cos(yaw) * g.BALL_CONTROL_DISTANCE
+        assert math.isclose(float(ball["x"]), expected_x, abs_tol=1e-3), (row, owner)
+        assert math.isclose(float(ball["z"]), expected_z, abs_tol=1e-3), (row, owner)
 
 
 def test_slice_preset_fields_are_complete_and_parseable():

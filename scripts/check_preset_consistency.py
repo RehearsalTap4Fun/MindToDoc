@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import ast
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -99,6 +100,19 @@ def check_presets() -> list[str]:
         owner = int(p["BallOwner"])
         if not any(pl.get("team") == "home" and int(pl.get("idx", -1)) == owner for pl in players):
             errors.append(f"preset {pid} BallOwner={owner} 找不到对应 home 球员")
+        elif p["SliceType"] != "goalkeep":
+            owner_player = next(
+                pl for pl in players
+                if pl.get("team") == "home" and int(pl.get("idx", -1)) == owner
+            )
+            yaw = math.radians(float(owner_player["facing"]))
+            expect_x = float(owner_player["pos"]["x"]) + math.sin(yaw) * g.BALL_CONTROL_DISTANCE
+            expect_z = float(owner_player["pos"]["z"]) + math.cos(yaw) * g.BALL_CONTROL_DISTANCE
+            if abs(bx - expect_x) > 1e-3 or abs(bz - expect_z) > 1e-3:
+                errors.append(
+                    f"preset {pid} BallPos 未在持球home[{owner}]朝向前方 {g.BALL_CONTROL_DISTANCE}m;"
+                    f"实际 ball=({bx:.3f},{bz:.3f}), 期望=({expect_x:.3f},{expect_z:.3f})"
+                )
 
         seen_players: set[tuple[str, int]] = set()
         for pl in players:
