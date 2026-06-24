@@ -88,8 +88,8 @@ def test_non_goalkeep_ball_is_offset_in_owner_facing_direction():
         yaw = math.radians(float(owner["facing"]))
         expected_x = float(owner["pos"]["x"]) + math.sin(yaw) * g.BALL_CONTROL_DISTANCE
         expected_z = float(owner["pos"]["z"]) + math.cos(yaw) * g.BALL_CONTROL_DISTANCE
-        assert math.isclose(float(ball["x"]), expected_x, abs_tol=1e-3), (row, owner)
-        assert math.isclose(float(ball["z"]), expected_z, abs_tol=1e-3), (row, owner)
+        assert math.isclose(float(ball["x"]), round(expected_x, 1), abs_tol=1e-6), (row, owner)
+        assert math.isclose(float(ball["z"]), round(expected_z, 1), abs_tol=1e-6), (row, owner)
 
 
 def test_slice_preset_fields_are_complete_and_parseable():

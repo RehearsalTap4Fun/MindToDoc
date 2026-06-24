@@ -978,6 +978,10 @@ def _forward_from_facing(facing: float) -> tuple[float, float]:
     return math.sin(yaw), math.cos(yaw)
 
 
+def _round_coord(value: float) -> float:
+    return round(value, 1)
+
+
 LC_PREFIX = "ActvSoccer"
 
 
@@ -1701,12 +1705,14 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
             if player["team"] == "home" and int(player["idx"]) == int(owner)
         )
         forward_x, forward_z = _forward_from_facing(float(owner_player["facing"]))
-        if stype in {"free_kick", "penalty", "corner"}:
-            owner_player["pos"]["x"] = round(float(ball["x"]) - forward_x * BALL_CONTROL_DISTANCE, 3)
-            owner_player["pos"]["z"] = round(float(ball["z"]) - forward_z * BALL_CONTROL_DISTANCE, 3)
+        if stype in {"penalty", "corner"}:
+            owner_player["pos"]["x"] = _round_coord(float(ball["x"]) - forward_x * BALL_CONTROL_DISTANCE)
+            owner_player["pos"]["z"] = _round_coord(float(ball["z"]) - forward_z * BALL_CONTROL_DISTANCE)
+            ball["x"] = _round_coord(float(ball["x"]))
+            ball["z"] = _round_coord(float(ball["z"]))
             return json.dumps(ball), players
-        ball["x"] = round(float(owner_player["pos"]["x"]) + forward_x * BALL_CONTROL_DISTANCE, 3)
-        ball["z"] = round(float(owner_player["pos"]["z"]) + forward_z * BALL_CONTROL_DISTANCE, 3)
+        ball["x"] = _round_coord(float(owner_player["pos"]["x"]) + forward_x * BALL_CONTROL_DISTANCE)
+        ball["z"] = _round_coord(float(owner_player["pos"]["z"]) + forward_z * BALL_CONTROL_DISTANCE)
         return json.dumps(ball), players
 
     preset1_players = [

@@ -108,7 +108,9 @@ def check_presets() -> list[str]:
             yaw = math.radians(float(owner_player["facing"]))
             expect_x = float(owner_player["pos"]["x"]) + math.sin(yaw) * g.BALL_CONTROL_DISTANCE
             expect_z = float(owner_player["pos"]["z"]) + math.cos(yaw) * g.BALL_CONTROL_DISTANCE
-            if abs(bx - expect_x) > 1e-3 or abs(bz - expect_z) > 1e-3:
+            expect_x = round(expect_x, 1)
+            expect_z = round(expect_z, 1)
+            if abs(bx - expect_x) > 1e-6 or abs(bz - expect_z) > 1e-6:
                 errors.append(
                     f"preset {pid} BallPos 未在持球home[{owner}]朝向前方 {g.BALL_CONTROL_DISTANCE}m;"
                     f"实际 ball=({bx:.3f},{bz:.3f}), 期望=({expect_x:.3f},{expect_z:.3f})"
@@ -168,24 +170,6 @@ def check_presets() -> list[str]:
             errors.append(f"preset {pid} Remark 过短或为空")
 
     for p in presets:
-        if p["SliceType"] != "penalty":
-            continue
-        pid = p["ID"]
-        bx, _, bz = _parse_pos(p["BallPos"])
-        if (bx, bz) != (g.PENALTY_SPOT[0], g.PENALTY_SPOT[2]):
-            errors.append(f"preset {pid} BallPos 应在 PENALTY_SPOT={g.PENALTY_SPOT},实际 ({bx},{bz})")
-
-    for p in presets:
-        if p["SliceType"] != "corner":
-            continue
-        pid = p["ID"]
-        bx, _, bz = _parse_pos(p["BallPos"])
-        ok = (bx, bz) in {(g.CORNER_LEFT_BALL[0], g.CORNER_LEFT_BALL[2]),
-                          (g.CORNER_RIGHT_BALL[0], g.CORNER_RIGHT_BALL[2])}
-        if not ok:
-            errors.append(f"preset {pid} BallPos 不在角球点;实际 ({bx},{bz})")
-
-    for p in presets:
         if p["SliceType"] != "goalkeep":
             continue
         pid = p["ID"]
@@ -207,6 +191,24 @@ def check_presets() -> list[str]:
         for a, b in zip(wall_xs, wall_xs[1:]):
             if (b - a) < g.WALL_PLAYER_GAP_MIN - GAP_TOL:
                 errors.append(f"preset {pid} 任意球人墙 Δx={b-a:.2f} < {g.WALL_PLAYER_GAP_MIN} (球员重叠或球穿不过)")
+
+    for p in presets:
+        if p["SliceType"] != "penalty":
+            continue
+        pid = p["ID"]
+        bx, _, bz = _parse_pos(p["BallPos"])
+        if (bx, bz) != (g.PENALTY_SPOT[0], g.PENALTY_SPOT[2]):
+            errors.append(f"preset {pid} BallPos 应在 PENALTY_SPOT={g.PENALTY_SPOT},实际 ({bx},{bz})")
+
+    for p in presets:
+        if p["SliceType"] != "corner":
+            continue
+        pid = p["ID"]
+        bx, _, bz = _parse_pos(p["BallPos"])
+        ok = (bx, bz) in {(g.CORNER_LEFT_BALL[0], g.CORNER_LEFT_BALL[2]),
+                          (g.CORNER_RIGHT_BALL[0], g.CORNER_RIGHT_BALL[2])}
+        if not ok:
+            errors.append(f"preset {pid} BallPos 不在角球点;实际 ({bx},{bz})")
 
     for p in presets:
         pid = p["ID"]
