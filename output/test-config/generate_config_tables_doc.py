@@ -19,6 +19,7 @@ SHEET_META: dict[str, dict[str, str]] = {
     "ActvSoccerCharacterCfg": {"用途": "4 角色外观与展示战力", "关联": "→ 创角流程", "填表": "数值"},
     "ActvSoccerNationalityCfg": {"用途": "国籍与首签候选合同池", "关联": "ContractPool→ContractCfg；NameLcKey→Language", "填表": "数值"},
     "ActvSoccerTutorialCfg": {"用途": "试训三步与切片实例", "关联": "SliceInstanceID→SliceInstanceCfg", "填表": "关卡"},
+    "ActvSoccerGuideStepCfg": {"用途": "试训、签约后强引导与第一关固定脚本引导步骤", "关联": "DialogueLcKey→Language；NextID串联步骤", "填表": "关卡/体验"},
     "ActvSoccerSlicePresetCfg": {"用途": "切片摆位预设（L2 主资产）", "关联": "SliceType；被 SliceInstanceCfg.PresetID 引用", "填表": "关卡"},
     "ActvSoccerSliceInstanceCfg": {"用途": "切片实例装配（L3）", "关联": "←Preset；→LevelCfg.SliceList、TutorialCfg", "填表": "关卡"},
     "ActvSoccerHapticCfg": {"用途": "震动事件强度/图案", "关联": "全局事件映射", "填表": "体验/数值"},
@@ -54,7 +55,7 @@ COMMON_PLATFORM_META: dict[str, str] = {
 }
 
 SECTION_GROUPS: list[tuple[str, list[str]]] = [
-    ("创角与引导", ["ActvSoccerCharacterCfg", "ActvSoccerNationalityCfg", "ActvSoccerTutorialCfg"]),
+    ("创角与引导", ["ActvSoccerCharacterCfg", "ActvSoccerNationalityCfg", "ActvSoccerTutorialCfg", "ActvSoccerGuideStepCfg"]),
     (
         "切片与关卡",
         [
@@ -399,7 +400,11 @@ def build_doc(summary: dict, sheet_columns: dict[str, list[dict]], sheets: list[
 
     lines.append("---\n\n")
 
+    rendered_sheets: set[str] = set()
     for section_name, sheet_names in SECTION_GROUPS:
+        sheet_names = [sheet_name for sheet_name in sheet_names if sheet_name in sheet_columns]
+        if not sheet_names:
+            continue
         lines.append(f"## {section_name}\n\n")
         if section_name == "切片与关卡":
             lines += [
@@ -418,6 +423,7 @@ def build_doc(summary: dict, sheet_columns: dict[str, list[dict]], sheets: list[
                 "程序万分值与策划 Val 换算：`程序值 / 10000`（如 17500→1.75，500000→50）。\n\n",
             ]
         for sheet_name in sheet_names:
+            rendered_sheets.add(sheet_name)
             meta = SHEET_META.get(sheet_name, {})
             lines.append(f"### {sheet_name}\n\n")
             if meta:
@@ -428,6 +434,18 @@ def build_doc(summary: dict, sheet_columns: dict[str, list[dict]], sheets: list[
             if cols:
                 lines.append(field_table_md(cols, include_read=True))
                 lines.append("\n")
+
+    remaining_sheets = [
+        sheet_name
+        for sheet_name in [*sheets, "ActvSoccerLanguageCfg"]
+        if sheet_name in sheet_columns and sheet_name not in rendered_sheets
+    ]
+    if remaining_sheets:
+        lines.append("## Other\n\n")
+        for sheet_name in remaining_sheets:
+            lines.append(f"### {sheet_name}\n\n")
+            lines.append(field_table_md(sheet_columns[sheet_name], include_read=True))
+            lines.append("\n")
 
     lines += [
         "---\n\n",

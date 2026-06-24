@@ -8,14 +8,10 @@
   "sheets": [
     "ActvSoccerCharacterCfg",
     "ActvSoccerNationalityCfg",
-    "ActvSoccerTutorialCfg",
-    "ActvSoccerGuideStepCfg",
+    "ActvSoccerAchieveCfg",
     "ActvSoccerSlicePresetCfg",
     "ActvSoccerSliceInstanceCfg",
     "ActvSoccerHapticCfg",
-    "ActvSoccerReceiveDecisionCfg",
-    "ActvSoccerPlayerStyleCfg",
-    "ActvSoccerFirstTouchAnimCfg",
     "ActvSoccerLevelCfg",
     "ActvSoccerAiProfileCfg",
     "ActvSoccerEnemyAiCfg",
@@ -30,7 +26,12 @@
     "ActvSoccerKnockoutCfg",
     "ActvSoccerKnockoutPhaseCfg",
     "ActvSoccerBetMultiplierCfg",
-    "ActvSoccerBetStakeTierCfg"
+    "ActvSoccerBetStakeTierCfg",
+    "ActvSoccerMatchRewardCfg",
+    "ActvSoccerReceiveDecisionCfg",
+    "ActvSoccerPlayerStyleCfg",
+    "ActvSoccerReplayCfg",
+    "ActvSoccerRankCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
   "language_entry_count": 233,
@@ -480,8 +481,6 @@
     "玩法基础": [
       "ActvSoccerCharacterCfg",
       "ActvSoccerNationalityCfg",
-      "ActvSoccerTutorialCfg",
-      "ActvSoccerGuideStepCfg",
       "ActvSoccerSlicePresetCfg",
       "ActvSoccerSliceInstanceCfg",
       "ActvSoccerLevelCfg",
@@ -513,8 +512,13 @@
     ],
     "接球决策": [
       "ActvSoccerReceiveDecisionCfg",
-      "ActvSoccerPlayerStyleCfg",
-      "ActvSoccerFirstTouchAnimCfg"
+      "ActvSoccerPlayerStyleCfg"
+    ],
+    "Other": [
+      "ActvSoccerAchieveCfg",
+      "ActvSoccerMatchRewardCfg",
+      "ActvSoccerReplayCfg",
+      "ActvSoccerRankCfg"
     ]
   },
   "id_cross_ref": {
@@ -528,13 +532,11 @@
     "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-3);101-203=试训/引导;AI字段已并入本表",
     "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
     "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
-    "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
-    "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300",
-    "GuideStep": "源步骤ID×10+1=对话/单步;源步骤ID×10+2=手势/等待操作;10011-10402=试训;20011-20112=签约后主界面到第一关;30011-30412=第一关固定脚本引导"
+    "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(WinRate, PowerRate)查行→OddsLeft/OddsRight万分值",
+    "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300"
   },
   "test_flow": [
     "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
-    "试训/主界面/第一关引导步骤读取ActvSoccerGuideStepCfg;对话文案走ActvSoccerLanguageCfg,手势描述直接写中文",
     "引导关201/202/203 (进攻+助攻+守门射手)",
     "正式关301移动门将 (Modifier4001) / 302点球",
     "困难关复用301 (Profile1003+Modifier4002)",

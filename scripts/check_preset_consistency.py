@@ -3,7 +3,7 @@
 """preset 摆位合规检查(spec §6.1)。
 
 加载主生成器最终 workbook,对每个 preset 断言协议 v1 §2-§5 约束:
-1. BallPos / pos.z ∈ [-120, 0]
+1. BallPos / pos.z ∈ [-60, 0]
 2. BallPos.x / pos.x ∈ [-18, 18]
 3. BallPos.y ∈ [0, GOAL_HEIGHT]
 4. 点球 preset:BallPos == PENALTY_SPOT

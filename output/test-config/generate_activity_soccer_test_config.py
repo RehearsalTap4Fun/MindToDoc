@@ -15,12 +15,15 @@ import json
 import math
 from pathlib import Path
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 OUT_DIR = Path(__file__).parent
+PROJECT_ROOT = OUT_DIR.parent.parent
 OUTPUT_FILE = OUT_DIR / "ActivitySoccer_preview.xlsx"
 OUTPUT_LC_FILE = OUT_DIR / "ActivitySoccerLanguage.xlsx"
+LATEST_ACTIVITY_SOCCER_XLSX = Path("C:/Project/K1Dataconfig/dataconfig/ActivitySoccer.xlsx")
+GUIDE_STEP_SOURCE = PROJECT_ROOT / "input" / "世界杯引导.xlsx"
 # 追加到 dataconfig/ConstConfig.xlsx 的 CfgID 段（当前线上最大约 10135564）
 ACTV_SOCCER_CONST_CFGID_BASE = 10135601
 SOURCE_DOCS = [
@@ -135,6 +138,82 @@ def make_sheet(wb: Workbook, name: str, columns: list[dict], rows: list[dict]) -
                     val = col.get("default", "{}")
             if val is not None:
                 ws.cell(row_idx, col_idx, val)
+
+
+def _field_index(ws: Worksheet) -> dict[str, int]:
+    return {
+        str(ws.cell(3, col_idx).value): col_idx
+        for col_idx in range(1, ws.max_column + 1)
+        if ws.cell(3, col_idx).value is not None and str(ws.cell(3, col_idx).value).strip()
+    }
+
+
+def align_to_latest_activity_soccer_schema(wb: Workbook) -> Workbook:
+    """Align generated workbook sheet/column headers to dataconfig ActivitySoccer.xlsx."""
+    if not LATEST_ACTIVITY_SOCCER_XLSX.exists():
+        return wb
+
+    latest_wb = load_workbook(LATEST_ACTIVITY_SOCCER_XLSX, data_only=True)
+    aligned = Workbook()
+    aligned.remove(aligned.active)
+    try:
+        for sheet_name in latest_wb.sheetnames:
+            latest_ws = latest_wb[sheet_name]
+            old_ws = wb[sheet_name] if sheet_name in wb.sheetnames else None
+            old_fields = _field_index(old_ws) if old_ws is not None else {}
+            latest_fields = [
+                latest_ws.cell(3, col_idx).value
+                for col_idx in range(1, latest_ws.max_column + 1)
+            ]
+            old_rows_by_field: dict[int, dict[str, object]] = {}
+            if old_ws is not None:
+                for row_idx in range(9, old_ws.max_row + 1):
+                    old_rows_by_field[row_idx] = {
+                        field: old_ws.cell(row_idx, col_idx).value
+                        for field, col_idx in old_fields.items()
+                    }
+            latest_rows = {
+                row_idx: [
+                    latest_ws.cell(row_idx, col_idx).value
+                    for col_idx in range(1, latest_ws.max_column + 1)
+                ]
+                for row_idx in range(1, latest_ws.max_row + 1)
+            }
+
+            ws = aligned.create_sheet(sheet_name)
+            for row_idx in range(1, min(latest_ws.max_row, 8) + 1):
+                for col_idx, value in enumerate(latest_rows[row_idx], start=1):
+                    if value is not None:
+                        ws.cell(row_idx, col_idx, value)
+
+            max_row = old_ws.max_row if old_ws is not None else latest_ws.max_row
+            for row_idx in range(9, max_row + 1):
+                latest_row = latest_rows.get(row_idx, [])
+                old_row = old_rows_by_field.get(row_idx, {})
+                for col_idx, field in enumerate(latest_fields, start=1):
+                    value = None
+                    if field and str(field) in old_row:
+                        value = old_row[str(field)]
+                    if value is None and col_idx <= len(latest_row):
+                        value = latest_row[col_idx - 1]
+                    if value is not None:
+                        ws.cell(row_idx, col_idx, value)
+        return aligned
+    finally:
+        latest_wb.close()
+
+
+def copy_sheet_from_xlsx(wb: Workbook, name: str, source_path: Path, source_sheet: str = "Sheet1") -> None:
+    """Copy a source worksheet's value matrix into the generated workbook."""
+    source_wb = load_workbook(source_path, read_only=True, data_only=True)
+    try:
+        source_ws = source_wb[source_sheet]
+        ws = wb.create_sheet(name)
+        for row_idx in range(1, source_ws.max_row + 1):
+            for col_idx in range(1, source_ws.max_column + 1):
+                ws.cell(row_idx, col_idx, source_ws.cell(row_idx, col_idx).value)
+    finally:
+        source_wb.close()
 
 
 # dataconfig/ConstConfig.xlsx → ConstConfigCfg 表头（首列 CfgID，非活动表 ID 约定）
@@ -789,12 +868,12 @@ COORD_UNIT = "m"
 # §2 场地边界
 FIELD_X_HALF = 18.0          # x ∈ [-18, 18]
 FIELD_Z_NEAR = 0.0           # 对方球门线
-FIELD_Z_MID = -60.0          # 中线
-FIELD_Z_FAR = -120.0         # 本方球门线
+FIELD_Z_MID = -30.0          # 中线
+FIELD_Z_FAR = -60.0           # 本方球门线
 
 # §3.1 球门
 AWAY_GOAL_CENTER = (0.0, 0.0, 0.0)
-HOME_GOAL_CENTER = (0.0, 0.0, -120.0)
+HOME_GOAL_CENTER = (0.0, 0.0, -60.0)
 GOAL_WIDTH = 8.5
 GOAL_HEIGHT = 3.0
 DEAD_CORNER_THICKNESS = 0.2
@@ -803,7 +882,7 @@ DEAD_CORNER_THICKNESS = 0.2
 AWAY_KEEPER_Z_DEFAULT = -0.5
 AWAY_KEEPER_Z_PENALTY = 0.0
 AWAY_KEEPER_Z_LONG_ATTACK = -1.0
-LONG_ATTACK_BALL_Z = -28.0   # 球点 z ≤ 此值视为远距进攻
+LONG_ATTACK_BALL_Z = -16.0   # 球点 z ≤ 此值视为远距进攻(吊射/远射,门将略向前出)
 
 
 def away_keeper_z(slice_type: str, ball_z: float | None = None) -> float:
@@ -821,17 +900,17 @@ PENALTY_AREA_X_HALF = 11.5
 GOAL_AREA_Z_FAR = -3.5
 
 # §3.4 点球
-PENALTY_SPOT = (0.0, 0.0, -11.0)
-PENALTY_FREE_RADIUS = 9.0    # 弧外球员距球 ≥ 9m
+PENALTY_SPOT = (0.0, 0.0, -6.5)
+PENALTY_FREE_RADIUS = 5.0    # 弧外球员距球 ≥ 5m
 
 # §3.5 角球
 CORNER_LEFT_BALL = (-17.0, 0.0, -1.0)
 CORNER_RIGHT_BALL = (17.0, 0.0, -1.0)
 CORNER_FLAG_X = 18.0
-CORNER_FREE_RADIUS = 9.0
+CORNER_FREE_RADIUS = 5.0
 
 # §3.6 中圈
-CENTER_CIRCLE_CENTER = (0.0, 0.0, -60.0)
+CENTER_CIRCLE_CENTER = (0.0, 0.0, -30.0)
 CENTER_CIRCLE_RADIUS = 4.5
 
 # §4 物理
@@ -1466,11 +1545,12 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
 
     def gk_attack(home_x: float, ball_z: float = -23.0) -> list[dict]:
         keeper_z = away_keeper_z("attack", ball_z)
+        support_z = max(FIELD_Z_MID, ball_z - 7)
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], home_x, 0, ball_z,
                         _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x, ball_z)),
-            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, ball_z - 7,
-                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, ball_z - 7)),
+            player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], home_x - 2, 0, support_z,
+                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, home_x - 2, support_z)),
             player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
                         _face_toward(home_x, ball_z, 0, keeper_z)),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], home_x - 4, 0, -10,
@@ -1478,7 +1558,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         ]
 
     def free_kick_wall(ball_x: float, ball_z: float = -16.0) -> list[dict]:
-        wall_z = min(-7.0, ball_z + 9.0)
+        wall_z = min(-7.0, ball_z + PENALTY_FREE_RADIUS)
         wall_xs = (-3.0, -1.5, 0.0, 1.5)
         keeper_z = away_keeper_z("free_kick", ball_z)
         return [
@@ -1500,27 +1580,29 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, ball_z,
                         _face_toward(0, 0, side_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 2, 0, -6,
-                        _face_toward(0, 0, 2, -6)),
+                        _face_toward(side_x, ball_z, 2, -6)),
             player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -2, 0, -6,
-                        _face_toward(0, 0, -2, -6)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -8, 180.0),
+                        _face_toward(side_x, ball_z, -2, -6)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(side_x, ball_z, 0, keeper_z)),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 0, 0, -8,
+                        _face_toward(side_x, ball_z, 0, -8)),
         ]
 
-    def throw_in_players(side_x: float) -> list[dict]:
+    def throw_in_players(side_x: float, ball_z: float = -16.0) -> list[dict]:
         throw_x = max(-FIELD_X_HALF, min(FIELD_X_HALF, side_x))
         recv_x = max(-16.0, min(16.0, throw_x - (3 if throw_x > 0 else -3)))
-        recv_z = -14.0
-        ball_z = -18.0
+        recv_z = max(FIELD_Z_MID, ball_z + 4)
         keeper_z = away_keeper_z("throw_in")
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], throw_x, 0, ball_z,
                         _face_toward(recv_x, recv_z, throw_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], recv_x, 0, recv_z,
-                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, recv_x, recv_z)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
+                        _face_toward(throw_x, ball_z, recv_x, recv_z)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(throw_x, ball_z, 0, keeper_z)),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], recv_x, 0, -10,
-                        _face_toward(recv_x, recv_z, recv_x, -10)),
+                        _face_toward(throw_x, ball_z, recv_x, -10)),
         ]
 
     def penalty_players() -> list[dict]:
@@ -1542,7 +1624,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
 
     def attack_setup(ball_x: float, ball_z: float, target_x: float = 0.0, support_x: float | None = None) -> list[dict]:
         support_x = ball_x - 2 if support_x is None else support_x
-        support_z = max(FIELD_Z_FAR, ball_z - 7)
+        support_z = max(FIELD_Z_MID, ball_z - 7)
         defender_x = max(-FIELD_X_HALF, min(FIELD_X_HALF, ball_x * 0.55))
         defender_z = min(FIELD_Z_NEAR, max(PENALTY_AREA_Z_FAR, ball_z + 10))
         keeper_z = away_keeper_z("attack", ball_z)
@@ -1559,32 +1641,37 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
 
     def corner_setup(side_x: float, target_x: float, target_z: float = 0.0) -> list[dict]:
         keeper_z = away_keeper_z("corner")
+        ball_z = -1.0
+        home2_x = -target_x if target_x else 3
         return [
-            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, -1,
-                        _face_toward(target_x, target_z, side_x, -1)),
+            player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], side_x, 0, ball_z,
+                        _face_toward(target_x, target_z, side_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], target_x, 0, -6,
-                        _face_toward(target_x, target_z, target_x, -6)),
-            player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], -target_x if target_x else 3, 0, -7,
-                        _face_toward(target_x, target_z, -target_x if target_x else 3, -7)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
+                        _face_toward(side_x, ball_z, target_x, -6)),
+            player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], home2_x, 0, -7,
+                        _face_toward(side_x, ball_z, home2_x, -7)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(side_x, ball_z, 0, keeper_z)),
             player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], target_x * 0.5, 0, -8,
-                        _face_toward(target_x, target_z, target_x * 0.5, -8)),
+                        _face_toward(side_x, ball_z, target_x * 0.5, -8)),
         ]
 
     def throw_in_setup(side_x: float, ball_z: float, target_x: float, target_z: float) -> list[dict]:
         throw_x = max(-FIELD_X_HALF, min(FIELD_X_HALF, side_x))
         support_x = max(-16.0, min(16.0, target_x * 0.5))
         keeper_z = away_keeper_z("throw_in")
+        defender_z = min(-3, target_z + 4)
         return [
             player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], throw_x, 0, ball_z,
                         _face_toward(target_x, target_z, throw_x, ball_z)),
             player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], target_x, 0, target_z,
-                        _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, target_x, target_z)),
+                        _face_toward(throw_x, ball_z, target_x, target_z)),
             player_init("home", 2, PLAYER_AI_DUTY_ENUM["Forward"], support_x, 0, target_z - 6,
-                        _face_toward(target_x, target_z, support_x, target_z - 6)),
-            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z, 180.0),
-            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], target_x, 0, min(-3, target_z + 4),
-                        _face_toward(target_x, target_z, target_x, min(-3, target_z + 4))),
+                        _face_toward(throw_x, ball_z, support_x, target_z - 6)),
+            player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, keeper_z,
+                        _face_toward(throw_x, ball_z, 0, keeper_z)),
+            player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], target_x, 0, defender_z,
+                        _face_toward(throw_x, ball_z, target_x, defender_z)),
         ]
 
     def goalkeep_setup(shot_x: float, shot_z: float) -> list[dict]:
@@ -1596,51 +1683,51 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         ]
 
     preset1_players = [
-        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 12, 0, -23.0,
-                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 12, -23.0)),
-        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 10, 0, -30,
-                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 10, -30)),
-        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, away_keeper_z("attack", -23.0),
-                    _face_toward(12, -23.0, 0, away_keeper_z("attack", -23.0))),
-        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 8, 0, -12,
-                    _face_toward(12, -23.0, 8, -12)),
+        player_init("home", 0, PLAYER_AI_DUTY_ENUM["Forward"], 12, 0, -13.0,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 12, -13.0)),
+        player_init("home", 1, PLAYER_AI_DUTY_ENUM["Forward"], 10, 0, -20,
+                    _face_toward(GOAL_CENTER_X, GOAL_CENTER_Z, 10, -20)),
+        player_init("away", 0, PLAYER_AI_DUTY_ENUM["Goalkeeper"], 0, 0, away_keeper_z("attack", -13.0),
+                    _face_toward(12, -13.0, 0, away_keeper_z("attack", -13.0))),
+        player_init("away", 1, PLAYER_AI_DUTY_ENUM["Defender"], 8, 0, -8,
+                    _face_toward(12, -13.0, 8, -8)),
     ]
 
     # (id, slice_type, name, tags, ball_pos, ball_vector, ball_owner, players, fov, target, op_angle, type_payload, rec_modes)
     specs = [
-        (1, "attack", "右路单刀", '["side","easy"]', pos_json(12, 0, -23), '{"x":0,"y":0,"z":1}', 0, preset1_players, 45, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
-        (5, "attack", "左路单刀", '["side"]', pos_json(-12, 0, -23), '{"x":0,"y":0,"z":1}', 0, gk_attack(-12), 45, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
-        (6, "attack", "中路突破", '["center"]', pos_json(0, 0, -22), '{"x":0,"y":0,"z":1}', 0, gk_attack(0, -22), 44, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5200,"angle":35}', '["draw_line","slingshot"]'),
-        (16, "attack", "中路吊射", '["center","lob"]', pos_json(0, 0, -28), '{"x":0,"y":0,"z":1}', 0, gk_attack(0, -28), 46, pos_json(0, 1.5, 0), 32.0, '{"keeper_weight":5400,"angle":32}', '["draw_line","slingshot"]'),
+        (1, "attack", "右路单刀", '["side","easy"]', pos_json(12, 0, -13), '{"x":0,"y":0,"z":1}', 0, preset1_players, 45, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
+        (5, "attack", "左路单刀", '["side"]', pos_json(-12, 0, -13), '{"x":0,"y":0,"z":1}', 0, gk_attack(-12, -13), 45, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5000,"angle":35}', '["draw_line","slingshot"]'),
+        (6, "attack", "中路突破", '["center"]', pos_json(0, 0, -12), '{"x":0,"y":0,"z":1}', 0, gk_attack(0, -12), 44, pos_json(0, 0, 0), 35.0, '{"keeper_weight":5200,"angle":35}', '["draw_line","slingshot"]'),
+        (16, "attack", "中路吊射", '["center","lob"]', pos_json(0, 0, -18), '{"x":0,"y":0,"z":1}', 0, gk_attack(0, -18), 46, pos_json(0, 1.5, 0), 32.0, '{"keeper_weight":5400,"angle":32}', '["draw_line","slingshot"]'),
         (2, "free_kick", "中路任意球", '["center"]', pos_json(0, 0, -16), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(0, -16), 42, pos_json(0, 1.8, 0), 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
         (7, "free_kick", "左侧任意球", '["side"]', pos_json(-10, 0, -14), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(-10, -14), 42, pos_json(-2, 1.8, 0), 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
         (8, "free_kick", "右侧任意球", '["side"]', pos_json(10, 0, -14), '{"x":0,"y":0,"z":1}', 0, free_kick_wall(10, -14), 42, pos_json(2, 1.8, 0), 28.0, '{"wall_count":4,"keeper_weight":4500}', '["draw_line","slingshot"]'),
-        (17, "free_kick", "弧线任意球", '["center","curve"]', pos_json(4, 0, -18), vec_to(4, -18, -3, 0), 0, free_kick_wall(4, -18), 41, pos_json(-3, 2.0, 0), 26.0, '{"wall_count":4,"keeper_weight":4800}', '["draw_line"]'),
+        (17, "free_kick", "弧线任意球", '["center","curve"]', pos_json(4, 0, -17), vec_to(4, -17, -3, 0), 0, free_kick_wall(4, -17), 41, pos_json(-3, 2.0, 0), 26.0, '{"wall_count":4,"keeper_weight":4800}', '["draw_line"]'),
         (3, "penalty", "标准点球", '["penalty"]', penalty_ball_pos(), '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(0, 0.5, 0), 0.0, '{"keeper_dirs":[2500,2500,2500,2500]}', '["draw_line","slingshot"]'),
         (9, "penalty", "加压点球", '["penalty","hard"]', penalty_ball_pos(), '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(0, 0.5, 0), 0.0, '{"keeper_dirs":[2000,3000,3000,2000]}', '["draw_line","slingshot"]'),
         (10, "corner", "左角球", '["corner","left"]', corner_ball_pos("left"), '{"x":1,"y":0,"z":1}', 0, corner_players(CORNER_LEFT_BALL[0]), 48, pos_json(0, 2.0, 0), 30.0, '{"first_point_weight":5000}', '["draw_line"]'),
         (11, "corner", "右角球", '["corner","right"]', corner_ball_pos("right"), '{"x":-1,"y":0,"z":1}', 0, corner_players(CORNER_RIGHT_BALL[0]), 48, pos_json(0, 2.0, 0), 30.0, '{"first_point_weight":5000}', '["draw_line"]'),
         (18, "corner", "后点包抄", '["corner","far"]', corner_ball_pos("right"), '{"x":-1,"y":0,"z":1}', 0, corner_players(CORNER_RIGHT_BALL[0]), 48, pos_json(-6, 2.0, 0), 28.0, '{"first_point_weight":4500,"far_post":1}', '["draw_line"]'),
-        (12, "throw_in", "左界外球", '["throw_in","left"]', pos_json(-18, 0, -18), '{"x":1,"y":0,"z":0}', 0, throw_in_players(-20), 44, pos_json(-10, 0, -14), 34.0, '{"second_attack":1}', '["draw_line"]'),
-        (13, "throw_in", "右界外球", '["throw_in","right"]', pos_json(18, 0, -18), '{"x":-1,"y":0,"z":0}', 0, throw_in_players(20), 44, pos_json(10, 0, -14), 34.0, '{"second_attack":1}', '["draw_line"]'),
+        (12, "throw_in", "左界外球", '["throw_in","left"]', pos_json(-18, 0, -16), '{"x":1,"y":0,"z":0}', 0, throw_in_players(-20, -16), 44, pos_json(-10, 0, -12), 34.0, '{"second_attack":1}', '["draw_line"]'),
+        (13, "throw_in", "右界外球", '["throw_in","right"]', pos_json(18, 0, -16), '{"x":-1,"y":0,"z":0}', 0, throw_in_players(20, -16), 44, pos_json(10, 0, -12), 34.0, '{"second_attack":1}', '["draw_line"]'),
         (4, "goalkeep", "基础守门", '["gk"]', pos_json(0, 0, -18), '{"x":0,"y":0,"z":1}', 0, goalkeep_players(), 50, None, 0.0, '{"shot_dirs":[3000,3000,4000],"reaction_ms":2500}', '["draw_line"]'),
         (14, "goalkeep", "大范围守门", '["gk","wide"]', pos_json(0, 0, -18), '{"x":0,"y":0,"z":1}', 0, goalkeep_players(), 52, None, 0.0, '{"shot_dirs":[3500,3500,3000],"reaction_ms":2200}', '["draw_line"]'),
         (15, "goalkeep", "近距扑点", '["gk","penalty"]', pos_json(0, 0, -11), '{"x":0,"y":0,"z":1}', 0, goalkeep_players(), 50, None, 0.0, '{"shot_dirs":[4000,4000,2000],"reaction_ms":1800}', '["draw_line"]'),
-        (19, "attack", "右肋斜插", '["side","diagonal"]', pos_json(8, 0, -30), vec_to(8, -30, -1, 0), 0, attack_setup(8, -30, -1, 5), 45, pos_json(-1, 0.2, 0), 34.0, '{"keeper_weight":5200,"diagonal":1}', '["draw_line","slingshot"]'),
-        (20, "attack", "左肋斜插", '["side","diagonal"]', pos_json(-8, 0, -30), vec_to(-8, -30, 1, 0), 0, attack_setup(-8, -30, 1, -5), 45, pos_json(1, 0.2, 0), 34.0, '{"keeper_weight":5200,"diagonal":1}', '["draw_line","slingshot"]'),
-        (21, "attack", "禁区弧顶远射", '["center","long_shot"]', pos_json(0, 0, -34), vec_to(0, -34, 0, 0), 0, attack_setup(0, -34, 0, -5), 46, pos_json(0, 1.0, 0), 30.0, '{"keeper_weight":5600,"long_shot":1}', '["draw_line","slingshot"]'),
-        (22, "attack", "右路内切射门", '["side","cut_in"]', pos_json(13, 0, -28), vec_to(13, -28, -2, 0), 0, attack_setup(13, -28, -2, 8), 45, pos_json(-2, 0.5, 0), 32.0, '{"keeper_weight":5400,"cut_in":1}', '["draw_line","slingshot"]'),
-        (23, "attack", "左路内切射门", '["side","cut_in"]', pos_json(-13, 0, -28), vec_to(-13, -28, 2, 0), 0, attack_setup(-13, -28, 2, -8), 45, pos_json(2, 0.5, 0), 32.0, '{"keeper_weight":5400,"cut_in":1}', '["draw_line","slingshot"]'),
-        (24, "attack", "倒三角回做", '["assist","cutback"]', pos_json(14, 0, -12), vec_to(14, -12, 0, -8), 0, attack_setup(14, -12, 0, 2), 47, pos_json(0, 0, -8), 36.0, '{"keeper_weight":5000,"cutback":1}', '["draw_line","slingshot"]'),
+        (19, "attack", "右肋斜插", '["side","diagonal"]', pos_json(8, 0, -15), vec_to(8, -15, -1, 0), 0, attack_setup(8, -15, -1, 5), 45, pos_json(-1, 0.2, 0), 34.0, '{"keeper_weight":5200,"diagonal":1}', '["draw_line","slingshot"]'),
+        (20, "attack", "左肋斜插", '["side","diagonal"]', pos_json(-8, 0, -15), vec_to(-8, -15, 1, 0), 0, attack_setup(-8, -15, 1, -5), 45, pos_json(1, 0.2, 0), 34.0, '{"keeper_weight":5200,"diagonal":1}', '["draw_line","slingshot"]'),
+        (21, "attack", "禁区弧顶远射", '["center","long_shot"]', pos_json(0, 0, -12), vec_to(0, -12, 0, 0), 0, attack_setup(0, -12, 0, -5), 46, pos_json(0, 1.0, 0), 30.0, '{"keeper_weight":5600,"long_shot":1}', '["draw_line","slingshot"]'),
+        (22, "attack", "右路内切射门", '["side","cut_in"]', pos_json(13, 0, -14), vec_to(13, -14, -2, 0), 0, attack_setup(13, -14, -2, 8), 45, pos_json(-2, 0.5, 0), 32.0, '{"keeper_weight":5400,"cut_in":1}', '["draw_line","slingshot"]'),
+        (23, "attack", "左路内切射门", '["side","cut_in"]', pos_json(-13, 0, -14), vec_to(-13, -14, 2, 0), 0, attack_setup(-13, -14, 2, -8), 45, pos_json(2, 0.5, 0), 32.0, '{"keeper_weight":5400,"cut_in":1}', '["draw_line","slingshot"]'),
+        (24, "attack", "倒三角回做", '["assist","cutback"]', pos_json(14, 0, -5), vec_to(14, -5, 0, -8), 0, attack_setup(14, -5, 0, 2), 47, pos_json(0, 0, -8), 36.0, '{"keeper_weight":5000,"cutback":1}', '["draw_line","slingshot"]'),
         (25, "attack", "门前抢点", '["center","tap_in"]', pos_json(3, 0, -8), vec_to(3, -8, 0, 0), 0, attack_setup(3, -8, 0, -3), 43, pos_json(0, 0.4, 0), 38.0, '{"keeper_weight":6200,"tap_in":1}', '["draw_line","slingshot"]'),
-        (26, "attack", "禁区外吊射", '["center","lob","long_shot"]', pos_json(-3, 0, -36), vec_to(-3, -36, 0, 0), 0, attack_setup(-3, -36, 0, 4), 48, pos_json(0, 2.2, 0), 28.0, '{"keeper_weight":5800,"lob":1}', '["draw_line","slingshot"]'),
-        (27, "attack", "二点补射", '["center","rebound"]', pos_json(5, 0, -14), vec_to(5, -14, -1, 0), 0, attack_setup(5, -14, -1, 0), 44, pos_json(-1, 0.6, 0), 34.0, '{"keeper_weight":6000,"rebound":1}', '["draw_line","slingshot"]'),
-        (28, "attack", "横向摆脱射门", '["center","dribble"]', pos_json(-5, 0, -24), vec_to(-5, -24, 1, 0), 0, attack_setup(-5, -24, 1, -9), 46, pos_json(1, 0.4, 0), 33.0, '{"keeper_weight":5500,"dribble":1}', '["draw_line","slingshot"]'),
-        (29, "free_kick", "近距中路任意球", '["center","close"]', pos_json(0, 0, -12), vec_to(0, -12, 0, 0), 0, free_kick_wall(0, -12), 43, pos_json(0, 1.6, 0), 24.0, '{"wall_count":4,"keeper_weight":5200,"close":1}', '["draw_line","slingshot"]'),
-        (30, "free_kick", "远距中路任意球", '["center","far"]', pos_json(0, 0, -26), vec_to(0, -26, 0, 0), 0, free_kick_wall(0, -26), 44, pos_json(0, 2.0, 0), 30.0, '{"wall_count":4,"keeper_weight":4300,"far":1}', '["draw_line","slingshot"]'),
-        (31, "free_kick", "右侧绕墙低射", '["side","low"]', pos_json(8, 0, -16), vec_to(8, -16, -2, 0), 0, free_kick_wall(8, -16), 42, pos_json(-2, 0.4, 0), 25.0, '{"wall_count":4,"keeper_weight":4800,"low":1}', '["draw_line","slingshot"]'),
-        (32, "free_kick", "左侧绕墙低射", '["side","low"]', pos_json(-8, 0, -16), vec_to(-8, -16, 2, 0), 0, free_kick_wall(-8, -16), 42, pos_json(2, 0.4, 0), 25.0, '{"wall_count":4,"keeper_weight":4800,"low":1}', '["draw_line","slingshot"]'),
-        (33, "free_kick", "传中任意球", '["side","cross"]', pos_json(13, 0, -22), vec_to(13, -22, -3, 0), 0, free_kick_wall(13, -22), 45, pos_json(-3, 2.2, 0), 32.0, '{"wall_count":4,"keeper_weight":4200,"cross":1}', '["draw_line"]'),
+        (26, "attack", "禁区外吊射", '["center","lob","long_shot"]', pos_json(-3, 0, -18), vec_to(-3, -18, 0, 0), 0, attack_setup(-3, -18, 0, 4), 48, pos_json(0, 2.2, 0), 28.0, '{"keeper_weight":5800,"lob":1}', '["draw_line","slingshot"]'),
+        (27, "attack", "二点补射", '["center","rebound"]', pos_json(5, 0, -7), vec_to(5, -7, -1, 0), 0, attack_setup(5, -7, -1, 0), 44, pos_json(-1, 0.6, 0), 34.0, '{"keeper_weight":6000,"rebound":1}', '["draw_line","slingshot"]'),
+        (28, "attack", "横向摆脱射门", '["center","dribble"]', pos_json(-5, 0, -14), vec_to(-5, -14, 1, 0), 0, attack_setup(-5, -14, 1, -9), 46, pos_json(1, 0.4, 0), 33.0, '{"keeper_weight":5500,"dribble":1}', '["draw_line","slingshot"]'),
+        (29, "free_kick", "近距中路任意球", '["center","close"]', pos_json(0, 0, -11), vec_to(0, -11, 0, 0), 0, free_kick_wall(0, -11), 43, pos_json(0, 1.6, 0), 24.0, '{"wall_count":4,"keeper_weight":5200,"close":1}', '["draw_line","slingshot"]'),
+        (30, "free_kick", "远距中路任意球", '["center","far"]', pos_json(0, 0, -22), vec_to(0, -22, 0, 0), 0, free_kick_wall(0, -22), 44, pos_json(0, 2.0, 0), 30.0, '{"wall_count":4,"keeper_weight":4300,"far":1}', '["draw_line","slingshot"]'),
+        (31, "free_kick", "右侧绕墙低射", '["side","low"]', pos_json(8, 0, -15), vec_to(8, -15, -2, 0), 0, free_kick_wall(8, -15), 42, pos_json(-2, 0.4, 0), 25.0, '{"wall_count":4,"keeper_weight":4800,"low":1}', '["draw_line","slingshot"]'),
+        (32, "free_kick", "左侧绕墙低射", '["side","low"]', pos_json(-8, 0, -15), vec_to(-8, -15, 2, 0), 0, free_kick_wall(-8, -15), 42, pos_json(2, 0.4, 0), 25.0, '{"wall_count":4,"keeper_weight":4800,"low":1}', '["draw_line","slingshot"]'),
+        (33, "free_kick", "传中任意球", '["side","cross"]', pos_json(13, 0, -19), vec_to(13, -19, -3, 0), 0, free_kick_wall(13, -19), 45, pos_json(-3, 2.2, 0), 32.0, '{"wall_count":4,"keeper_weight":4200,"cross":1}', '["draw_line"]'),
         (34, "penalty", "左下角点球", '["penalty","low_left"]', penalty_ball_pos(), '{"x":-0.35,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(-2.8, 0.2, 0), 0.0, '{"keeper_dirs":[3500,1800,2500,2200]}', '["draw_line","slingshot"]'),
         (35, "penalty", "右下角点球", '["penalty","low_right"]', penalty_ball_pos(), '{"x":0.35,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(2.8, 0.2, 0), 0.0, '{"keeper_dirs":[1800,3500,2500,2200]}', '["draw_line","slingshot"]'),
         (36, "penalty", "半高点球", '["penalty","mid_high"]', penalty_ball_pos(), '{"x":0,"y":0,"z":1}', 0, penalty_players(), 40, pos_json(0, 1.8, 0), 0.0, '{"keeper_dirs":[2400,2400,3200,2000]}', '["draw_line","slingshot"]'),
@@ -1651,12 +1738,12 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         (41, "corner", "短角球配合", '["corner","short"]', corner_ball_pos("left"), vec_to(-17, -1, -12, -6), 0, corner_setup(CORNER_LEFT_BALL[0], -12, -6), 47, pos_json(-12, 0, -6), 36.0, '{"short_corner":1}', '["draw_line"]'),
         (42, "corner", "低平扫门前", '["corner","low_cross"]', corner_ball_pos("right"), vec_to(17, -1, -2, -2), 0, corner_setup(CORNER_RIGHT_BALL[0], -2, -2), 47, pos_json(-2, 0.4, -2), 32.0, '{"low_cross":1}', '["draw_line"]'),
         (43, "corner", "禁区混战二点", '["corner","scramble"]', corner_ball_pos("left"), vec_to(-17, -1, 1, -5), 0, corner_setup(CORNER_LEFT_BALL[0], 1, -5), 50, pos_json(1, 1.0, -5), 34.0, '{"scramble":1}', '["draw_line"]'),
-        (44, "throw_in", "左侧近端接应", '["throw_in","left","near"]', pos_json(-18, 0, -12), vec_to(-18, -12, -12, -10), 0, throw_in_setup(-18, -12, -12, -10), 44, pos_json(-12, 0, -10), 34.0, '{"near_support":1}', '["draw_line"]'),
-        (45, "throw_in", "右侧近端接应", '["throw_in","right","near"]', pos_json(18, 0, -12), vec_to(18, -12, 12, -10), 0, throw_in_setup(18, -12, 12, -10), 44, pos_json(12, 0, -10), 34.0, '{"near_support":1}', '["draw_line"]'),
-        (46, "throw_in", "左侧远端转移", '["throw_in","left","switch"]', pos_json(-18, 0, -28), vec_to(-18, -28, 5, -18), 0, throw_in_setup(-18, -28, 5, -18), 46, pos_json(5, 0, -18), 36.0, '{"switch_side":1}', '["draw_line"]'),
-        (47, "throw_in", "右侧远端转移", '["throw_in","right","switch"]', pos_json(18, 0, -28), vec_to(18, -28, -5, -18), 0, throw_in_setup(18, -28, -5, -18), 46, pos_json(-5, 0, -18), 36.0, '{"switch_side":1}', '["draw_line"]'),
-        (48, "throw_in", "左路快速反击", '["throw_in","left","counter"]', pos_json(-18, 0, -34), vec_to(-18, -34, -8, -20), 0, throw_in_setup(-18, -34, -8, -20), 45, pos_json(-8, 0, -20), 35.0, '{"counter":1}', '["draw_line"]'),
-        (49, "throw_in", "右路快速反击", '["throw_in","right","counter"]', pos_json(18, 0, -34), vec_to(18, -34, 8, -20), 0, throw_in_setup(18, -34, 8, -20), 45, pos_json(8, 0, -20), 35.0, '{"counter":1}', '["draw_line"]'),
+        (44, "throw_in", "左侧近端接应", '["throw_in","left","near"]', pos_json(-18, 0, -10), vec_to(-18, -10, -12, -8), 0, throw_in_setup(-18, -10, -12, -8), 44, pos_json(-12, 0, -8), 34.0, '{"near_support":1}', '["draw_line"]'),
+        (45, "throw_in", "右侧近端接应", '["throw_in","right","near"]', pos_json(18, 0, -10), vec_to(18, -10, 12, -8), 0, throw_in_setup(18, -10, 12, -8), 44, pos_json(12, 0, -8), 34.0, '{"near_support":1}', '["draw_line"]'),
+        (46, "throw_in", "左侧远端转移", '["throw_in","left","switch"]', pos_json(-18, 0, -23), vec_to(-18, -23, 5, -16), 0, throw_in_setup(-18, -23, 5, -16), 46, pos_json(5, 0, -16), 36.0, '{"switch_side":1}', '["draw_line"]'),
+        (47, "throw_in", "右侧远端转移", '["throw_in","right","switch"]', pos_json(18, 0, -23), vec_to(18, -23, -5, -16), 0, throw_in_setup(18, -23, -5, -16), 46, pos_json(-5, 0, -16), 36.0, '{"switch_side":1}', '["draw_line"]'),
+        (48, "throw_in", "左路快速反击", '["throw_in","left","counter"]', pos_json(-18, 0, -25), vec_to(-18, -25, -8, -18), 0, throw_in_setup(-18, -25, -8, -18), 45, pos_json(-8, 0, -18), 35.0, '{"counter":1}', '["draw_line"]'),
+        (49, "throw_in", "右路快速反击", '["throw_in","right","counter"]', pos_json(18, 0, -25), vec_to(18, -25, 8, -18), 0, throw_in_setup(18, -25, 8, -18), 45, pos_json(8, 0, -18), 35.0, '{"counter":1}', '["draw_line"]'),
         (50, "goalkeep", "左侧低球扑救", '["gk","left","low"]', pos_json(-5, 0, -16), '{"x":0,"y":0,"z":1}', 0, goalkeep_setup(-5, -16), 50, None, 0.0, '{"shot_dirs":[4500,2500,2000],"reaction_ms":2000}', '["draw_line"]'),
     ]
 
@@ -1750,35 +1837,8 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         ],
     )
 
-    make_sheet(
-        wb,
-        "ActvSoccerGuideStepCfg",
-        c(
-            id_col("int", "引导步骤ID"),
-            ("GuideID", "string", "引导组ID:trial/main_to_level1/level1_tutorial"),
-            ("StepIndex", "int", "组内步骤序号"),
-            ("Trigger", "string", "触发事件或状态条件"),
-            ("LevelID", "int", "绑定关卡ID;非关卡步骤填0"),
-            ("SliceID", "int", "绑定切片实例ID;非切片步骤填0"),
-            ("DialogueLcKey", "string", "引导文案→ActvSoccerLanguageCfg"),
-            ("TextStyle", "string", "文案表现:bubble/bottom_bar/popup/toast"),
-            ("FocusTarget", "string", "高亮对象:UINode或局内tag"),
-            ("MaskType", "string", "遮罩:none/full/spotlight/bottom_safe"),
-            ("GestureDesc", "string", "手势动画中文描述;无手势留空"),
-            ("WaitType", "string", "等待类型:none/tap/drag/swipe/release/click_continue/auto_delay"),
-            ("WaitTarget", "string", "等待目标:UI节点/操作区域/切片目标"),
-            ("PassCondition", "string", "通过条件:事件名或判定表达"),
-            ("FailAction", "string", "失败处理:none/retry_step/show_rewind/continue_as_failed"),
-            ("SaveScope", "string", "保存域:profile/runtime/attempt;无保存留空"),
-            ("SaveKey", "string", "保存字段;无保存留空"),
-            ("SaveValue", "string", "保存值;无保存留空"),
-            ("SaveTiming", "string", "保存时机:step_complete/button_clicked/click_continue"),
-            ("NextID", "int", "下一步骤ID;0=结束"),
-            ("SkipPolicy", "string", "跳过策略:cannot_skip/auto_after_delay/allow_skip_if_seen"),
-            ("Remark", "string", "备注"),
-        ),
-        build_guide_step_rows(lc),
-    )
+    build_guide_step_rows(lc)
+    copy_sheet_from_xlsx(wb, "ActvSoccerGuideStepCfg", GUIDE_STEP_SOURCE)
 
     # --- 3.2 切片 ---
     make_sheet(
@@ -2276,7 +2336,7 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         BET_STAKE_TIER_ROWS,
     )
 
-    return wb
+    return align_to_latest_activity_soccer_schema(wb)
 
 
 def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict]) -> None:
@@ -2357,13 +2417,11 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-3);101-203=试训/引导;AI字段已并入本表",
             "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
             "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
-            "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(winRate_int, powerRate_int)查行→oddsLeft/oddsRight万分值",
+            "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(WinRate, PowerRate)查行→OddsLeft/OddsRight万分值",
             "BetStakeTier": "6档:free(命中+5)+50/100/150/200/300",
-            "GuideStep": "源步骤ID×10+1=对话/单步;源步骤ID×10+2=手势/等待操作;10011-10402=试训;20011-20112=签约后主界面到第一关;30011-30412=第一关固定脚本引导",
         },
         "test_flow": [
             "创角→试训切片101/102/103 (SliceInstance内置easy档AI字段)",
-            "试训/主界面/第一关引导步骤读取ActvSoccerGuideStepCfg;对话文案走ActvSoccerLanguageCfg,手势描述直接写中文",
             "引导关201/202/203 (进攻+助攻+守门射手)",
             "正式关301移动门将 (Modifier4001) / 302点球",
             "困难关复用301 (Profile1003+Modifier4002)",
@@ -2429,6 +2487,19 @@ def export_summary(sheets: list[str], lc_rows: list[dict], const_rows: list[dict
             "SeasonCfg.NextSeason": "后置联赛(原UnlockPrevSeason反向)",
         },
     }
+    actual_sheets = set(sheets)
+    rendered_sheets: set[str] = set()
+    filtered_groups: dict[str, list[str]] = {}
+    for group_name, group_sheets in summary["sheet_groups"].items():
+        filtered = [sheet_name for sheet_name in group_sheets if sheet_name in actual_sheets]
+        if filtered:
+            filtered_groups[group_name] = filtered
+            rendered_sheets.update(filtered)
+    remaining_sheets = [sheet_name for sheet_name in sheets if sheet_name not in rendered_sheets]
+    if remaining_sheets:
+        filtered_groups["Other"] = remaining_sheets
+    summary["sheet_groups"] = filtered_groups
+
     (OUT_DIR / "test-config-summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )

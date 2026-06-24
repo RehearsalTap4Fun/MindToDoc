@@ -47,3 +47,5 @@ python3 -m pytest output/test-config/level-tags/tests -q
 ## 协作约定
 
 每次开展新工作前先 `git pull --ff-only`；完成有效改动后提交。
+
+审核/检验/复核类任务(`审核 X 是否合规`、`按新参数调整 Y` 等)接到后先走 `references/audit-three-tier-discipline.md` 的「硬范围 / 软分布 / 设计意图」三档断言,再动手。
