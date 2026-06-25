@@ -1177,52 +1177,96 @@ ROUNDS_TOTAL = 50
 LEVELS_PER_ROUND = 10
 TIERS_TOTAL = 10
 
-# slice_type 编号（程序侧 L1 枚举）：1 attack / 2 free_kick / 3 penalty / 4 corner / 5 throw_in / 6 goalkeep
+# slice_type 编号（程序侧 L1 枚举）：1 attack / 2 corner / 3 free_kick / 4 goalkeep / 5 penalty / 6 throw_in
+# 该数字编号同时编入 SlicePresetCfg.ID 千位、SliceInstanceCfg.ID 百位
 SLICE_TYPE_NAME: dict[int, str] = {
-    1: "attack", 2: "free_kick", 3: "penalty",
-    4: "corner", 5: "throw_in", 6: "goalkeep",
+    1: "attack", 2: "corner", 3: "free_kick",
+    4: "goalkeep", 5: "penalty", 6: "throw_in",
 }
 SLICE_TYPE_ORDER = [1, 2, 3, 4, 5, 6]
 
-# 每个 slice_type 的可用 preset 池（按 tier 轮换取用，丰富画面）
-PRESET_POOL: dict[int, list[int]] = {
-    1: [1, 5, 6, 16, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
-        9001, 9002, 9003, 9004, 9005, 9006, 9007, 9008, 9009, 9010,
-        9011, 9012, 9013, 9014, 9015, 9016, 9017, 9018, 9019],  # attack
-    2: [2, 7, 8, 17, 29, 30, 31, 32, 33,
-        9020, 9021, 9022, 9023, 9024],                         # free_kick
-    3: [3, 9, 34, 35, 36, 9025],                              # penalty
-    4: [10, 11, 18, 37, 38, 39, 40, 41, 42, 43, 9026, 9027],   # corner
-    5: [12, 13, 44, 45, 46, 47, 48, 49, 9028],                # throw_in
-    6: [4, 14, 15, 50, 9029],                                 # goalkeep
+# 手工编排 preset 旧 ID → 新 ID（按 SliceType 千位 + 类型内连续编号 重新分段）
+# NameLcKey 保持 ActvSoccer_preset_name_{old} 不变，仅 ID 改变。
+MANUAL_PRESET_ID_REMAP: dict[int, int] = {
+    # attack 1xxx
+    1: 1001, 5: 1002, 6: 1003, 16: 1004,
+    19: 1005, 20: 1006, 21: 1007, 22: 1008, 23: 1009, 24: 1010,
+    25: 1011, 26: 1012, 27: 1013, 28: 1014,
+    # corner 2xxx
+    10: 2001, 11: 2002, 18: 2003,
+    37: 2004, 38: 2005, 39: 2006, 40: 2007, 41: 2008, 42: 2009, 43: 2010,
+    # free_kick 3xxx
+    2: 3001, 7: 3002, 8: 3003, 17: 3004,
+    29: 3005, 30: 3006, 31: 3007, 32: 3008, 33: 3009,
+    # goalkeep 4xxx
+    4: 4001, 14: 4002, 15: 4003, 50: 4004,
+    # penalty 5xxx
+    3: 5001, 9: 5002, 34: 5003, 35: 5004, 36: 5005,
+    # throw_in 6xxx
+    12: 6001, 13: 6002,
+    44: 6003, 45: 6004, 46: 6005, 47: 6006, 48: 6007, 49: 6008,
+}
+# 参考截图 preset 旧 9xxx → 新 ID（在对应类型段末尾续编）
+REFERENCE_PRESET_ID_REMAP: dict[int, int] = {
+    # attack 续 1015-1033
+    9001: 1015, 9002: 1016, 9003: 1017, 9004: 1018, 9005: 1019,
+    9006: 1020, 9007: 1021, 9008: 1022, 9009: 1023, 9010: 1024,
+    9011: 1025, 9012: 1026, 9013: 1027, 9014: 1028, 9015: 1029,
+    9016: 1030, 9017: 1031, 9018: 1032, 9019: 1033,
+    # corner 续 2011-2012
+    9026: 2011, 9027: 2012,
+    # free_kick 续 3010-3014
+    9020: 3010, 9021: 3011, 9022: 3012, 9023: 3013, 9024: 3014,
+    # goalkeep 续 4005
+    9029: 4005,
+    # penalty 续 5006
+    9025: 5006,
+    # throw_in 续 6009
+    9028: 6009,
 }
 
-# 库实例变体数按玩法密度分配。进攻/任意球承担主要关卡节奏，因此给更多变体槽。
+# 每个 slice_type 的可用 preset 池（按 tier 轮换取用，丰富画面）；ID 千位=类型编号
+PRESET_POOL: dict[int, list[int]] = {
+    1: [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010,
+        1011, 1012, 1013, 1014,
+        1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024,
+        1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033],  # attack
+    2: [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+        2011, 2012],                                            # corner
+    3: [3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009,
+        3010, 3011, 3012, 3013, 3014],                           # free_kick
+    4: [4001, 4002, 4003, 4004, 4005],                          # goalkeep
+    5: [5001, 5002, 5003, 5004, 5005, 5006],                    # penalty
+    6: [6001, 6002, 6003, 6004, 6005, 6006, 6007, 6008, 6009],  # throw_in
+}
+
+# preset 池起始偏移：attack 池前 3 个(1001-1003)预留给试训/引导关，常规库实例从 1004 起。
+PRESET_POOL_OFFSET: dict[int, int] = {1: 3}
 SLICE_TYPE_VARIANT_COUNT: dict[int, int] = {
     1: 5,  # attack
-    2: 4,  # free_kick
-    3: 2,  # penalty
-    4: 3,  # corner
-    5: 2,  # throw_in
-    6: 2,  # goalkeep
+    2: 3,  # corner
+    3: 4,  # free_kick
+    4: 2,  # goalkeep
+    5: 2,  # penalty
+    6: 2,  # throw_in
 }
 
 # 关卡应用权重：进攻最高、任意球次之；角球/界外球/点球低频，守门作为特殊调剂。
 WEIGHTED_SLICE_TYPE_ORDER = [
-    1, 1, 2, 1, 4,
-    1, 2, 1, 5, 2,
-    1, 3, 1, 2, 6,
-    1, 4, 2, 1, 5,
+    1, 1, 3, 1, 2,
+    1, 3, 1, 6, 3,
+    1, 5, 1, 3, 4,
+    1, 2, 3, 1, 6,
 ]
 
 # 实例层首脚可操作夹角曲线，tier1 → tier10 单调收紧。
 SLICE_TYPE_ANGLE_RANGE: dict[int, tuple[float, float]] = {
     1: (55.0, 38.0),  # attack
-    2: (36.0, 24.0),  # free_kick
-    3: (0.0, 0.0),    # penalty: 专属判定
-    4: (42.0, 30.0),  # corner
-    5: (42.0, 30.0),  # throw_in
-    6: (0.0, 0.0),    # goalkeep: 专属判定
+    2: (42.0, 30.0),  # corner
+    3: (36.0, 24.0),  # free_kick
+    4: (0.0, 0.0),    # goalkeep: 专属判定
+    5: (0.0, 0.0),    # penalty: 专属判定
+    6: (42.0, 30.0),  # throw_in
 }
 
 # tier 主题（联赛名 + 主题对手球队池）
@@ -1278,7 +1322,7 @@ def _tier_primary_modifier(tier: int, slice_type: int | None = None) -> int:
     if tier <= 6:
         return 4002
     if tier <= 8:
-        if slice_type in (3, 6):
+        if slice_type in (4, 5):  # goalkeep / penalty 不收角
             return 0
         return 4006
     return 4005
@@ -1300,15 +1344,15 @@ def _instance_modifiers_json(tier: int, slice_type: int, variant: int) -> str:
         mods.append({"id": "moving_keeper", "params": {"speed": 1.0}})
     elif 5 <= tier <= 6:
         mods.append({"id": "moving_keeper", "params": {"speed": 1.5}})
-    elif 7 <= tier <= 8 and slice_type not in (3, 6):
+    elif 7 <= tier <= 8 and slice_type not in (4, 5):  # goalkeep/penalty 不收角
         mods.append({"id": "narrow_angle", "params": {"shrink": 0.7}})
     elif tier >= 9:
         mods.append({"id": "moving_keeper", "params": {"speed": 2.0}})
-    if slice_type == 2 and tier >= 6:  # 任意球固定人墙
+    if slice_type == 3 and tier >= 6:  # 任意球固定人墙
         mods.append({"id": "fixed_wall", "params": {}})
-    if variant == 2 and slice_type in (2, 3):  # 任意球/点球加压：关辅助线
+    if variant == 2 and slice_type in (3, 5):  # 任意球/点球加压：关辅助线
         mods.append({"id": "no_aim_line", "params": {}})
-    if variant == 2 and slice_type == 6:  # 守门加压：门将移动
+    if variant == 2 and slice_type == 4:  # 守门加压：门将移动
         if not any(m["id"] == "moving_keeper" for m in mods):
             mods.append({"id": "moving_keeper", "params": {"speed": 1.5}})
     if tier == 10:
@@ -1317,14 +1361,23 @@ def _instance_modifiers_json(tier: int, slice_type: int, variant: int) -> str:
 
 
 def _instance_ai_cols(iid: int, slice_type: int, *, is_guide: int = 0) -> dict:
-    """返回并入 SliceInstanceCfg 的 AI 字段。"""
-    tier = iid // 100
+    """返回并入 SliceInstanceCfg 的 AI 字段。
+
+    新 ID 编码：iid = 1{type_digit}{seq:02d}，其中
+      type_digit 1=attack 2=corner 3=free_kick 4=goalkeep 5=penalty 6=throw_in
+      seq = (tier-1)*variant_count + variant，从 1 开始
+    tier 取 ceil(seq / variant_count)。
+    """
+    type_digit = (iid // 100) - 10
+    seq = iid % 100
+    variant_count = SLICE_TYPE_VARIANT_COUNT[type_digit]
+    tier = (seq - 1) // variant_count + 1
     s = TIER.get(tier, TIER[1])
-    if slice_type == 6:        # 守门：玩家为门将，对方后卫射门
+    if slice_type == 4:        # 守门：玩家为门将，对方后卫射门
         gk_ai, def_ai, shooter_ai, mod = 0, 0, _enemy_id(tier, 3), 0
-    elif slice_type == 3:      # 点球：有对方门将，无后卫
+    elif slice_type == 5:      # 点球：有对方门将，无后卫
         gk_ai, def_ai, shooter_ai, mod = _enemy_id(tier, 1), 0, 0, _tier_primary_modifier(tier, slice_type)
-    else:                      # 进攻/任意球/角球/界外球
+    else:                      # 进攻/角球/任意球/界外球
         gk_ai, def_ai, shooter_ai, mod = _enemy_id(tier, 1), _enemy_id(tier, 2), 0, _tier_primary_modifier(tier, slice_type)
     return {
         "AiProfileID": s["ai_profile_id"],
@@ -1360,30 +1413,50 @@ def _guide_instance_ai_cols(
 def _build_instance_library() -> list[dict]:
     """类型差异化库实例；旧 6 行(101-203)前置保留。
     切片胜利条件由 SliceType 决定(attack/free_kick/penalty/corner/throw_in→进球;
-    goalkeep→不被进球),不在实例层覆盖。"""
+    goalkeep→不被进球),不在实例层覆盖。
+
+    ID 编码：1{type_digit}{seq:02d}
+      type_digit 1=attack 2=corner 3=free_kick 4=goalkeep 5=penalty 6=throw_in
+      seq = (tier-1)*variant_count + variant
+    e.g. 1101=attack tier1 v1, 1201=corner tier1 v1, 1601=throw_in tier1 v1。
+    """
     legacy = [
-        {"ID": 101, "SliceType": "attack", "PresetID": 1, "Remark": "试训-进攻",
+        {"ID": 101, "SliceType": "attack", "PresetID": 1001, "Remark": "试训-进攻",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 102, "SliceType": "free_kick", "PresetID": 2, "Remark": "试训-任意球",
+        {"ID": 102, "SliceType": "free_kick", "PresetID": 3001, "Remark": "试训-任意球",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 103, "SliceType": "penalty", "PresetID": 3, "Remark": "试训-点球",
+        {"ID": 103, "SliceType": "penalty", "PresetID": 5001, "Remark": "试训-点球",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 201, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 30, "Remark": "引导关1",
+        {"ID": 201, "SliceType": "attack", "PresetID": 1002, "OverrideOperableAngle": 30, "Remark": "引导关1",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 202, "SliceType": "attack", "PresetID": 1, "OverrideOperableAngle": 28, "Remark": "引导关2",
+        {"ID": 202, "SliceType": "attack", "PresetID": 1003, "OverrideOperableAngle": 28, "Remark": "引导关2",
          **_guide_instance_ai_cols(1001, 2001, 2002, 0, 1200)},
-        {"ID": 203, "SliceType": "goalkeep", "PresetID": 4, "Remark": "引导关3-守门",
+        {"ID": 203, "SliceType": "goalkeep", "PresetID": 4001, "Remark": "引导关3-守门",
          **_guide_instance_ai_cols(1002, 0, 0, 2003, 900)},
     ]
     lib: list[dict] = []
-    for tier in range(1, TIERS_TOTAL + 1):
-        for stype in SLICE_TYPE_ORDER:
-            pool = PRESET_POOL[stype]
-            type_name = SLICE_TYPE_NAME[stype]
-            variant_count = SLICE_TYPE_VARIANT_COUNT[stype]
+    for stype in SLICE_TYPE_ORDER:
+        pool = PRESET_POOL[stype]
+        offset = PRESET_POOL_OFFSET.get(stype, 0)
+        type_name = SLICE_TYPE_NAME[stype]
+        variant_count = SLICE_TYPE_VARIANT_COUNT[stype]
+        total = TIERS_TOTAL * variant_count
+        eff_pool_size = len(pool) - offset
+        full_cycles = total // eff_pool_size
+        full_count = full_cycles * eff_pool_size
+        tail_count = total - full_count
+        for tier in range(1, TIERS_TOTAL + 1):
             for variant in range(1, variant_count + 1):
-                preset_id = pool[((tier - 1) * variant_count + (variant - 1)) % len(pool)]
-                iid = tier * 100 + stype * 10 + variant
+                seq = (tier - 1) * variant_count + variant
+                # 完整循环段照常按顺序取；最后不足一轮的尾段右对齐到 pool 末尾，
+                # 让后期 tier 用上更靠后的 preset、而非又回到开头。
+                if seq <= full_count:
+                    pool_idx = offset + (seq - 1) % eff_pool_size
+                else:
+                    tail_seq = seq - full_count  # 1..tail_count
+                    pool_idx = offset + (eff_pool_size - tail_count) + (tail_seq - 1)
+                preset_id = pool[pool_idx]
+                iid = 1000 + stype * 100 + seq
                 row: dict = {
                     "ID": iid,
                     "SliceType": type_name,
@@ -1498,7 +1571,8 @@ def _slice_count(tier: int) -> int:
 
 def _compose_slice_list(level_in_round: int, tier: int) -> list[int]:
     """按类型权重轮换，引用库实例 id。
-    整体占比：进攻最高、任意球次之；角球/界外球/点球低频，守门特殊调剂。"""
+    整体占比：进攻最高、任意球次之；角球/界外球/点球低频，守门特殊调剂。
+    实例 ID 编码：1{type_digit}{seq:02d}, seq=(tier-1)*variant_count + variant。"""
     n = _slice_count(tier)
     start = ((tier - 1) * LEVELS_PER_ROUND + level_in_round - 1) % len(WEIGHTED_SLICE_TYPE_ORDER)
     out: list[int] = []
@@ -1506,7 +1580,8 @@ def _compose_slice_list(level_in_round: int, tier: int) -> list[int]:
         stype = WEIGHTED_SLICE_TYPE_ORDER[(start + k) % len(WEIGHTED_SLICE_TYPE_ORDER)]
         variant_count = SLICE_TYPE_VARIANT_COUNT[stype]
         variant = ((tier + level_in_round + k - 2) % variant_count) + 1
-        out.append(tier * 100 + stype * 10 + variant)
+        seq = (tier - 1) * variant_count + variant
+        out.append(1000 + stype * 100 + seq)
     return out
 
 
@@ -1526,56 +1601,63 @@ def _build_seasons(lc: LcRegistry) -> list[dict]:
     return rows
 
 
+LEVEL_SOURCE_FILE = OUT_DIR / "source-data" / "level.json"
+
+
 def _build_levels(lc: LcRegistry) -> list[dict]:
-    """500 关：lid 全局递增；第1关=引导关(复用 201/202/203)。"""
+    """500 关：从 source-data/level.json 加载已编排的关卡数据。
+    源数据由策划在 xlsx 中编辑后，通过 source-data/extract_levels.py 提取生成。
+    第1关为引导关(复用 201/202/203)。"""
+    if not LEVEL_SOURCE_FILE.exists():
+        raise FileNotFoundError(
+            f"缺少关卡源数据: {LEVEL_SOURCE_FILE}。"
+            f"可从 ActivitySoccer_preview.xlsx 重新提取: python source-data/extract_levels.py"
+        )
+    payload = json.loads(LEVEL_SOURCE_FILE.read_text(encoding="utf-8"))
     rows = []
-    lid = 0
-    for r in range(1, ROUNDS_TOTAL + 1):
-        tier = math.ceil(r / 5)
-        s = TIER[tier]
-        pool = _theme_team_pool(tier)
-        for j in range(1, LEVELS_PER_ROUND + 1):
-            lid += 1
-            if lid == 1:
-                slices = [201, 202, 203]
-                is_tut, profile = 1, 1001
-            else:
-                slices = _compose_slice_list(j, tier)
-                is_tut, profile = 0, s["ai_profile_id"]
-            n = len(slices)
-            win_threshold = math.ceil(n * 0.6)
-            draw_threshold = max(1, win_threshold - 1)  # 保证 lose<draw<win 三态可达
-            rows.append({
-                "ID": lid,
-                "IsTutorial": is_tut,
-                "SliceList": json.dumps(slices),
-                "AiProfileID": profile,
-                "WinThreshold": win_threshold,
-                "DrawThreshold": draw_threshold,
-                "TicketCost": 0 if is_tut else 1,
-                "OpponentTeamID": pool[(r - 1) % len(pool)],
-                "OpponentTeamStar": s["opponent_star"],
-                "SeasonID": r,
-                "Remark": (
-                    "第1轮-引导关(含守门切片203)" if lid == 1
-                    else f"第{r}轮 tier{tier} 第{j}场"
-                ),
-            })
+    for row in payload["rows"]:
+        sl = row["SliceList"]
+        # SliceList 可能是 JSON 字符串或已解析的 list
+        if isinstance(sl, list):
+            sl_json = json.dumps(sl)
+        else:
+            sl_json = str(sl)
+        is_tut = int(row["IsTutorial"] or 0)
+        rid = int(row["ID"])
+        season = int(row["SeasonID"])
+        tier = math.ceil(season / 5)
+        rows.append({
+            "ID": rid,
+            "IsTutorial": is_tut,
+            "SliceList": sl_json,
+            "AiProfileID": int(row["AiProfileID"]),
+            "WinThreshold": int(row["WinThreshold"]),
+            "DrawThreshold": int(row["DrawThreshold"]),
+            "TicketCost": int(row["TicketCost"]),
+            "OpponentTeamID": int(row["OpponentTeamID"]),
+            "OpponentTeamStar": int(row["OpponentTeamStar"]),
+            "SeasonID": season,
+            "Remark": (
+                "第1轮-引导关(含守门切片203)" if rid == 1
+                else f"第{season}轮 tier{tier} 第{((rid - 1) % LEVELS_PER_ROUND) + 1}场"
+            ),
+        })
     return rows
 
 
 def _preset_angle_cols(slice_type: int, operable_angle: float | None = None) -> dict:
     """Preset 自身 4 角度列跟随该站位的首脚夹角；逐 tier 收窄由实例 override 实现。
     点球/守门无扇形，span 置 0。"""
-    if slice_type in (3, 6):
+    if slice_type in (4, 5):  # goalkeep / penalty
         return {"AngleSpanMin": 0.0, "AngleSpanMax": 0.0, "AngleMaxCenterShift": 0.0, "AngleMargin": 0.0}
     angle_max = float(operable_angle if operable_angle is not None else SLICE_TYPE_ANGLE_RANGE[slice_type][0])
     angle_min = max(20.0, min(angle_max, angle_max - 18.0))
     return {
         "AngleSpanMin": round(angle_min, 1),
         "AngleSpanMax": round(angle_max, 1),
-        "AngleMaxCenterShift": 5.0 if slice_type in (1, 4, 5) else 3.0,
-        "AngleMargin": 6.0 if slice_type in (1, 4, 5) else 5.0,
+        # attack(1)/corner(2)/throw_in(6) 给较宽中心偏移与贴边余量；free_kick(3) 收紧
+        "AngleMaxCenterShift": 5.0 if slice_type in (1, 2, 6) else 3.0,
+        "AngleMargin": 6.0 if slice_type in (1, 2, 6) else 5.0,
     }
 
 
@@ -1792,14 +1874,17 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         return json.dumps(ball), players
 
     def reference_rows() -> list[dict]:
-        """把截图复刻的 29 个参考 preset 纳入正式 preset 配置池。"""
+        """把截图复刻的 29 个参考 preset 纳入正式 preset 配置池。
+        ID 通过 REFERENCE_PRESET_ID_REMAP 映射到新分段(1015+/2011+/3010+/4005/5006/6009)。"""
         if not REFERENCE_PRESETS_FILE.exists():
             raise FileNotFoundError(f"缺少参考切片配置源: {REFERENCE_PRESETS_FILE}")
         payload = json.loads(REFERENCE_PRESETS_FILE.read_text(encoding="utf-8"))
         rows: list[dict] = []
         for item in payload["rows"]:
             cfg = dict(item["official_like_row"])
-            pid = int(cfg["ID"])
+            old_pid = int(cfg["ID"])
+            pid = REFERENCE_PRESET_ID_REMAP[old_pid]
+            cfg["ID"] = pid
             players = json.loads(cfg["PlayersInit"])
             cfg["BallPos"], players = align_ball_with_owner(
                 str(cfg["SliceType"]),
@@ -1827,7 +1912,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                 )
             cfg["TypePayload"] = json.dumps(type_payload, ensure_ascii=False)
             cfg["NameLcKey"] = lc.add(
-                lc_key("preset", "ref", str(pid)),
+                lc_key("preset", "ref", str(old_pid)),
                 str(item["name"]),
                 f"SlicePresetCfg/{pid}/ref:{item['image']}",
             )
@@ -1910,12 +1995,13 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         "throw_in": "界外球二次进攻基础站位",
         "goalkeep": "守门扑救基础站位",
     }
-    for (pid, stype, name, tags, ball_pos, ball_vec, owner, players, fov, target, op_angle, payload, rec) in specs:
+    for (old_pid, stype, name, tags, ball_pos, ball_vec, owner, players, fov, target, op_angle, payload, rec) in specs:
+        pid = MANUAL_PRESET_ID_REMAP[old_pid]
         ball_pos, players = align_ball_with_owner(stype, ball_pos, owner, players)
         target_desc = target if target else "无固定目标点"
         row = {
             "ID": pid, "SliceType": stype,
-            "NameLcKey": lc.add(lc_key("preset", "name", str(pid)), name, f"SlicePresetCfg/{pid}"),
+            "NameLcKey": lc.add(lc_key("preset", "name", str(old_pid)), name, f"SlicePresetCfg/{pid}"),
             "Tags": tags, "BallPos": ball_pos, "BallVector": ball_vec, "BallOwner": owner,
             "PlayersInit": players_init_json(players), "CameraFov": fov, "TargetPoint": target,
             "OperableAngle": op_angle, "TypePayload": payload, "RecommendedModes": rec,
@@ -1927,6 +2013,8 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         row.update(_preset_angle_cols(type_id[stype], op_angle))
         rows.append(row)
     rows.extend(reference_rows())
+    # 按 ID 升序输出：手工 + 参考混合编号后，同 SliceType 段连续(1xxx/2xxx/...)。
+    rows.sort(key=lambda r: r["ID"])
     return rows
 
 

@@ -161,11 +161,15 @@ def test_instance_library_has_three_perceivable_variants_per_tier_type():
     g, rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
     legacy_ids = {101, 102, 103, 201, 202, 203}
     regular_rows = [row for row in rows if row["ID"] not in legacy_ids and row["ID"] < 90000]
+    # 实例 ID 编码: 1{stype:1}{seq:02d}, seq=(tier-1)*variant_count + variant (1-based)
     by_tier_type = {}
     for row in regular_rows:
-        tier = row["ID"] // 100
-        stype = (row["ID"] // 10) % 10
-        variant = row["ID"] % 10
+        iid = row["ID"]
+        stype = (iid // 100) - 10
+        seq = iid % 100
+        variant_count = g.SLICE_TYPE_VARIANT_COUNT[stype]
+        tier = (seq - 1) // variant_count + 1
+        variant = (seq - 1) % variant_count + 1
         by_tier_type.setdefault((tier, stype), set()).add(variant)
 
     assert len(by_tier_type) == 60

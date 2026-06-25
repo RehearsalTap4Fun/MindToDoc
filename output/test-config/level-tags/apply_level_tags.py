@@ -204,9 +204,11 @@ def validate_dataset(ds: dict) -> None:
     for r in ds["levels"]:
         sl = _json.loads(r["SliceList"])
         n = len(sl)
-        if not (0 < r["DrawThreshold"] < r["WinThreshold"] <= n):
+        # 允许 win/draw 大于 n: boss 关卡可故意把 win 设为高于切片数,
+        # 让玩家在该关无法触发 win 结算(只能取得 draw),作为难度调控手段.
+        if not (0 < r["DrawThreshold"] < r["WinThreshold"]):
             errors.append(
-                f"level {r['ID']} 阈值非法: lose<draw<win<=n 不成立 "
+                f"level {r['ID']} 阈值非法: lose<draw<win 不成立 "
                 f"(draw={r['DrawThreshold']}, win={r['WinThreshold']}, n={n})"
             )
         for s in sl:
