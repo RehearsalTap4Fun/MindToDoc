@@ -102,7 +102,10 @@ def test_slice_preset_fields_are_complete_and_parseable():
 
     for row in rows:
         assert row["SliceType"] in valid_slice_types, row
-        assert isinstance(row["NameLcKey"], str) and row["NameLcKey"].startswith("ActvSoccer_preset_name_"), row
+        assert isinstance(row["NameLcKey"], str) and row["NameLcKey"].startswith((
+            "ActvSoccer_preset_name_",
+            "ActvSoccer_preset_ref_",
+        )), row
         assert isinstance(json.loads(row["Tags"]), list), row
 
         vector = _pos(row["BallVector"])
@@ -134,14 +137,14 @@ def test_slice_preset_fields_are_complete_and_parseable():
 
 def test_slice_preset_library_has_production_distribution():
     _, rows = _slice_preset_rows()
-    assert len(rows) == 50
+    assert len(rows) == 79
     assert Counter(row["SliceType"] for row in rows) == {
-        "attack": 14,
-        "free_kick": 9,
-        "penalty": 5,
-        "corner": 10,
-        "throw_in": 8,
-        "goalkeep": 4,
+        "attack": 33,
+        "free_kick": 14,
+        "penalty": 6,
+        "corner": 12,
+        "throw_in": 9,
+        "goalkeep": 5,
     }
 
 
@@ -155,7 +158,7 @@ def test_every_slice_preset_is_referenced_by_an_instance():
 
 
 def test_instance_library_has_three_perceivable_variants_per_tier_type():
-    _, rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
+    g, rows = _sheet_rows("ActvSoccerSliceInstanceCfg")
     legacy_ids = {101, 102, 103, 201, 202, 203}
     regular_rows = [row for row in rows if row["ID"] not in legacy_ids and row["ID"] < 90000]
     by_tier_type = {}
@@ -166,7 +169,9 @@ def test_instance_library_has_three_perceivable_variants_per_tier_type():
         by_tier_type.setdefault((tier, stype), set()).add(variant)
 
     assert len(by_tier_type) == 60
-    assert all(variants >= {1, 2, 3} for variants in by_tier_type.values())
+    for (_, stype), variants in by_tier_type.items():
+        expected = set(range(1, g.SLICE_TYPE_VARIANT_COUNT[stype] + 1))
+        assert variants == expected
 
 
 def test_narrow_angle_skips_zero_angle_slice_types():

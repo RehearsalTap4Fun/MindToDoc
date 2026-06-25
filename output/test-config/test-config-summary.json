@@ -8,14 +8,10 @@
   "sheets": [
     "ActvSoccerCharacterCfg",
     "ActvSoccerNationalityCfg",
-    "ActvSoccerTutorialCfg",
-    "ActvSoccerGuideStepCfg",
+    "ActvSoccerAchieveCfg",
     "ActvSoccerSlicePresetCfg",
     "ActvSoccerSliceInstanceCfg",
     "ActvSoccerHapticCfg",
-    "ActvSoccerReceiveDecisionCfg",
-    "ActvSoccerPlayerStyleCfg",
-    "ActvSoccerFirstTouchAnimCfg",
     "ActvSoccerLevelCfg",
     "ActvSoccerAiProfileCfg",
     "ActvSoccerEnemyAiCfg",
@@ -30,10 +26,16 @@
     "ActvSoccerKnockoutCfg",
     "ActvSoccerKnockoutPhaseCfg",
     "ActvSoccerBetMultiplierCfg",
-    "ActvSoccerBetStakeTierCfg"
+    "ActvSoccerBetStakeTierCfg",
+    "ActvSoccerMatchRewardCfg",
+    "ActvSoccerReceiveDecisionCfg",
+    "ActvSoccerPlayerStyleCfg",
+    "ActvSoccerReplayCfg",
+    "ActvSoccerRankCfg",
+    "ActvSoccerGuideCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
-  "language_entry_count": 233,
+  "language_entry_count": 262,
   "sheets_program_only": [
     "ActvSoccerSliceTypeDefCfg",
     "ActvSoccerPlayerAiDutyEnumCfg",
@@ -480,8 +482,6 @@
     "玩法基础": [
       "ActvSoccerCharacterCfg",
       "ActvSoccerNationalityCfg",
-      "ActvSoccerTutorialCfg",
-      "ActvSoccerGuideStepCfg",
       "ActvSoccerSlicePresetCfg",
       "ActvSoccerSliceInstanceCfg",
       "ActvSoccerLevelCfg",
@@ -513,8 +513,14 @@
     ],
     "接球决策": [
       "ActvSoccerReceiveDecisionCfg",
-      "ActvSoccerPlayerStyleCfg",
-      "ActvSoccerFirstTouchAnimCfg"
+      "ActvSoccerPlayerStyleCfg"
+    ],
+    "Other": [
+      "ActvSoccerAchieveCfg",
+      "ActvSoccerMatchRewardCfg",
+      "ActvSoccerReplayCfg",
+      "ActvSoccerRankCfg",
+      "ActvSoccerGuideCfg"
     ]
   },
   "id_cross_ref": {
@@ -525,7 +531,7 @@
     "ReceiveDecision": "5001-5004=接球决策风格(Balanced/Playmaker/Dribbler/TargetMan)",
     "PlayerStyle": "5101-5104=球员风格(Balanced/Playmaker/Dribbler/TargetMan);CharacterCfg.PlayerStyleCfgID引用",
     "FirstTouchAnim": "5201+=第一脚触球表现映射(Action×BallHeight×Direction×Pressure)",
-    "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6,variant1-3);101-203=试训/引导;AI字段已并入本表",
+    "SliceInstance": "库实例id=tier*100+type*10+variant(type1-6; attack 1-5,free_kick 1-4,corner 1-3,penalty/throw_in/goalkeep 1-2);101-203=试训/引导;AI字段已并入本表",
     "Level": "1-500=50轮×10关;Group=轮次;第1关=引导关;淘汰赛round15起(level141)开放",
     "Season": "1-50轮单group=1;NextSeason链推进;总轮次=count(同group)",
     "BetMultiplier": "385行=程序ChampionOddsCfg二维网格;按(WinRate, PowerRate)查行→OddsLeft/OddsRight万分值",
