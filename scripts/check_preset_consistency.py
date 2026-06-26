@@ -9,7 +9,7 @@
 4. 点球 preset:BallPos == PENALTY_SPOT
 5. 角球 preset:BallPos in {CORNER_LEFT_BALL, CORNER_RIGHT_BALL}
 6. 守门 preset:home 玩家 pos.z ∈ [GOAL_AREA_Z_FAR, FIELD_Z_NEAR]
-7. 任意球 preset:防守墙连续两人 |Δx| ≥ WALL_PLAYER_GAP_MIN - 0.001
+7. 任意球 preset:防守墙连续两人二维距离 ≥ WALL_PLAYER_GAP_MIN - 0.001
 8. 方向、角度、枚举、JSON、控球索引、备注等基础字段均可解析且在约束内
 9. 对方门将(away.duty=Goalkeeper) z 取值必须落在三档常量之一,且与切片类型一致
 10. 主生成器源代码中 keeper z 不得散布硬编码,必须通过 away_keeper_z()/常量取
@@ -183,14 +183,18 @@ def check_presets() -> list[str]:
         if p["SliceType"] != "free_kick":
             continue
         pid = p["ID"]
-        wall_xs = sorted(
-            float(pl["pos"]["x"])
+        wall_positions = sorted(
+            (
+                float(pl["pos"]["x"]),
+                float(pl["pos"]["z"]),
+            )
             for pl in json.loads(p["PlayersInit"])
             if pl["team"] == "away" and pl["duty"] == g.PLAYER_AI_DUTY_ENUM["Defender"]
         )
-        for a, b in zip(wall_xs, wall_xs[1:]):
-            if (b - a) < g.WALL_PLAYER_GAP_MIN - GAP_TOL:
-                errors.append(f"preset {pid} 任意球人墙 Δx={b-a:.2f} < {g.WALL_PLAYER_GAP_MIN} (球员重叠或球穿不过)")
+        for a, b in zip(wall_positions, wall_positions[1:]):
+            gap = math.hypot(b[0] - a[0], b[1] - a[1])
+            if gap < g.WALL_PLAYER_GAP_MIN - GAP_TOL:
+                errors.append(f"preset {pid} 任意球人墙间距={gap:.2f} < {g.WALL_PLAYER_GAP_MIN} (球员重叠或球穿不过)")
 
     for p in presets:
         if p["SliceType"] != "penalty":

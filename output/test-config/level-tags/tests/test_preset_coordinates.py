@@ -50,6 +50,34 @@ def _pos(text):
     return json.loads(text)
 
 
+def _pos_tuple(text):
+    value = _pos(text)
+    return float(value["x"]), float(value.get("y", 0)), float(value["z"])
+
+
+def _player_pos_tuple(player):
+    pos = player["pos"]
+    return float(pos["x"]), float(pos.get("y", 0)), float(pos["z"])
+
+
+def _distance_xz(a, b):
+    return math.hypot(float(a[0]) - float(b[0]), float(a[2]) - float(b[2]))
+
+
+def _line_distance_xz(point, start, end):
+    px, pz = float(point[0]), float(point[2])
+    sx, sz = float(start[0]), float(start[2])
+    ex, ez = float(end[0]), float(end[2])
+    vx, vz = ex - sx, ez - sz
+    wx, wz = px - sx, pz - sz
+    denom = vx * vx + vz * vz
+    if denom <= 1e-9:
+        return math.hypot(px - sx, pz - sz), 0.0
+    t = (wx * vx + wz * vz) / denom
+    cx, cz = sx + t * vx, sz + t * vz
+    return math.hypot(px - cx, pz - cz), t
+
+
 def test_slice_preset_coordinates_are_inside_protocol_bounds():
     g, rows = _slice_preset_rows()
     for row in rows:
@@ -214,6 +242,78 @@ def test_free_kick_wall_count_matches_players_init():
             if player["team"] == "away" and int(player["duty"]) == 2
         ]
         assert payload["wall_count"] == len(defenders), row
+
+
+def test_free_kick_and_corner_spacing_geometry_is_playable():
+    g, rows = _slice_preset_rows()
+    for row in rows:
+        ball = _pos_tuple(row["BallPos"])
+        target = _pos_tuple(row["TargetPoint"]) if row.get("TargetPoint") else (0.0, 0.0, 0.0)
+        players = json.loads(row["PlayersInit"])
+        home = [player for player in players if player["team"] == "home"]
+        away = [player for player in players if player["team"] == "away"]
+
+        if row["SliceType"] == "free_kick":
+            wall = [
+                player for player in away
+                if int(player["duty"]) == g.PLAYER_AI_DUTY_ENUM["Defender"]
+            ]
+            assert wall, row
+            for player in wall:
+                assert _distance_xz(_player_pos_tuple(player), ball) >= 5.0, (row, player)
+
+            line_distances = [
+                _line_distance_xz(_player_pos_tuple(player), ball, target)
+                for player in wall
+            ]
+            blocking_distances = [
+                distance for distance, t in line_distances
+                if 0.05 < t < 0.95
+            ]
+            assert blocking_distances, row
+            assert min(blocking_distances) <= 0.8, row
+
+        if row["SliceType"] == "corner":
+            for i, first in enumerate(home):
+                for second in home[i + 1:]:
+                    assert _distance_xz(_player_pos_tuple(first), _player_pos_tuple(second)) >= 2.0, (
+                        row,
+                        first,
+                        second,
+                    )
+
+            owner = int(row["BallOwner"])
+            receivers = [player for player in home if int(player["idx"]) != owner]
+            if receivers and target:
+                vector = _pos(row["BallVector"])
+                goalward_target = float(target[2]) > float(ball[2]) + 1.0 or float(vector["z"]) > 0.3
+                if not goalward_target:
+                    continue
+                nearest = min(receivers, key=lambda player: _distance_xz(_player_pos_tuple(player), target))
+                assert float(nearest["pos"]["z"]) >= float(ball[2]) - 1.0, (row, nearest)
+
+
+def test_tap_in_rebound_and_throw_in_targets_have_receivers():
+    _, rows = _slice_preset_rows()
+    for row in rows:
+        target = _pos_tuple(row["TargetPoint"]) if row.get("TargetPoint") else None
+        if not target:
+            continue
+        tags = set(json.loads(row.get("Tags") or "[]"))
+        players = json.loads(row["PlayersInit"])
+        owner = int(row["BallOwner"])
+        receivers = [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != owner
+        ]
+        if row["SliceType"] == "attack" and tags & {"tap_in", "rebound"}:
+            assert receivers, row
+            nearest = min(receivers, key=lambda player: _distance_xz(_player_pos_tuple(player), target))
+            assert _distance_xz(_player_pos_tuple(nearest), target) <= 5.0, (row, nearest)
+        if row["SliceType"] == "throw_in":
+            assert receivers, row
+            nearest = min(receivers, key=lambda player: _distance_xz(_player_pos_tuple(player), target))
+            assert _distance_xz(_player_pos_tuple(nearest), target) <= 3.0, (row, nearest)
 
 
 def test_slice_type_specific_field_invariants_apply_to_all_matching_presets():

@@ -1769,6 +1769,9 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         length = math.hypot(dx, dz) or 1.0
         return json.dumps({"x": round(dx / length, 3), "y": 0, "z": round(dz / length, 3)})
 
+    def clamp_x(x: float, margin: float = 0.5) -> float:
+        return max(-FIELD_X_HALF + margin, min(FIELD_X_HALF - margin, x))
+
     def attack_setup(ball_x: float, ball_z: float, target_x: float = 0.0, support_x: float | None = None) -> list[dict]:
         support_x = ball_x - 2 if support_x is None else support_x
         support_z = max(FIELD_Z_MID, ball_z - 7)
@@ -1873,6 +1876,142 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         ball["z"] = _round_coord(float(owner_player["pos"]["z"]) + forward_z * BALL_CONTROL_DISTANCE)
         return json.dumps(ball), players
 
+    def normalize_free_kick_wall(ball_pos: str, target: str | None, players: list[dict]) -> list[dict]:
+        ball = json.loads(ball_pos)
+        target_pos = json.loads(target) if target else {"x": GOAL_CENTER_X, "z": GOAL_CENTER_Z}
+        ball_x, ball_z = float(ball["x"]), float(ball["z"])
+        target_x, target_z = float(target_pos["x"]), float(target_pos["z"])
+        dx, dz = target_x - ball_x, target_z - ball_z
+        length = math.hypot(dx, dz) or 1.0
+        ux, uz = dx / length, dz / length
+        wall_distance = min(max(5.6, length * 0.45), max(5.6, length - 1.0))
+        center_x = ball_x + ux * wall_distance
+        center_z = ball_z + uz * wall_distance
+        perp_x, perp_z = -uz, ux
+        defenders = [
+            player for player in players
+            if player["team"] == "away" and int(player["duty"]) == PLAYER_AI_DUTY_ENUM["Defender"]
+        ]
+        wall_gap = 1.5  # 留出四舍五入余量，同时保证内侧人墙能遮挡射线。
+        offsets = [
+            (idx - (len(defenders) - 1) / 2) * wall_gap
+            for idx in range(len(defenders))
+        ]
+        for defender, offset in zip(defenders, offsets):
+            x = clamp_x(center_x + perp_x * offset)
+            z = max(FIELD_Z_FAR, min(FIELD_Z_NEAR, center_z + perp_z * offset))
+            defender["pos"]["x"] = _round_coord(x)
+            defender["pos"]["z"] = _round_coord(z)
+            defender["facing"] = _face_toward(ball_x, ball_z, x, z)
+        return players
+
+    def normalize_corner_receivers(
+        ball_pos: str,
+        ball_vec: str,
+        target: str | None,
+        owner: int,
+        players: list[dict],
+    ) -> list[dict]:
+        if not target:
+            return players
+        ball = json.loads(ball_pos)
+        vector = json.loads(ball_vec)
+        target_pos = json.loads(target)
+        ball_x, ball_z = float(ball["x"]), float(ball["z"])
+        target_x, target_z = float(target_pos["x"]), float(target_pos["z"])
+        goalward_target = target_z > ball_z + 1.0 or float(vector.get("z", 0)) > 0.3
+        receivers = [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != int(owner)
+        ]
+        if not receivers:
+            return players
+        side = -1.0 if ball_x < 0 else 1.0
+        anchor_z = max(target_z - 0.8, ball_z - 0.8) if goalward_target else target_z
+        planned = [
+            (target_x, anchor_z),
+            (target_x - side * 3.0, anchor_z - 1.4),
+            (target_x + side * 3.2, anchor_z - 1.8),
+            (target_x - side * 5.6, anchor_z - 3.2),
+        ]
+        for receiver, (x, z) in zip(sorted(receivers, key=lambda p: int(p["idx"])), planned):
+            x = clamp_x(x)
+            z = max(FIELD_Z_FAR, min(FIELD_Z_NEAR, z))
+            receiver["pos"]["x"] = _round_coord(x)
+            receiver["pos"]["z"] = _round_coord(z)
+            receiver["facing"] = _face_toward(ball_x, ball_z, x, z)
+        return players
+
+    def normalize_attack_receivers(tags: str, target: str | None, owner: int, players: list[dict]) -> list[dict]:
+        if not target:
+            return players
+        try:
+            tag_set = set(json.loads(tags))
+        except json.JSONDecodeError:
+            tag_set = set()
+        if not (tag_set & {"tap_in", "rebound"}):
+            return players
+        target_pos = json.loads(target)
+        target_x, target_z = float(target_pos["x"]), float(target_pos["z"])
+        receivers = [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != int(owner)
+        ]
+        if not receivers:
+            return players
+        receiver = sorted(receivers, key=lambda p: int(p["idx"]))[-1]
+        x = clamp_x(target_x)
+        z = max(FIELD_Z_FAR, min(FIELD_Z_NEAR, target_z - 2.0))
+        receiver["pos"]["x"] = _round_coord(x)
+        receiver["pos"]["z"] = _round_coord(z)
+        receiver["facing"] = _face_toward(target_x, target_z, x, z)
+        return players
+
+    def normalize_throw_in_receivers(target: str | None, owner: int, players: list[dict]) -> list[dict]:
+        if not target:
+            return players
+        target_pos = json.loads(target)
+        target_x, target_z = float(target_pos["x"]), float(target_pos["z"])
+        receivers = [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != int(owner)
+        ]
+        if not receivers:
+            return players
+        receiver = sorted(receivers, key=lambda p: int(p["idx"]))[0]
+        receiver["pos"]["x"] = _round_coord(clamp_x(target_x))
+        receiver["pos"]["z"] = _round_coord(max(FIELD_Z_FAR, min(FIELD_Z_NEAR, target_z)))
+        owner_player = next(
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) == int(owner)
+        )
+        receiver["facing"] = _face_toward(
+            float(owner_player["pos"]["x"]),
+            float(owner_player["pos"]["z"]),
+            receiver["pos"]["x"],
+            receiver["pos"]["z"],
+        )
+        return players
+
+    def normalize_playable_spacing(
+        stype: str,
+        tags: str,
+        ball_pos: str,
+        ball_vec: str,
+        target: str | None,
+        owner: int,
+        players: list[dict],
+    ) -> list[dict]:
+        if stype == "free_kick":
+            return normalize_free_kick_wall(ball_pos, target, players)
+        if stype == "corner":
+            return normalize_corner_receivers(ball_pos, ball_vec, target, owner, players)
+        if stype == "attack":
+            return normalize_attack_receivers(tags, target, owner, players)
+        if stype == "throw_in":
+            return normalize_throw_in_receivers(target, owner, players)
+        return players
+
     def reference_rows() -> list[dict]:
         """把截图复刻的 29 个参考 preset 纳入正式 preset 配置池。
         ID 通过 REFERENCE_PRESET_ID_REMAP 映射到新分段(1015+/2011+/3010+/4005/5006/6009)。"""
@@ -1889,6 +2028,15 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
             cfg["BallPos"], players = align_ball_with_owner(
                 str(cfg["SliceType"]),
                 str(cfg["BallPos"]),
+                int(cfg["BallOwner"]),
+                players,
+            )
+            players = normalize_playable_spacing(
+                str(cfg["SliceType"]),
+                str(cfg["Tags"]),
+                str(cfg["BallPos"]),
+                str(cfg["BallVector"]),
+                cfg.get("TargetPoint"),
                 int(cfg["BallOwner"]),
                 players,
             )
@@ -1998,6 +2146,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     for (old_pid, stype, name, tags, ball_pos, ball_vec, owner, players, fov, target, op_angle, payload, rec) in specs:
         pid = MANUAL_PRESET_ID_REMAP[old_pid]
         ball_pos, players = align_ball_with_owner(stype, ball_pos, owner, players)
+        players = normalize_playable_spacing(stype, tags, ball_pos, ball_vec, target, owner, players)
         target_desc = target if target else "无固定目标点"
         row = {
             "ID": pid, "SliceType": stype,
