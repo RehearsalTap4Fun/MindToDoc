@@ -1183,6 +1183,7 @@ SLICE_TYPE_NAME: dict[int, str] = {
     1: "attack", 2: "corner", 3: "free_kick",
     4: "goalkeep", 5: "penalty", 6: "throw_in",
 }
+SLICE_TYPE_ID: dict[str, int] = {name: sid for sid, name in SLICE_TYPE_NAME.items()}
 SLICE_TYPE_ORDER = [1, 2, 3, 4, 5, 6]
 
 # 手工编排 preset 旧 ID → 新 ID（按 SliceType 千位 + 类型内连续编号 重新分段）
@@ -1772,6 +1773,87 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     def clamp_x(x: float, margin: float = 0.5) -> float:
         return max(-FIELD_X_HALF + margin, min(FIELD_X_HALF - margin, x))
 
+    def clamp_z(z: float, margin: float = 0.2) -> float:
+        return max(FIELD_Z_FAR + margin, min(FIELD_Z_NEAR - margin, z))
+
+    def angle_between_xz(ax: float, az: float, bx: float, bz: float) -> float:
+        a_len = math.hypot(ax, az)
+        b_len = math.hypot(bx, bz)
+        if a_len <= 1e-6 or b_len <= 1e-6:
+            return 0.0
+        dot = max(-1.0, min(1.0, (ax * bx + az * bz) / (a_len * b_len)))
+        return math.degrees(math.acos(dot))
+
+    def first_pass_receiver_limit(stype: str, op_angle: float) -> float:
+        cols = _preset_angle_cols(SLICE_TYPE_ID[stype], op_angle)
+        return float(cols["AngleSpanMin"]) / 2.0 + float(cols["AngleMaxCenterShift"]) + float(cols["AngleMargin"])
+
+    def receiver_angle_from_ball(ball: dict, vector: dict, receiver: dict) -> float:
+        return angle_between_xz(
+            float(vector["x"]),
+            float(vector["z"]),
+            float(receiver["pos"]["x"]) - float(ball["x"]),
+            float(receiver["pos"]["z"]) - float(ball["z"]),
+        )
+
+    def ensure_attack_receiver_in_first_pass_angle(
+        ball_pos: str,
+        ball_vec: str,
+        target: str | None,
+        owner: int,
+        players: list[dict],
+        op_angle: float,
+    ) -> list[dict]:
+        ball = json.loads(ball_pos)
+        vector = json.loads(ball_vec)
+        vx, vz = float(vector["x"]), float(vector["z"])
+        v_len = math.hypot(vx, vz)
+        if v_len <= 1e-6:
+            return players
+        ux, uz = vx / v_len, vz / v_len
+        limit = first_pass_receiver_limit("attack", op_angle)
+        receivers = sorted(
+            (
+                player for player in players
+                if player["team"] == "home" and int(player["idx"]) != int(owner)
+            ),
+            key=lambda player: int(player["idx"]),
+        )
+        if not receivers:
+            return players
+        if any(receiver_angle_from_ball(ball, vector, receiver) <= limit for receiver in receivers):
+            return players
+        placement_limit = max(0.0, limit - 2.0)
+
+        target_pos = json.loads(target) if target else {"x": GOAL_CENTER_X, "z": GOAL_CENTER_Z}
+        target_distance = math.hypot(
+            float(target_pos["x"]) - float(ball["x"]),
+            float(target_pos["z"]) - float(ball["z"]),
+        )
+        lead_distance = max(5.0, min(9.0, target_distance * 0.5 if target_distance else 7.0))
+        perp_x, perp_z = -uz, ux
+        center_side = -1.0 if float(ball["x"]) > 1.0 else 1.0
+        candidates = [
+            (0.9 * center_side, lead_distance),
+            (-0.9 * center_side, lead_distance),
+            (0.0, lead_distance),
+            (0.0, max(4.0, lead_distance - 1.5)),
+        ]
+        receiver = receivers[0]
+        best_x = float(ball["x"]) + ux * lead_distance
+        best_z = float(ball["z"]) + uz * lead_distance
+        for offset, distance in candidates:
+            x = clamp_x(float(ball["x"]) + ux * distance + perp_x * offset)
+            z = clamp_z(float(ball["z"]) + uz * distance + perp_z * offset)
+            probe = {"pos": {"x": x, "z": z}}
+            if receiver_angle_from_ball(ball, vector, probe) <= placement_limit:
+                best_x, best_z = x, z
+                break
+        receiver["pos"]["x"] = _round_coord(best_x)
+        receiver["pos"]["z"] = _round_coord(best_z)
+        receiver["facing"] = _face_toward(float(ball["x"]), float(ball["z"]), best_x, best_z)
+        return players
+
     def attack_setup(ball_x: float, ball_z: float, target_x: float = 0.0, support_x: float | None = None) -> list[dict]:
         support_x = ball_x - 2 if support_x is None else support_x
         support_z = max(FIELD_Z_MID, ball_z - 7)
@@ -1942,30 +2024,45 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
             receiver["facing"] = _face_toward(ball_x, ball_z, x, z)
         return players
 
-    def normalize_attack_receivers(tags: str, target: str | None, owner: int, players: list[dict]) -> list[dict]:
-        if not target:
-            return players
+    def normalize_attack_receivers(
+        tags: str,
+        ball_pos: str,
+        ball_vec: str,
+        target: str | None,
+        owner: int,
+        players: list[dict],
+        op_angle: float,
+    ) -> list[dict]:
         try:
             tag_set = set(json.loads(tags))
         except json.JSONDecodeError:
             tag_set = set()
-        if not (tag_set & {"tap_in", "rebound"}):
-            return players
-        target_pos = json.loads(target)
-        target_x, target_z = float(target_pos["x"]), float(target_pos["z"])
-        receivers = [
-            player for player in players
-            if player["team"] == "home" and int(player["idx"]) != int(owner)
-        ]
+        receivers = sorted(
+            [
+                player for player in players
+                if player["team"] == "home" and int(player["idx"]) != int(owner)
+            ],
+            key=lambda player: int(player["idx"]),
+        )
         if not receivers:
             return players
-        receiver = sorted(receivers, key=lambda p: int(p["idx"]))[-1]
-        x = clamp_x(target_x)
-        z = max(FIELD_Z_FAR, min(FIELD_Z_NEAR, target_z - 2.0))
-        receiver["pos"]["x"] = _round_coord(x)
-        receiver["pos"]["z"] = _round_coord(z)
-        receiver["facing"] = _face_toward(target_x, target_z, x, z)
-        return players
+        if target and tag_set & {"tap_in", "rebound"}:
+            target_pos = json.loads(target)
+            target_x, target_z = float(target_pos["x"]), float(target_pos["z"])
+            receiver = receivers[-1]
+            x = clamp_x(target_x)
+            z = max(FIELD_Z_FAR, min(FIELD_Z_NEAR, target_z - 2.0))
+            receiver["pos"]["x"] = _round_coord(x)
+            receiver["pos"]["z"] = _round_coord(z)
+            receiver["facing"] = _face_toward(target_x, target_z, x, z)
+        return ensure_attack_receiver_in_first_pass_angle(
+            ball_pos,
+            ball_vec,
+            target,
+            owner,
+            players,
+            op_angle,
+        )
 
     def normalize_throw_in_receivers(target: str | None, owner: int, players: list[dict]) -> list[dict]:
         if not target:
@@ -2001,13 +2098,14 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         target: str | None,
         owner: int,
         players: list[dict],
+        op_angle: float,
     ) -> list[dict]:
         if stype == "free_kick":
             return normalize_free_kick_wall(ball_pos, target, players)
         if stype == "corner":
             return normalize_corner_receivers(ball_pos, ball_vec, target, owner, players)
         if stype == "attack":
-            return normalize_attack_receivers(tags, target, owner, players)
+            return normalize_attack_receivers(tags, ball_pos, ball_vec, target, owner, players, op_angle)
         if stype == "throw_in":
             return normalize_throw_in_receivers(target, owner, players)
         return players
@@ -2024,6 +2122,10 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
             old_pid = int(cfg["ID"])
             pid = REFERENCE_PRESET_ID_REMAP[old_pid]
             cfg["ID"] = pid
+            cfg.update(_preset_angle_cols(
+                SLICE_TYPE_ID[str(cfg["SliceType"])],
+                float(cfg.get("OperableAngle") or 0),
+            ))
             players = json.loads(cfg["PlayersInit"])
             cfg["BallPos"], players = align_ball_with_owner(
                 str(cfg["SliceType"]),
@@ -2039,6 +2141,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
                 cfg.get("TargetPoint"),
                 int(cfg["BallOwner"]),
                 players,
+                float(cfg.get("OperableAngle") or 0),
             )
             ball_z = float(json.loads(cfg["BallPos"])["z"])
             for player_cfg in players:
@@ -2146,7 +2249,7 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
     for (old_pid, stype, name, tags, ball_pos, ball_vec, owner, players, fov, target, op_angle, payload, rec) in specs:
         pid = MANUAL_PRESET_ID_REMAP[old_pid]
         ball_pos, players = align_ball_with_owner(stype, ball_pos, owner, players)
-        players = normalize_playable_spacing(stype, tags, ball_pos, ball_vec, target, owner, players)
+        players = normalize_playable_spacing(stype, tags, ball_pos, ball_vec, target, owner, players, op_angle)
         target_desc = target if target else "无固定目标点"
         row = {
             "ID": pid, "SliceType": stype,
@@ -2162,9 +2265,236 @@ def _build_presets(lc: LcRegistry) -> list[dict]:
         row.update(_preset_angle_cols(type_id[stype], op_angle))
         rows.append(row)
     rows.extend(reference_rows())
+    _overlay_xlsx_preset_rows(rows)
     # 按 ID 升序输出：手工 + 参考混合编号后，同 SliceType 段连续(1xxx/2xxx/...)。
     rows.sort(key=lambda r: r["ID"])
     return rows
+
+
+def _overlay_xlsx_preset_rows(rows: list[dict]) -> None:
+    """用现有 ActivitySoccer_preview.xlsx 内容覆盖 rows——xlsx 是用户编辑过的真相源。
+
+    对 rows 中已存在的 ID,xlsx 同行所有字段(非空值)覆盖到 row。
+    对 xlsx 独有的 ID(策划在 xlsx 直接新增),追加到 rows,并按 SliceType 补 _preset_angle_cols。
+    第一次跑(xlsx 不存在)直接 return,主生成器走纯 specs 路径。
+    """
+    if not OUTPUT_FILE.exists():
+        return
+    from openpyxl import load_workbook
+    wb = load_workbook(OUTPUT_FILE, data_only=True, read_only=True)
+    try:
+        if "ActvSoccerSlicePresetCfg" not in wb.sheetnames:
+            return
+        ws = wb["ActvSoccerSlicePresetCfg"]
+        fields = [ws.cell(3, c).value for c in range(1, ws.max_column + 1)]
+        by_id = {int(row["ID"]): row for row in rows}
+        for r in range(9, ws.max_row + 1):
+            xlsx_row = {f: ws.cell(r, i).value for i, f in enumerate(fields, 1) if f}
+            rid = xlsx_row.get("ID")
+            if rid in (None, ""):
+                continue
+            rid = int(rid)
+            if rid in by_id:
+                target = by_id[rid]
+                for field, value in xlsx_row.items():
+                    if value not in (None, ""):
+                        target[field] = value
+            else:
+                xlsx_row["ID"] = rid
+                stype_id = SLICE_TYPE_ID.get(str(xlsx_row.get("SliceType")))
+                if stype_id is not None:
+                    xlsx_row.update(_preset_angle_cols(stype_id, None))
+                rows.append(xlsx_row)
+                by_id[rid] = xlsx_row
+    finally:
+        wb.close()
+
+
+def _angle_between_xz(ax: float, az: float, bx: float, bz: float) -> float:
+    a_len = math.hypot(ax, az)
+    b_len = math.hypot(bx, bz)
+    if a_len <= 1e-6 or b_len <= 1e-6:
+        return 0.0
+    dot = max(-1.0, min(1.0, (ax * bx + az * bz) / (a_len * b_len)))
+    return math.degrees(math.acos(dot))
+
+
+def _clamp_field_x(x: float, margin: float = 0.5) -> float:
+    return max(-FIELD_X_HALF + margin, min(FIELD_X_HALF - margin, x))
+
+
+def _clamp_field_z(z: float, margin: float = 0.2) -> float:
+    return max(FIELD_Z_FAR + margin, min(FIELD_Z_NEAR - margin, z))
+
+
+def _json_pos(x: float, y: float, z: float) -> str:
+    return json.dumps({"x": _round_coord(x), "y": y, "z": _round_coord(z)}, ensure_ascii=False)
+
+
+def _normalize_owner_ball_offset(row: dict, players: list[dict]) -> None:
+    stype = str(row["SliceType"])
+    if stype == "goalkeep":
+        return
+    owner = next(
+        player for player in players
+        if player["team"] == "home" and int(player["idx"]) == int(row["BallOwner"])
+    )
+    ball = json.loads(row["BallPos"])
+
+    if stype == "penalty":
+        ball["x"], ball["y"], ball["z"] = PENALTY_SPOT
+    elif stype == "corner":
+        ball["x"], ball["y"], ball["z"] = (
+            CORNER_LEFT_BALL if float(ball["x"]) < 0 else CORNER_RIGHT_BALL
+        )
+    else:
+        owner_pos = owner["pos"]
+        owner["facing"] = _face_toward(
+            float(ball["x"]),
+            float(ball["z"]),
+            float(owner_pos["x"]),
+            float(owner_pos["z"]),
+        )
+        forward_x, forward_z = _forward_from_facing(float(owner["facing"]))
+        ball["x"] = _round_coord(float(owner_pos["x"]) + forward_x * BALL_CONTROL_DISTANCE)
+        ball["z"] = _round_coord(float(owner_pos["z"]) + forward_z * BALL_CONTROL_DISTANCE)
+        row["BallPos"] = json.dumps(ball, ensure_ascii=False)
+        return
+
+    owner_pos = owner["pos"]
+    owner["facing"] = _face_toward(
+        float(ball["x"]),
+        float(ball["z"]),
+        float(owner_pos["x"]),
+        float(owner_pos["z"]),
+    )
+    forward_x, forward_z = _forward_from_facing(float(owner["facing"]))
+    owner_pos["x"] = _round_coord(float(ball["x"]) - forward_x * BALL_CONTROL_DISTANCE)
+    owner_pos["z"] = _round_coord(float(ball["z"]) - forward_z * BALL_CONTROL_DISTANCE)
+    row["BallPos"] = json.dumps(ball, ensure_ascii=False)
+
+
+def _receiver_angle(row: dict, ball: dict, vector: dict, receiver: dict) -> float:
+    return _angle_between_xz(
+        float(vector["x"]),
+        float(vector["z"]),
+        float(receiver["pos"]["x"]) - float(ball["x"]),
+        float(receiver["pos"]["z"]) - float(ball["z"]),
+    )
+
+
+def _ensure_attack_receiver_angle(row: dict, players: list[dict]) -> None:
+    if row["SliceType"] != "attack":
+        return
+    ball = json.loads(row["BallPos"])
+    vector = json.loads(row["BallVector"])
+    vx, vz = float(vector["x"]), float(vector["z"])
+    v_len = math.hypot(vx, vz)
+    if v_len <= 1e-6:
+        return
+    ux, uz = vx / v_len, vz / v_len
+    receivers = sorted(
+        [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != int(row["BallOwner"])
+        ],
+        key=lambda player: int(player["idx"]),
+    )
+    if not receivers:
+        return
+    limit = (
+        float(row["AngleSpanMin"]) / 2.0
+        + float(row["AngleMaxCenterShift"])
+        + float(row["AngleMargin"])
+    )
+    if any(_receiver_angle(row, ball, vector, receiver) <= limit for receiver in receivers):
+        return
+
+    target = json.loads(row["TargetPoint"]) if row.get("TargetPoint") else {"x": GOAL_CENTER_X, "z": GOAL_CENTER_Z}
+    target_distance = math.hypot(float(target["x"]) - float(ball["x"]), float(target["z"]) - float(ball["z"]))
+    lead_distance = max(5.0, min(8.0, target_distance * 0.45 if target_distance else 6.0))
+    receiver = receivers[0]
+    receiver["pos"]["x"] = _round_coord(_clamp_field_x(float(ball["x"]) + ux * lead_distance))
+    receiver["pos"]["z"] = _round_coord(_clamp_field_z(float(ball["z"]) + uz * lead_distance))
+    receiver["facing"] = _face_toward(
+        float(ball["x"]),
+        float(ball["z"]),
+        float(receiver["pos"]["x"]),
+        float(receiver["pos"]["z"]),
+    )
+
+
+def _ensure_target_receivers(row: dict, players: list[dict]) -> None:
+    target = json.loads(row["TargetPoint"]) if row.get("TargetPoint") else None
+    if not target:
+        return
+    receivers = sorted(
+        [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != int(row["BallOwner"])
+        ],
+        key=lambda player: int(player["idx"]),
+    )
+    if not receivers:
+        return
+    tags = set(json.loads(row.get("Tags") or "[]"))
+    if row["SliceType"] == "attack" and tags & {"tap_in", "rebound"}:
+        receiver = receivers[-1]
+        receiver["pos"]["x"] = _round_coord(_clamp_field_x(float(target["x"])))
+        receiver["pos"]["z"] = _round_coord(_clamp_field_z(float(target["z"]) - 2.0))
+        receiver["facing"] = _face_toward(
+            float(target["x"]),
+            float(target["z"]),
+            float(receiver["pos"]["x"]),
+            float(receiver["pos"]["z"]),
+        )
+    if row["SliceType"] == "throw_in":
+        receiver = receivers[0]
+        receiver["pos"]["x"] = _round_coord(_clamp_field_x(float(target["x"])))
+        receiver["pos"]["z"] = _round_coord(_clamp_field_z(float(target["z"])))
+
+
+def _normalize_free_kick_wall_after_patch(row: dict, players: list[dict]) -> None:
+    if row["SliceType"] != "free_kick":
+        return
+    ball = json.loads(row["BallPos"])
+    target = json.loads(row["TargetPoint"]) if row.get("TargetPoint") else {"x": GOAL_CENTER_X, "z": GOAL_CENTER_Z}
+    ball_x, ball_z = float(ball["x"]), float(ball["z"])
+    target_x, target_z = float(target["x"]), float(target["z"])
+    dx, dz = target_x - ball_x, target_z - ball_z
+    length = math.hypot(dx, dz) or 1.0
+    ux, uz = dx / length, dz / length
+    wall_distance = min(max(5.6, length * 0.45), max(5.6, length - 1.0))
+    center_x = ball_x + ux * wall_distance
+    center_z = ball_z + uz * wall_distance
+    perp_x, perp_z = -uz, ux
+    defenders = sorted(
+        [
+            player for player in players
+            if player["team"] == "away" and int(player["duty"]) == PLAYER_AI_DUTY_ENUM["Defender"]
+        ],
+        key=lambda player: int(player["idx"]),
+    )
+    wall_gap = 1.5
+    offsets = [
+        (idx - (len(defenders) - 1) / 2.0) * wall_gap
+        for idx in range(len(defenders))
+    ]
+    for defender, offset in zip(defenders, offsets):
+        x = _clamp_field_x(center_x + perp_x * offset)
+        z = _clamp_field_z(center_z + perp_z * offset)
+        defender["pos"]["x"] = _round_coord(x)
+        defender["pos"]["z"] = _round_coord(z)
+        defender["facing"] = _face_toward(ball_x, ball_z, x, z)
+
+
+def normalize_editor_patched_preset_row(row: dict) -> None:
+    players = json.loads(row["PlayersInit"])
+    _normalize_owner_ball_offset(row, players)
+    _normalize_free_kick_wall_after_patch(row, players)
+    _ensure_target_receivers(row, players)
+    _ensure_attack_receiver_angle(row, players)
+    row["PlayersInit"] = json.dumps(players, ensure_ascii=False)
 
 
 def build_workbook(lc: LcRegistry) -> Workbook:

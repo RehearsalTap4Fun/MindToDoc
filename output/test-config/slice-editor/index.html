@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activity Soccer Slice Editor</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>切片编辑器</h1>
+      <p id="statusText">加载中</p>
+    </div>
+    <div class="header-actions">
+      <button id="reloadButton" type="button">刷新</button>
+      <button id="saveButton" type="button" class="primary">保存补丁</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="preset-panel">
+      <div class="filters" id="typeFilters"></div>
+      <input id="searchInput" type="search" placeholder="搜索 ID / 类型 / 标签">
+      <div id="presetList" class="preset-list"></div>
+    </aside>
+
+    <section class="field-panel">
+      <div class="field-toolbar">
+        <div>
+          <strong id="presetTitle">-</strong>
+          <span id="presetMeta"></span>
+        </div>
+        <div class="toggle-row">
+          <label><input id="showMaxAngle" type="checkbox" checked> 显示夹角</label>
+          <label><input id="showMinAngle" type="checkbox" checked> 高亮夹角</label>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="fieldCanvas" width="720" height="1200"></canvas>
+      </div>
+    </section>
+
+    <aside class="inspector">
+      <section>
+        <h2>选中对象</h2>
+        <div id="selectionInfo" class="kv"></div>
+        <div class="player-actions">
+          <button id="addHomePlayerButton" type="button">添加我方</button>
+          <button id="addAwayPlayerButton" type="button">添加对方</button>
+          <button id="deletePlayerButton" type="button">删除选中</button>
+        </div>
+      </section>
+      <section>
+        <h2>角度</h2>
+        <label>显示夹角 <input id="angleMaxInput" type="number" min="0" max="180" step="1"></label>
+        <label>同步夹角 <input id="angleMinInput" type="number" min="0" max="180" step="1"></label>
+        <label>中心偏移 <input id="centerShiftInput" type="number" min="0" max="180" step="1"></label>
+        <label>边缘余量 <input id="marginInput" type="number" min="0" max="90" step="1"></label>
+      </section>
+      <section>
+        <h2>检测</h2>
+        <div id="angleCheck" class="check"></div>
+      </section>
+      <section>
+        <h2>补丁</h2>
+        <textarea id="patchPreview" spellcheck="false"></textarea>
+      </section>
+    </aside>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

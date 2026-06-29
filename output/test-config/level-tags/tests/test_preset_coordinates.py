@@ -78,6 +78,17 @@ def _line_distance_xz(point, start, end):
     return math.hypot(px - cx, pz - cz), t
 
 
+def _angle_between_xz(a, b):
+    ax, az = float(a[0]), float(a[1])
+    bx, bz = float(b[0]), float(b[1])
+    alen = math.hypot(ax, az)
+    blen = math.hypot(bx, bz)
+    if alen <= 1e-9 or blen <= 1e-9:
+        return 0.0
+    dot = max(-1.0, min(1.0, (ax * bx + az * bz) / (alen * blen)))
+    return math.degrees(math.acos(dot))
+
+
 def test_slice_preset_coordinates_are_inside_protocol_bounds():
     g, rows = _slice_preset_rows()
     for row in rows:
@@ -118,6 +129,39 @@ def test_non_goalkeep_ball_is_offset_in_owner_facing_direction():
         expected_z = float(owner["pos"]["z"]) + math.cos(yaw) * g.BALL_CONTROL_DISTANCE
         assert math.isclose(float(ball["x"]), round(expected_x, 1), abs_tol=1e-6), (row, owner)
         assert math.isclose(float(ball["z"]), round(expected_z, 1), abs_tol=1e-6), (row, owner)
+
+
+def test_attack_first_pass_angle_covers_a_teammate():
+    _, rows = _slice_preset_rows()
+    for row in rows:
+        if row["SliceType"] != "attack":
+            continue
+        ball = _pos_tuple(row["BallPos"])
+        vector = _pos(row["BallVector"])
+        players = json.loads(row["PlayersInit"])
+        owner = int(row["BallOwner"])
+        receivers = [
+            player for player in players
+            if player["team"] == "home" and int(player["idx"]) != owner
+        ]
+        assert receivers, row
+
+        pass_limit = (
+            float(row["AngleSpanMin"]) / 2.0
+            + float(row["AngleMaxCenterShift"])
+            + float(row["AngleMargin"])
+        )
+        receiver_angles = [
+            _angle_between_xz(
+                (float(vector["x"]), float(vector["z"])),
+                (
+                    float(player["pos"]["x"]) - float(ball[0]),
+                    float(player["pos"]["z"]) - float(ball[2]),
+                ),
+            )
+            for player in receivers
+        ]
+        assert min(receiver_angles) <= pass_limit, (row, receiver_angles, pass_limit)
 
 
 def test_slice_preset_fields_are_complete_and_parseable():
@@ -331,3 +375,5 @@ def test_slice_type_specific_field_invariants_apply_to_all_matching_presets():
             for player in json.loads(row["PlayersInit"]):
                 if player["team"] == "home":
                     assert g.GOAL_AREA_Z_FAR <= float(player["pos"]["z"]) <= g.FIELD_Z_NEAR, (row, player)
+
+
