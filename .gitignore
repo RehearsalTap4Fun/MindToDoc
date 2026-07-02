@@ -13,14 +13,16 @@ __pycache__/
 output/dingtalk-sync/
 output/dingtalk-source/
 output/scripts/
+examples/*/output/dingtalk-sync/
+examples/*/output/dingtalk-source/
 
 # 本地 diff/调试临时目录
 .diff-tmp/
 
 # 测试配置生成失败时的备用产物
-output/test-config/ActivitySoccer_preview.generated.xlsx
-output/test-config/ActivitySoccerLanguage.generated.xlsx
+examples/*/output/test-config/ActivitySoccer_preview.generated.xlsx
+examples/*/output/test-config/ActivitySoccerLanguage.generated.xlsx
 
 # 关卡 tag 工具产物(由 apply_level_tags.py 生成)
-output/test-config/level-tags/ActivitySoccer.LevelTagged.generated.xlsx
-output/test-config/level-tags/level-tag-summary.json
+examples/*/output/test-config/level-tags/ActivitySoccer.LevelTagged.generated.xlsx
+examples/*/output/test-config/level-tags/level-tag-summary.json
