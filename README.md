@@ -24,27 +24,8 @@
 
 ## 已归档的示例项目
 
-- `examples/2026世界杯主题活动/`：足球主题活动完整产物 —— 主案/配置表/界面标注、切片编辑器与关卡标签工具链（`output/test-config/`）、专属坐标协议（`references/soccer-coordinate-protocol.md`）、专属校验脚本（`scripts/check_protocol_drift.py` 等）、原型页面、美术/音效需求、钉钉同步中间产物
+- `examples/2026世界杯主题活动/`：足球主题活动完整产物 —— 主案/配置表/界面标注、切片编辑器与关卡标签工具链、专属坐标协议与校验脚本、原型页面、美术/音效需求、钉钉同步中间产物；工具用法见该目录下 `README.md`
 - `examples/K1新服大地图重构/`：K1 新服大地图重构的主案、配置表结构、界面标注
-
-## 世界杯测试配置工具（示例项目内）
-
-首次运行先安装依赖:
-
-```bash
-python3 -m pip install -r requirements-dev.txt
-```
-
-常用命令（均在 `examples/2026世界杯主题活动/` 内）:
-
-```bash
-python3 "examples/2026世界杯主题活动/output/test-config/generate_activity_soccer_test_config.py"
-python3 "examples/2026世界杯主题活动/output/test-config/level-tags/apply_level_tags.py"
-python3 "examples/2026世界杯主题活动/scripts/check_protocol_drift.py"
-python3 "examples/2026世界杯主题活动/scripts/check_preset_consistency.py"
-python3 "examples/2026世界杯主题活动/scripts/check_xlsx_drift.py" --summary
-python3 -m pytest "examples/2026世界杯主题活动/output/test-config/level-tags/tests" -q
-```
 
 ## 协作约定
 
