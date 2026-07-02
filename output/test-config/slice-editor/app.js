@@ -639,6 +639,15 @@ function onPointerDown(event) {
   renderAll();
 }
 
+const OPPONENT_GOAL = { x: 0, z: 0 };
+
+function facingTargetFor(preset, player) {
+  if (player.team === "home" && Number(player.idx) !== Number(preset.BallOwner)) {
+    return OPPONENT_GOAL;
+  }
+  return preset.BallPos;
+}
+
 function onPointerMove(event) {
   if (!state.drag) return;
   const preset = currentPreset();
@@ -648,6 +657,10 @@ function onPointerMove(event) {
     preset.BallPos.x = world.x;
     preset.BallPos.z = world.z;
     if (owner) snapOwnerToBall(preset, owner);
+    for (const p of preset.PlayersInit) {
+      if (p.team === "home" && Number(p.idx) === Number(preset.BallOwner)) continue;
+      p.facing = faceToward(p.pos, facingTargetFor(preset, p));
+    }
   }
   if (state.drag.kind === "vector") {
     preset.BallVector = normalizeVec({ x: world.x - preset.BallPos.x, z: world.z - preset.BallPos.z });
@@ -660,6 +673,8 @@ function onPointerMove(event) {
       if (player.team === "home" && Number(player.idx) === Number(preset.BallOwner)) {
         player.facing = faceToward(player.pos, preset.BallPos);
         snapBallToOwner(preset, player);
+      } else {
+        player.facing = faceToward(player.pos, facingTargetFor(preset, player));
       }
     }
   }

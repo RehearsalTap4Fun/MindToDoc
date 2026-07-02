@@ -32,15 +32,15 @@
     "ActvSoccerPlayerStyleCfg",
     "ActvSoccerReplayCfg",
     "ActvSoccerRankCfg",
-    "ActvSoccerGuideCfg"
+    "ActvSoccerGuideCfg",
+    "ActvSoccerCharacterStateCfg"
   ],
   "language_sheet": "ActvSoccerLanguageCfg",
-  "language_entry_count": 262,
+  "language_entry_count": 224,
   "sheets_program_only": [
     "ActvSoccerSliceTypeDefCfg",
     "ActvSoccerPlayerAiDutyEnumCfg",
-    "ActvSoccerBetMatchCfg",
-    "ActvSoccerCharacterStateCfg"
+    "ActvSoccerBetMatchCfg"
   ],
   "sheets_common_platform": {
     "ActvSoccerBattlePassCfg": "BattlePassNew / ActivityBattlePass",
@@ -520,7 +520,8 @@
       "ActvSoccerMatchRewardCfg",
       "ActvSoccerReplayCfg",
       "ActvSoccerRankCfg",
-      "ActvSoccerGuideCfg"
+      "ActvSoccerGuideCfg",
+      "ActvSoccerCharacterStateCfg"
     ]
   },
   "id_cross_ref": {

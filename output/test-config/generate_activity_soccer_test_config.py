@@ -36,7 +36,6 @@ SHEETS_PROGRAM_ONLY = (
     "ActvSoccerSliceTypeDefCfg",      # L1 slice_type 程序只读枚举
     "ActvSoccerPlayerAiDutyEnumCfg",  # player_ai_duty 程序只读枚举
     "ActvSoccerBetMatchCfg",          # 正式对阵/赔率由服务端生成
-    "ActvSoccerCharacterStateCfg",    # FSM状态→动画映射，客户端+美术维护
 )
 # 走项目通用配套表，不在本活动 xlsx 重复维护
 SHEETS_COMMON_PLATFORM = (
@@ -69,9 +68,7 @@ PLAYER_AI_DUTY_ENUM_COMMENT = "1=Goalkeeper,2=Defender,3=Forward"
 
 # 第1行读取端: c=仅客户端 s=仅服务端 cs=双端; Remark 留空(备注列)
 SHEET_DEFAULT_READ: dict[str, str] = {
-    "ActvSoccerTutorialCfg": "c",
     "ActvSoccerHapticCfg": "c",
-    "ActvSoccerFirstTouchAnimCfg": "c",
     "ActvSoccerSliceFlowCfg": "c",
     "ActvSoccerContractCfg": "cs",
     "ActvSoccerContractStarLicCfg": "s",
@@ -79,31 +76,42 @@ SHEET_DEFAULT_READ: dict[str, str] = {
     "ActvSoccerKnockoutPhaseCfg": "s",
     "ActvSoccerBetMultiplierCfg": "cs",
     "ActvSoccerBetStakeTierCfg": "cs",
+    "ActvSoccerAchieveCfg": "cs",
+    "ActvSoccerMatchRewardCfg": "cs",
+    "ActvSoccerReplayCfg": "s",
+    "ActvSoccerRankCfg": "cs",
+    "ActvSoccerGuideCfg": "c",
+    "ActvSoccerCharacterStateCfg": "c",
 }
 READ_OVERRIDES: dict[str, dict[str, str]] = {
-    "ActvSoccerCharacterCfg": {"AppearanceKey": "c", "DisplayPower": "c"},
+    "ActvSoccerCharacterCfg": {"AppearanceKey": "c", "Body": "c"},
     "ActvSoccerNationalityCfg": {"NameLcKey": "c", "ContractPool": "s"},
-    "ActvSoccerTutorialCfg": {"SliceInstanceID": "cs", "DescLcKey": "c"},
-    "ActvSoccerGuideStepCfg": {
-        "DialogueLcKey": "c", "TextStyle": "c",
-        "FocusTarget": "c", "MaskType": "c", "GestureDesc": "c",
-        "WaitType": "c", "WaitTarget": "c", "SkipPolicy": "c",
-    },
     "ActvSoccerSlicePresetCfg": {
         "NameLcKey": "c", "Tags": "c", "BallPos": "c", "BallVector": "c", "BallOwner": "c",
         "PlayersInit": "c", "CameraFov": "c", "TargetPoint": "c", "RecommendedModes": "c",
-        "AngleSpanMin": "c", "AngleSpanMax": "c", "AngleMaxCenterShift": "c", "AngleMargin": "c",
+        "OpenSecondPoint": "c", "TypePayload": "c",
     },
-    "ActvSoccerSliceInstanceCfg": {"OverrideOperableAngle": "c"},
     "ActvSoccerReceiveDecisionCfg": {"HighBallHeight": "c"},
     "ActvSoccerEnemyAiCfg": {"AnimationKey": "c"},
-    "ActvSoccerTeamCfg": {"NameLcKey": "c", "KitKey": "c", "BadgeKey": "c"},
+    "ActvSoccerTeamCfg": {"NameLcKey": "c", "KitKey": "c", "BadgeKey": "c", "NationFlag": "c"},
     "ActvSoccerFameGrowthLevelCfg": {"TitleLcKey": "c"},
-    "ActvSoccerLifeGrowthLevelCfg": {"TitleLcKey": "c"},
+    "ActvSoccerLifeGrowthLevelCfg": {"QualityShow": "c", "Icon": "c", "Name": "c"},
     "ActvSoccerSeasonCfg": {"LeagueNameLcKey": "c"},
     "ActvSoccerKnockoutPhaseCfg": {
         "PhaseLcKey": "cs", "PhaseKey": "cs", "DayContentLcKey": "c", "BetOpen": "cs",
     },
+    "ActvSoccerAchieveCfg": {
+        "Type": "sc", "Count": "sc",
+        "QualityShow": "c", "Icon": "c", "Title": "c", "Des": "c",
+    },
+    "ActvSoccerMatchRewardCfg": {
+        "OutReward": "s", "RiseMailID": "s", "OutMailID": "s",
+    },
+    "ActvSoccerRankCfg": {
+        "TabKey": "c", "IconPath": "c", "SelfItemBgPath": "c", "ItemBgPath": "c",
+    },
+    "ActvSoccerContractCfg": {"Body": "c", "GoalDesc": "c"},
+    "ActvSoccerSliceInstanceCfg": {},
 }
 
 
@@ -217,6 +225,27 @@ def copy_sheet_from_xlsx(wb: Workbook, name: str, source_path: Path, source_shee
         source_wb.close()
 
 
+def mirror_sheet_from_preview(wb: Workbook, name: str) -> bool:
+    """把 ActivitySoccer_preview.xlsx 中的同名 sheet 完整镜像到 wb。
+    用于那些真相源在 xlsx 端(策划/程序直接维护)的 sheet:
+      AchieveCfg / MatchRewardCfg / ReplayCfg / RankCfg / GuideCfg / CharacterStateCfg。
+    """
+    if not OUTPUT_FILE.exists():
+        return False
+    src_wb = load_workbook(OUTPUT_FILE, read_only=True, data_only=True)
+    try:
+        if name not in src_wb.sheetnames:
+            return False
+        src_ws = src_wb[name]
+        ws = wb.create_sheet(name)
+        for row_idx in range(1, src_ws.max_row + 1):
+            for col_idx in range(1, src_ws.max_column + 1):
+                ws.cell(row_idx, col_idx, src_ws.cell(row_idx, col_idx).value)
+        return True
+    finally:
+        src_wb.close()
+
+
 # dataconfig/ConstConfig.xlsx → ConstConfigCfg 表头（首列 CfgID，非活动表 ID 约定）
 CONST_CONFIG_COLUMNS: list[dict] = [
     {"field": "CfgID", "type": "int", "server": "id", "read": "cs", "comment2": "编号"},
@@ -305,6 +334,8 @@ def _first_sign_contract_rows() -> list[dict]:
             "SignReward": "[]",
             "GrantFameLevel": 1, "GrantLifeLevel": 1,
             "GrantScene": "first_sign",
+            "Body": "",
+            "GoalDesc": "赛季结束前联赛排名第12",
             "Remark": f"首签1星-{note}",
         }
         for cid, tid, note in pairs
@@ -347,6 +378,8 @@ def _league_finish_contract_rows() -> list[dict]:
             "SeasonGoal": sg, "SeasonReward": sr, "SignReward": "[]",
             "GrantFameLevel": gfl, "GrantLifeLevel": gll,
             "GrantScene": "league_finish",
+            "Body": "",
+            "GoalDesc": note,
             "Remark": note,
         }
         for cid, tid, star, pf, pg, pa, pfm, sg, sr, gfl, gll, note in rows
@@ -1428,9 +1461,9 @@ def _build_instance_library() -> list[dict]:
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
         {"ID": 103, "SliceType": "penalty", "PresetID": 5001, "Remark": "试训-点球",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 201, "SliceType": "attack", "PresetID": 1002, "OverrideOperableAngle": 30, "Remark": "引导关1",
+        {"ID": 201, "SliceType": "attack", "PresetID": 1002, "AimYawRange": 30.0, "Remark": "引导关1",
          **_guide_instance_ai_cols(1001, 2001, 0, 0, 1200)},
-        {"ID": 202, "SliceType": "attack", "PresetID": 1003, "OverrideOperableAngle": 28, "Remark": "引导关2",
+        {"ID": 202, "SliceType": "attack", "PresetID": 1003, "AimYawRange": 28.0, "Remark": "引导关2",
          **_guide_instance_ai_cols(1001, 2001, 2002, 0, 1200)},
         {"ID": 203, "SliceType": "goalkeep", "PresetID": 4001, "Remark": "引导关3-守门",
          **_guide_instance_ai_cols(1002, 0, 0, 2003, 900)},
@@ -1462,7 +1495,7 @@ def _build_instance_library() -> list[dict]:
                     "ID": iid,
                     "SliceType": type_name,
                     "PresetID": preset_id,
-                    "OverrideOperableAngle": _instance_operable_angle(tier, stype),
+                    "AimYawRange": _instance_operable_angle(tier, stype),
                     "Modifiers": _instance_modifiers_json(tier, stype, variant),
                     "Remark": f"库 tier{tier} {type_name} v{variant}",
                 }
@@ -1638,6 +1671,7 @@ def _build_levels(lc: LcRegistry) -> list[dict]:
             "OpponentTeamID": int(row["OpponentTeamID"]),
             "OpponentTeamStar": int(row["OpponentTeamStar"]),
             "SeasonID": season,
+            "FortID": rid,
             "Remark": (
                 "第1轮-引导关(含守门切片203)" if rid == 1
                 else f"第{season}轮 tier{tier} 第{((rid - 1) % LEVELS_PER_ROUND) + 1}场"
@@ -2402,10 +2436,14 @@ def _ensure_attack_receiver_angle(row: dict, players: list[dict]) -> None:
     )
     if not receivers:
         return
+    # xlsx 已移除 AngleSpanMin/AngleMaxCenterShift/AngleMargin 四列;
+    # 从 SliceType 与 attack 类型的默认角度曲线兜底,保证接球位置计算继续可用。
+    stype_id = SLICE_TYPE_ID.get(str(row["SliceType"]), 1)
+    fallback = _preset_angle_cols(stype_id, None)
     limit = (
-        float(row["AngleSpanMin"]) / 2.0
-        + float(row["AngleMaxCenterShift"])
-        + float(row["AngleMargin"])
+        float(row.get("AngleSpanMin", fallback["AngleSpanMin"])) / 2.0
+        + float(row.get("AngleMaxCenterShift", fallback["AngleMaxCenterShift"]))
+        + float(row.get("AngleMargin", fallback["AngleMargin"]))
     )
     if any(_receiver_angle(row, ball, vector, receiver) <= limit for receiver in receivers):
         return
@@ -2508,14 +2546,15 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         c(
             id_col("int", "角色ID character_id"),
             ("AppearanceKey", "string", "外观资源键"),
-            ("DisplayPower", "int", "展示战力(仅表现)"),
+            ("Body", "string", "球衣"),
+            ("Number", "int", "号码"),
             ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 1, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_1.prefab", "DisplayPower": 10, "Remark": "角色A"},
-            {"ID": 2, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_2.prefab", "DisplayPower": 10, "Remark": "角色B"},
-            {"ID": 3, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_3.prefab", "DisplayPower": 10, "Remark": "角色C"},
-            {"ID": 4, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_4.prefab", "DisplayPower": 10, "Remark": "角色D"},
+            {"ID": 1, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_1.prefab", "Body": "", "Number": 10, "Remark": "角色A"},
+            {"ID": 2, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_2.prefab", "Body": "", "Number": 10, "Remark": "角色B"},
+            {"ID": 3, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_3.prefab", "Body": "", "Number": 10, "Remark": "角色C"},
+            {"ID": 4, "AppearanceKey": "Assets/k1/K1D1/Res/Models/Soccer/Footballplayer_4.prefab", "Body": "", "Number": 10, "Remark": "角色D"},
         ],
     )
 
@@ -2541,26 +2580,9 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         ],
     )
 
-    make_sheet(
-        wb,
-        "ActvSoccerTutorialCfg",
-        c(
-            id_col("int", "试训步骤序号"),
-            ("SliceType", "string", "切片类型"),
-            ("SliceInstanceID", "int", "关联切片实例(测试用)"),
-            ("ForcedOrder", "bool", "强制顺序"),
-            ("DescLcKey", "string", "步骤描述→ActvSoccerLanguageCfg"),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 1, "SliceType": "attack", "SliceInstanceID": 101, "ForcedOrder": 1, "DescLcKey": lc.add(lc_key("tutorial", "desc", "1"), "进攻教学", "TutorialCfg/1")},
-            {"ID": 2, "SliceType": "free_kick", "SliceInstanceID": 102, "ForcedOrder": 1, "DescLcKey": lc.add(lc_key("tutorial", "desc", "2"), "任意球教学", "TutorialCfg/2")},
-            {"ID": 3, "SliceType": "penalty", "SliceInstanceID": 103, "ForcedOrder": 1, "DescLcKey": lc.add(lc_key("tutorial", "desc", "3"), "点球教学", "TutorialCfg/3")},
-        ],
-    )
-
-    build_guide_step_rows(lc)
-    copy_sheet_from_xlsx(wb, "ActvSoccerGuideStepCfg", GUIDE_STEP_SOURCE)
+    # ActvSoccerAchieveCfg / ActvSoccerGuideCfg 直接从 preview.xlsx 反向镜像
+    # (成就与新引导表由策划/程序在 xlsx 端直接维护,不在脚本内重复表达)
+    mirror_sheet_from_preview(wb, "ActvSoccerAchieveCfg")
 
     # --- 3.2 切片 ---
     make_sheet(
@@ -2577,13 +2599,9 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("PlayersInit", "ext[]", f"球员站位+duty+朝向({PLAYER_AI_DUTY_ENUM_COMMENT})", V_PLAYER_INIT, PLAYER_INIT_DEFAULT),
             ("CameraFov", "float", "相机FOV"),
             ("TargetPoint", "ext", "目标点", P_VEC3, '{"x":0,"y":0,"z":0}'),
-            ("OperableAngle", "float", "可操作夹角(兼容字段=AngleSpanMax默认)"),
-            ("AngleSpanMin", "float", "可操作夹角宽度下限(°)"),
-            ("AngleSpanMax", "float", "可操作夹角宽度上限(°)"),
-            ("AngleMaxCenterShift", "float", "扇形中心相对接球方向最大偏移(°)"),
-            ("AngleMargin", "float", "合法目标贴边余量(°)"),
             ("TypePayload", "ext", "type_payload默认", V_TYPE_PAYLOAD, '{"keeper_weight":5000,"angle":35}'),
             ("RecommendedModes", "string[]", "建议模式"),
+            ("OpenSecondPoint", "int", "开启二次选点(0=关闭,1=开启)"),
             ("Remark", "string", "设计备注:说明该preset的切片类型、球点/方向、目标点、控球球员和推荐操作；用于策划排查与实例复用"),
         ),
         _build_presets(lc),
@@ -2596,7 +2614,10 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             id_col("int", "slice_instance_id"),
             ("SliceType", "string", "切片类型"),
             ("PresetID", "int", "preset_id"),
-            ("OverrideOperableAngle", "float", "覆盖可操作夹角(0=不覆盖)"),
+            ("AimYawRange", "float", "可操作夹角(°;0=按SliceType默认)"),
+            ("CamYawRange", "float", "可旋转视角(°;0=按SliceType默认)"),
+            ("ObjectiveType", "string", "单一胜利目标(score/survive等;空=按SliceType默认)"),
+            ("ExtraObjectives", "ext[]", "复合胜利目标", "SoccerObjective_V", '[{"type":"pass_to","params":{"target":1}},{"type":"score"}]'),
             ("Modifiers", "ext[]", "切片机制", V_MODIFIER, '[{"id":"moving_keeper","params":{"speed":1.0}}]'),
             ("AiProfileID", "int", "难度档→ActvSoccerAiProfileCfg"),
             ("GoalkeeperAiID", "int", "门将AI"),
@@ -2700,36 +2721,6 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         ],
     )
 
-    make_sheet(
-        wb,
-        "ActvSoccerFirstTouchAnimCfg",
-        c(
-            id_col("int", "表现配置ID"),
-            ("Action", "string", "第一脚逻辑动作", "", "Stop/PushForward/PushLeft/PushRight/HalfTurnLeft/HalfTurnRight/Shield/OneTouchPass/OneTouchShot"),
-            ("BallHeightType", "string", "来球高度分类", "", "Ground/High"),
-            ("BallDirectionType", "string", "来球方向分类", "", "Front/Left/Right/Back"),
-            ("BodyDirectionType", "string", "身体朝向分类", "", "FaceBall/BackToBall/SideToBall"),
-            ("PressureLevel", "string", "压力等级", "", "Low/Medium/High/Any"),
-            ("StateKey", "string", "对应ActvSoccerCharacterStateCfg.StateKey"),
-            ("AnimKey", "string", "美术动作Key;优先匹配已有动作表"),
-            ("Priority", "int", "多条命中时取优先级高的"),
-            ("Remark", "string", "备注"),
-        ),
-        [
-            {"ID": 5201, "Action": "Stop", "BallHeightType": "Ground", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Any", "StateKey": "Control", "AnimKey": "B01_ReceiveBall", "Priority": 100, "Remark": "地面正面停球"},
-            {"ID": 5202, "Action": "Stop", "BallHeightType": "High", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Any", "StateKey": "Control", "AnimKey": "B03_ReceiveAir", "Priority": 100, "Remark": "高空球停球,可复用B01"},
-            {"ID": 5203, "Action": "PushForward", "BallHeightType": "Ground", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Low", "StateKey": "Control", "AnimKey": "B02_DribbleTouch", "Priority": 110, "Remark": "顺势领球推进"},
-            {"ID": 5204, "Action": "PushLeft", "BallHeightType": "Ground", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Low", "StateKey": "Control", "AnimKey": "B02_DribbleTouch", "Priority": 100, "Remark": "左侧领球,表现可镜像"},
-            {"ID": 5205, "Action": "PushRight", "BallHeightType": "Ground", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Low", "StateKey": "Control", "AnimKey": "B02_DribbleTouch", "Priority": 100, "Remark": "右侧领球,表现可镜像"},
-            {"ID": 5206, "Action": "HalfTurnLeft", "BallHeightType": "Ground", "BallDirectionType": "Back", "BodyDirectionType": "BackToBall", "PressureLevel": "Medium", "StateKey": "TurnLeft", "AnimKey": "A05_TurnLeft", "Priority": 100, "Remark": "背身半转身"},
-            {"ID": 5207, "Action": "HalfTurnRight", "BallHeightType": "Ground", "BallDirectionType": "Back", "BodyDirectionType": "BackToBall", "PressureLevel": "Medium", "StateKey": "TurnRight", "AnimKey": "A06_TurnRight", "Priority": 100, "Remark": "背身半转身镜像"},
-            {"ID": 5208, "Action": "Shield", "BallHeightType": "Ground", "BallDirectionType": "Back", "BodyDirectionType": "BackToBall", "PressureLevel": "High", "StateKey": "Control", "AnimKey": "B01_ReceiveBall", "Priority": 120, "Remark": "高压背身护球,后续可替换专用护球动作"},
-            {"ID": 5209, "Action": "OneTouchPass", "BallHeightType": "Ground", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Low", "StateKey": "Pass", "AnimKey": "C03_OneTouchPass", "Priority": 120, "Remark": "一脚传球"},
-            {"ID": 5210, "Action": "OneTouchShot", "BallHeightType": "Ground", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Low", "StateKey": "Kick", "AnimKey": "D01_Shoot", "Priority": 100, "Remark": "一脚射门,可复用射门动作"},
-            {"ID": 5211, "Action": "OneTouchShot", "BallHeightType": "High", "BallDirectionType": "Front", "BodyDirectionType": "FaceBall", "PressureLevel": "Any", "StateKey": "Kick", "AnimKey": "D05_Volley", "Priority": 110, "Remark": "高空球一脚处理,后续可扩展头球/倒挂金钩"},
-        ],
-    )
-
     # --- 3.3 关卡 ---
     make_sheet(
         wb,
@@ -2745,6 +2736,7 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("OpponentTeamID", "int", "对手球队(队名/队服/队标)"),
             ("OpponentTeamStar", "int", "对手球队星级(球员属性计算依据)"),
             ("SeasonID", "int", "所属联赛轮次(=SeasonCfg.ID)"),
+            ("FortID", "int", "总关卡序号(用于UI跨轮次连续编号)"),
             ("Remark", "string", "备注"),
         ),
         _build_levels(lc),
@@ -2840,16 +2832,17 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("ContractStarLicReward", "int", "合同星级许可奖励(0=无,2-5=license_id)"),
             ("PlayerRating", "int", "主角评分(仅知名度线投放)"),
             ("TitleLcKey", "string", "称号→ActvSoccerLanguageCfg"),
+            ("GoldRewardAdd", "int", "金币收益增加(0=无加成,>0为百分点增益)"),
             ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 1, "Level": 1, "ExpRequired": 0, "ContractStarLicReward": 0, "PlayerRating": 10, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "1"), "业余球员", "FameGrowthLevelCfg/1")},
-            {"ID": 2, "Level": 2, "ExpRequired": 100, "ContractStarLicReward": 0, "PlayerRating": 15, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "2"), "新秀", "FameGrowthLevelCfg/2"), "Remark": ""},
-            {"ID": 3, "Level": 3, "ExpRequired": 150, "ContractStarLicReward": 2, "PlayerRating": 20, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "3"), "专业球员", "FameGrowthLevelCfg/3"), "Remark": "3级→2星许可"},
-            {"ID": 4, "Level": 4, "ExpRequired": 180, "ContractStarLicReward": 2, "PlayerRating": 25, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "4"), "明星", "FameGrowthLevelCfg/4"), "Remark": ""},
-            {"ID": 5, "Level": 5, "ExpRequired": 200, "ContractStarLicReward": 3, "PlayerRating": 30, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "5"), "大师", "FameGrowthLevelCfg/5"), "Remark": "文档示例:知名度5级→3星许可"},
-            {"ID": 6, "Level": 6, "ExpRequired": 240, "ContractStarLicReward": 4, "PlayerRating": 35, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "6"), "世界级", "FameGrowthLevelCfg/6"), "Remark": "6级→4星许可"},
-            {"ID": 7, "Level": 7, "ExpRequired": 300, "ContractStarLicReward": 5, "PlayerRating": 40, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "7"), "传奇", "FameGrowthLevelCfg/7"), "Remark": "7级→5星许可(tier9-10合同池可达)"},
+            {"ID": 1, "Level": 1, "ExpRequired": 0, "ContractStarLicReward": 0, "PlayerRating": 10, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "1"), "业余球员", "FameGrowthLevelCfg/1"), "GoldRewardAdd": 0},
+            {"ID": 2, "Level": 2, "ExpRequired": 100, "ContractStarLicReward": 0, "PlayerRating": 15, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "2"), "新秀", "FameGrowthLevelCfg/2"), "GoldRewardAdd": 0, "Remark": ""},
+            {"ID": 3, "Level": 3, "ExpRequired": 150, "ContractStarLicReward": 2, "PlayerRating": 20, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "3"), "专业球员", "FameGrowthLevelCfg/3"), "GoldRewardAdd": 5, "Remark": "3级→2星许可"},
+            {"ID": 4, "Level": 4, "ExpRequired": 180, "ContractStarLicReward": 2, "PlayerRating": 25, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "4"), "明星", "FameGrowthLevelCfg/4"), "GoldRewardAdd": 10, "Remark": ""},
+            {"ID": 5, "Level": 5, "ExpRequired": 200, "ContractStarLicReward": 3, "PlayerRating": 30, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "5"), "大师", "FameGrowthLevelCfg/5"), "GoldRewardAdd": 15, "Remark": "文档示例:知名度5级→3星许可"},
+            {"ID": 6, "Level": 6, "ExpRequired": 240, "ContractStarLicReward": 4, "PlayerRating": 35, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "6"), "世界级", "FameGrowthLevelCfg/6"), "GoldRewardAdd": 20, "Remark": "6级→4星许可"},
+            {"ID": 7, "Level": 7, "ExpRequired": 300, "ContractStarLicReward": 5, "PlayerRating": 40, "TitleLcKey": lc.add(lc_key("growth", "fame_title", "7"), "传奇", "FameGrowthLevelCfg/7"), "GoldRewardAdd": 30, "Remark": "7级→5星许可(tier9-10合同池可达)"},
         ],
     )
 
@@ -2865,18 +2858,19 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("TicketCap", "int", "门票上限"),
             ("TicketRecoverMin", "int", "门票恢复间隔分钟"),
             ("FreeRewind", "int", "免费回溯次数"),
-            ("ExtraRound", "int", "额外联赛轮次"),
-            ("QualityShow", "int", "品质等级展示(配合UI色块)"),
+            ("QualityShow", "int", "展示品质(配合UI色块)"),
+            ("Icon", "string", "图标资源路径"),
+            ("Name", "string", "生活等级名称(展示,可留空由UI用等级号)"),
             ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 1, "Level": 1, "ExpRequired": 0, "ContractStarLicReward": 0, "TicketCap": 80, "TicketRecoverMin": 30, "QualityShow": 1, "Remark": ""},
-            {"ID": 2, "Level": 2, "ExpRequired": 100, "ContractStarLicReward": 0, "TicketCap": 200, "TicketRecoverMin": 28, "FreeRewind": 1, "QualityShow": 1, "Remark": "升级消耗金币100"},
-            {"ID": 3, "Level": 3, "ExpRequired": 150, "ContractStarLicReward": 2, "TicketCap": 220, "TicketRecoverMin": 26, "QualityShow": 2, "Remark": "3级→2星许可"},
-            {"ID": 4, "Level": 4, "ExpRequired": 200, "RewardFame": 10, "ContractStarLicReward": 3, "TicketCap": 250, "TicketRecoverMin": 25, "ExtraRound": 5, "QualityShow": 2, "Remark": "文档示例:生活4级→3星许可"},
-            {"ID": 5, "Level": 5, "ExpRequired": 300, "ContractStarLicReward": 4, "TicketCap": 280, "TicketRecoverMin": 22, "QualityShow": 3, "Remark": "5级→4星许可"},
-            {"ID": 6, "Level": 6, "ExpRequired": 400, "RewardFame": 15, "ContractStarLicReward": 4, "TicketCap": 300, "TicketRecoverMin": 20, "FreeRewind": 2, "QualityShow": 3, "Remark": "6级→4星许可(维持)"},
-            {"ID": 7, "Level": 7, "ExpRequired": 550, "RewardFame": 20, "ContractStarLicReward": 5, "TicketCap": 320, "TicketRecoverMin": 18, "FreeRewind": 2, "ExtraRound": 10, "QualityShow": 4, "Remark": "7级→5星许可(tier9-10合同池可达)"},
+            {"ID": 1, "Level": 1, "ExpRequired": 0, "ContractStarLicReward": 0, "TicketCap": 80, "TicketRecoverMin": 30, "QualityShow": 1, "Icon": "", "Name": "", "Remark": ""},
+            {"ID": 2, "Level": 2, "ExpRequired": 100, "ContractStarLicReward": 0, "TicketCap": 200, "TicketRecoverMin": 28, "FreeRewind": 1, "QualityShow": 1, "Icon": "", "Name": "", "Remark": "升级消耗金币100"},
+            {"ID": 3, "Level": 3, "ExpRequired": 150, "ContractStarLicReward": 2, "TicketCap": 220, "TicketRecoverMin": 26, "QualityShow": 2, "Icon": "", "Name": "", "Remark": "3级→2星许可"},
+            {"ID": 4, "Level": 4, "ExpRequired": 200, "RewardFame": 10, "ContractStarLicReward": 3, "TicketCap": 250, "TicketRecoverMin": 25, "QualityShow": 2, "Icon": "", "Name": "", "Remark": "文档示例:生活4级→3星许可"},
+            {"ID": 5, "Level": 5, "ExpRequired": 300, "ContractStarLicReward": 4, "TicketCap": 280, "TicketRecoverMin": 22, "QualityShow": 3, "Icon": "", "Name": "", "Remark": "5级→4星许可"},
+            {"ID": 6, "Level": 6, "ExpRequired": 400, "RewardFame": 15, "ContractStarLicReward": 4, "TicketCap": 300, "TicketRecoverMin": 20, "FreeRewind": 2, "QualityShow": 3, "Icon": "", "Name": "", "Remark": "6级→4星许可(维持)"},
+            {"ID": 7, "Level": 7, "ExpRequired": 550, "RewardFame": 20, "ContractStarLicReward": 5, "TicketCap": 320, "TicketRecoverMin": 18, "FreeRewind": 2, "QualityShow": 4, "Icon": "", "Name": "", "Remark": "7级→5星许可(tier9-10合同池可达)"},
         ],
     )
 
@@ -2889,21 +2883,22 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("Region", "string", "地区(纯展示)"),
             ("KitKey", "string", "队服资源"),
             ("BadgeKey", "string", "队标资源"),
+            ("NationFlag", "string", "国旗资源(NationFlagCfg.ID)"),
             ("Remark", "string", "备注"),
         ),
         [
-            {"ID": 101, "NameLcKey": lc.add(lc_key("team", "name", "101"), "红星联", "TeamCfg/101"), "Region": "asia", "KitKey": "WC_Kit_01", "BadgeKey": "WC_Badge_01", "Remark": "默认展示球队"},
-            {"ID": 102, "NameLcKey": lc.add(lc_key("team", "name", "102"), "莱茵青年", "TeamCfg/102"), "Region": "europe", "KitKey": "WC_Kit_02", "BadgeKey": "WC_Badge_02", "Remark": ""},
-            {"ID": 103, "NameLcKey": lc.add(lc_key("team", "name", "103"), "桑巴之星", "TeamCfg/103"), "Region": "south_america", "KitKey": "WC_Kit_03", "BadgeKey": "WC_Badge_03", "Remark": ""},
-            {"ID": 104, "NameLcKey": lc.add(lc_key("team", "name", "104"), "蓝白雄鹰", "TeamCfg/104"), "Region": "south_america", "KitKey": "WC_Kit_04", "BadgeKey": "WC_Badge_04", "Remark": ""},
-            {"ID": 201, "NameLcKey": lc.add(lc_key("team", "name", "201"), "海港FC", "TeamCfg/201"), "Region": "asia", "KitKey": "WC_Kit_05", "BadgeKey": "WC_Badge_05", "Remark": "中国动态池"},
-            {"ID": 202, "NameLcKey": lc.add(lc_key("team", "name", "202"), "东方之鹰", "TeamCfg/202"), "Region": "asia", "KitKey": "WC_Kit_06", "BadgeKey": "WC_Badge_06", "Remark": "中国动态池"},
-            {"ID": 203, "NameLcKey": lc.add(lc_key("team", "name", "203"), "北欧狼", "TeamCfg/203"), "Region": "europe", "KitKey": "WC_Kit_07", "BadgeKey": "WC_Badge_07", "Remark": "联赛对手展示"},
-            {"ID": 204, "NameLcKey": lc.add(lc_key("team", "name", "204"), "阿根廷神鹰", "TeamCfg/204"), "Region": "south_america", "KitKey": "WC_Kit_08", "BadgeKey": "WC_Badge_08", "Remark": "文档合同示例"},
-            {"ID": 205, "NameLcKey": lc.add(lc_key("team", "name", "205"), "桑巴红魔", "TeamCfg/205"), "Region": "south_america", "KitKey": "WC_Kit_09", "BadgeKey": "WC_Badge_09", "Remark": ""},
-            {"ID": 206, "NameLcKey": lc.add(lc_key("team", "name", "206"), "南美风暴", "TeamCfg/206"), "Region": "south_america", "KitKey": "WC_Kit_10", "BadgeKey": "WC_Badge_10", "Remark": ""},
-            {"ID": 207, "NameLcKey": lc.add(lc_key("team", "name", "207"), "潘帕斯之翼", "TeamCfg/207"), "Region": "south_america", "KitKey": "WC_Kit_11", "BadgeKey": "WC_Badge_11", "Remark": ""},
-            {"ID": 208, "NameLcKey": lc.add(lc_key("team", "name", "208"), "高卢雄鸡", "TeamCfg/208"), "Region": "europe", "KitKey": "WC_Kit_12", "BadgeKey": "WC_Badge_12", "Remark": "12队服/队标"},
+            {"ID": 101, "NameLcKey": lc.add(lc_key("team", "name", "101"), "红星联", "TeamCfg/101"), "Region": "asia", "KitKey": "WC_Kit_01", "BadgeKey": "WC_Badge_01", "NationFlag": "", "Remark": "默认展示球队"},
+            {"ID": 102, "NameLcKey": lc.add(lc_key("team", "name", "102"), "莱茵青年", "TeamCfg/102"), "Region": "europe", "KitKey": "WC_Kit_02", "BadgeKey": "WC_Badge_02", "NationFlag": "", "Remark": ""},
+            {"ID": 103, "NameLcKey": lc.add(lc_key("team", "name", "103"), "桑巴之星", "TeamCfg/103"), "Region": "south_america", "KitKey": "WC_Kit_03", "BadgeKey": "WC_Badge_03", "NationFlag": "", "Remark": ""},
+            {"ID": 104, "NameLcKey": lc.add(lc_key("team", "name", "104"), "蓝白雄鹰", "TeamCfg/104"), "Region": "south_america", "KitKey": "WC_Kit_04", "BadgeKey": "WC_Badge_04", "NationFlag": "", "Remark": ""},
+            {"ID": 201, "NameLcKey": lc.add(lc_key("team", "name", "201"), "海港FC", "TeamCfg/201"), "Region": "asia", "KitKey": "WC_Kit_05", "BadgeKey": "WC_Badge_05", "NationFlag": "", "Remark": "中国动态池"},
+            {"ID": 202, "NameLcKey": lc.add(lc_key("team", "name", "202"), "东方之鹰", "TeamCfg/202"), "Region": "asia", "KitKey": "WC_Kit_06", "BadgeKey": "WC_Badge_06", "NationFlag": "", "Remark": "中国动态池"},
+            {"ID": 203, "NameLcKey": lc.add(lc_key("team", "name", "203"), "北欧狼", "TeamCfg/203"), "Region": "europe", "KitKey": "WC_Kit_07", "BadgeKey": "WC_Badge_07", "NationFlag": "", "Remark": "联赛对手展示"},
+            {"ID": 204, "NameLcKey": lc.add(lc_key("team", "name", "204"), "阿根廷神鹰", "TeamCfg/204"), "Region": "south_america", "KitKey": "WC_Kit_08", "BadgeKey": "WC_Badge_08", "NationFlag": "", "Remark": "文档合同示例"},
+            {"ID": 205, "NameLcKey": lc.add(lc_key("team", "name", "205"), "桑巴红魔", "TeamCfg/205"), "Region": "south_america", "KitKey": "WC_Kit_09", "BadgeKey": "WC_Badge_09", "NationFlag": "", "Remark": ""},
+            {"ID": 206, "NameLcKey": lc.add(lc_key("team", "name", "206"), "南美风暴", "TeamCfg/206"), "Region": "south_america", "KitKey": "WC_Kit_10", "BadgeKey": "WC_Badge_10", "NationFlag": "", "Remark": ""},
+            {"ID": 207, "NameLcKey": lc.add(lc_key("team", "name", "207"), "潘帕斯之翼", "TeamCfg/207"), "Region": "south_america", "KitKey": "WC_Kit_11", "BadgeKey": "WC_Badge_11", "NationFlag": "", "Remark": ""},
+            {"ID": 208, "NameLcKey": lc.add(lc_key("team", "name", "208"), "高卢雄鸡", "TeamCfg/208"), "Region": "europe", "KitKey": "WC_Kit_12", "BadgeKey": "WC_Badge_12", "NationFlag": "", "Remark": "12队服/队标"},
             *_build_theme_teams(lc),
         ],
     )
@@ -2937,6 +2932,8 @@ def build_workbook(lc: LcRegistry) -> Workbook:
             ("GrantFameLevel", "int", "抽样门槛-知名度等级"),
             ("GrantLifeLevel", "int", "抽样门槛-生活等级"),
             ("GrantScene", "string", "first_sign/league_finish"),
+            ("Body", "string", "球衣款式(客户端展示)"),
+            ("GoalDesc", "string", "目标描述(客户端展示,可由 SeasonGoal 渲染或手填)"),
             ("Remark", "string", "备注"),
         ),
         [
@@ -3027,18 +3024,18 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         "ActvSoccerBetMultiplierCfg",
         c(
             id_col("int", "编号"),
-            ("winRate_int", "int", "胜率万分值(主队;0..10000)"),
-            ("powerRate_int", "int", "战力比万分值(主队/客队;3000..20000)"),
-            ("oddsLeft_int", "int", "主队赔率万分值"),
-            ("oddsRight_int", "int", "客队赔率万分值"),
+            ("WinRate", "int", "左边胜率万分比(0..10000)"),
+            ("PowerRate", "int", "左边玩家和右边玩家战力比万分比(3000..20000)"),
+            ("OddsLeft", "int", "左边赔率万分比"),
+            ("OddsRight", "int", "右边赔率万分比"),
         ),
         [
             {
                 "ID": i + 1,
-                "winRate_int": wr,
-                "powerRate_int": pr,
-                "oddsLeft_int": odds_l,
-                "oddsRight_int": odds_r,
+                "WinRate": wr,
+                "PowerRate": pr,
+                "OddsLeft": odds_l,
+                "OddsRight": odds_r,
             }
             for i, (wr, pr, odds_l, odds_r) in enumerate(BET_MULTIPLIER_GRID)
         ],
@@ -3057,6 +3054,14 @@ def build_workbook(lc: LcRegistry) -> Workbook:
         ),
         BET_STAKE_TIER_ROWS,
     )
+
+    # --- 3.8 淘汰赛结算奖励 / 排行榜 / 回放 / 引导 / 表现状态 ---
+    # 以下六张 sheet 由策划在 xlsx 端直接维护,脚本仅镜像 preview.xlsx 已有值。
+    mirror_sheet_from_preview(wb, "ActvSoccerMatchRewardCfg")
+    mirror_sheet_from_preview(wb, "ActvSoccerReplayCfg")
+    mirror_sheet_from_preview(wb, "ActvSoccerRankCfg")
+    mirror_sheet_from_preview(wb, "ActvSoccerGuideCfg")
+    mirror_sheet_from_preview(wb, "ActvSoccerCharacterStateCfg")
 
     return align_to_latest_activity_soccer_schema(wb)
 
