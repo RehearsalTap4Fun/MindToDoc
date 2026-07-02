@@ -6,10 +6,11 @@
 
 - `SKILL.md`：技能主流程（对齐 `system-design-doc` 定稿规范）
 - `templates/`：主案、模块章、配置表派生、界面标注派生模板
-- `input/`：原始素材
-- `output/`：主功能案、`-配置表结构.md`、`-界面标注.md` 等
-- `output/ui-annotation/assets/`：界面截图与红圈标注图
-- `output/system-design-doc-samples/`：迁移样例（世界杯主题活动）
+- `references/`：跨项目复用的规则细则（配表边界、K1 公共配置表、钉钉同步、审核纪律等）
+- `scripts/`：通用工具（`md2jsonml.py` 钉钉转换、`dingtalk_md_unescape.py` 反转义、`list_tbd.py` 等）
+- `input/`：原始素材（骨架状态，等待新任务放入）
+- `output/`：主功能案、`-配置表结构.md`、`-界面标注.md` 等产出（骨架状态）
+- `examples/<项目名>/`：已完成项目的完整产物存档（input/output/docs/scripts 等），供参考不做修改
 - `docs/superpowers/`：**已归档 (archived)** — 2026-06-01 旧版设计/计划，含已废弃 HTML 原型方案；以根目录 `SKILL.md` 为准
 
 ## 使用流程
@@ -19,13 +20,14 @@
 3. 逐模块写主案规则；配置表字段、界面标注写入派生 md。
 4. 用户提供截图后，走界面标注标准流程（识图 → 红圈 → 审核 → 左图右文）。
 5. 按需同步钉钉；本地 md 为 SSOT。
+6. 项目完成后，把 `input/`、`output/` 下该项目的产物整理进 `examples/<项目名>/` 存档，外层目录恢复为骨架状态，供下一个项目使用。
 
-## 当前样例
+## 已归档的示例项目
 
-- 旧版（只读素材）：`output/2026世界杯主题活动-开发文档.md`
-- 定稿格式：`output/system-design-doc-samples/2026世界杯主题活动.md` 及配置表/界面标注派生
+- `examples/2026世界杯主题活动/`：足球主题活动完整产物 —— 主案/配置表/界面标注、切片编辑器与关卡标签工具链（`output/test-config/`）、专属坐标协议（`references/soccer-coordinate-protocol.md`）、专属校验脚本（`scripts/check_protocol_drift.py` 等）、原型页面、美术/音效需求、钉钉同步中间产物
+- `examples/K1新服大地图重构/`：K1 新服大地图重构的主案、配置表结构、界面标注
 
-## 世界杯测试配置工具
+## 世界杯测试配置工具（示例项目内）
 
 首次运行先安装依赖:
 
@@ -33,15 +35,15 @@
 python3 -m pip install -r requirements-dev.txt
 ```
 
-常用命令:
+常用命令（均在 `examples/2026世界杯主题活动/` 内）:
 
 ```bash
-python3 output/test-config/generate_activity_soccer_test_config.py
-python3 output/test-config/level-tags/apply_level_tags.py
-python3 scripts/check_protocol_drift.py
-python3 scripts/check_preset_consistency.py
-python3 scripts/check_xlsx_drift.py --summary
-python3 -m pytest output/test-config/level-tags/tests -q
+python3 "examples/2026世界杯主题活动/output/test-config/generate_activity_soccer_test_config.py"
+python3 "examples/2026世界杯主题活动/output/test-config/level-tags/apply_level_tags.py"
+python3 "examples/2026世界杯主题活动/scripts/check_protocol_drift.py"
+python3 "examples/2026世界杯主题活动/scripts/check_preset_consistency.py"
+python3 "examples/2026世界杯主题活动/scripts/check_xlsx_drift.py" --summary
+python3 -m pytest "examples/2026世界杯主题活动/output/test-config/level-tags/tests" -q
 ```
 
 ## 协作约定
