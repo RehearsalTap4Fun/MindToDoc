@@ -28,6 +28,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 - `references/dingtalk-sync-reference.md`：钉钉 MCP、`md2jsonml.py`、payload 限制、jsonml/markdown 双路径、补 ind、补表、补图。
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
 
+> **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑：`C:\Project\K1Game\game` 是服务器仓库。 `C:\Project\K1Client\k1_client` 是客户端仓库。
 > **维护说明**：`references/` 与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动同步，保持本技能自包含。
 > **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重——K1 用**功能名前缀**（如 `ActvSoccer_`），X1/X15 用 `LC_<页签>_`；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
 
