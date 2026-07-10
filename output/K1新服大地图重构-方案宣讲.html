@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新服大地图重构 · 方案宣讲</title>
+<style>
+  :root{
+    --bg-deep:#0a0e17;
+    --bg-panel:#111826;
+    --bg-panel-2:#151f30;
+    --line:#233047;
+    --line-soft:#1a2536;
+    --gold:#e8b04b;
+    --gold-soft:#c8934a;
+    --teal:#3fd7c4;
+    --blue:#5b8def;
+    --red:#e0654f;
+    --text-1:#eef2f8;
+    --text-2:#a9b6cc;
+    --text-3:#6d7d99;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 8%, rgba(63,215,196,0.08), transparent 40%),
+      radial-gradient(circle at 85% 0%, rgba(91,141,239,0.10), transparent 45%),
+      var(--bg-deep);
+    color:var(--text-1);
+    font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--teal);}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+  section{padding:88px 0;}
+  h1,h2,h3,h4{margin:0;letter-spacing:0.02em;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13px;color:var(--teal);letter-spacing:0.18em;
+    text-transform:uppercase;margin-bottom:18px;font-weight:600;
+  }
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--teal);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;min-height:92vh;display:flex;flex-direction:column;
+    justify-content:center;overflow:hidden;padding:120px 0 60px;
+  }
+  .hero-grid{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(63,215,196,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(63,215,196,0.06) 1px, transparent 1px);
+    background-size:60px 60px;
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 30%, black 10%, transparent 75%);
+    opacity:0.9;
+  }
+  .hero-glow{
+    position:absolute;top:-10%;left:50%;transform:translateX(-50%);
+    width:900px;height:900px;border-radius:50%;
+    background:radial-gradient(circle, rgba(232,176,75,0.10), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:2;text-align:center;}
+  .hero-tag{
+    display:inline-block;padding:6px 16px;border:1px solid var(--line);
+    border-radius:999px;font-size:13px;color:var(--text-2);
+    background:rgba(21,31,48,0.6);margin-bottom:28px;letter-spacing:0.04em;
+  }
+  .hero-tag b{color:var(--gold);font-weight:600;}
+  .hero h1{
+    font-size:clamp(32px,5vw,56px);font-weight:700;color:var(--text-1);
+    line-height:1.35;margin-bottom:22px;
+  }
+  .hero h1 .accent{color:var(--gold);}
+  .hero p.sub{
+    max-width:640px;margin:0 auto 40px;color:var(--text-2);
+    font-size:17px;
+  }
+  .hero-stats{
+    display:flex;justify-content:center;gap:0;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:rgba(17,24,38,0.7);backdrop-filter:blur(6px);
+    overflow:hidden;max-width:760px;margin:0 auto;
+  }
+  .hero-stat{
+    flex:1;min-width:150px;padding:22px 18px;text-align:center;
+    border-right:1px solid var(--line-soft);
+  }
+  .hero-stat:last-child{border-right:none;}
+  .hero-stat .num{font-size:26px;font-weight:700;color:var(--gold);display:block;}
+  .hero-stat .label{font-size:13px;color:var(--text-3);margin-top:6px;}
+  .scroll-hint{
+    position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+    font-size:12px;color:var(--text-3);letter-spacing:0.1em;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+  }
+  .scroll-hint .line{width:1px;height:26px;background:linear-gradient(var(--text-3),transparent);animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:0.3;}50%{opacity:1;}}
+
+  /* ---------- Section heading ---------- */
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 56px;}
+  .sec-head h2{font-size:clamp(24px,3.2vw,34px);color:var(--text-1);margin-bottom:14px;}
+  .sec-head p{color:var(--text-2);font-size:15.5px;}
+
+  /* ---------- Timeline (21-day) ---------- */
+  .timeline{position:relative;padding:20px 0 10px;}
+  .timeline-track{
+    position:relative;display:flex;justify-content:space-between;
+    padding:0 10px;margin-bottom:0;
+  }
+  .timeline-track::before{
+    content:"";position:absolute;top:17px;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--line),var(--teal),var(--gold));
+    opacity:0.5;
+  }
+  .t-node{position:relative;flex:1;text-align:center;z-index:1;}
+  .t-dot{
+    width:34px;height:34px;border-radius:50%;margin:0 auto 16px;
+    background:var(--bg-panel-2);border:2px solid var(--teal);
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;color:var(--teal);
+  }
+  .t-node.gold .t-dot{border-color:var(--gold);color:var(--gold);}
+  .t-node .t-day{font-size:12px;color:var(--text-3);letter-spacing:0.06em;margin-bottom:4px;}
+  .t-node .t-title{font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:6px;}
+  .t-node .t-desc{font-size:13px;color:var(--text-2);padding:0 6px;}
+
+  /* ---------- Map structure ---------- */
+  .map-visual{
+    display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;
+  }
+  .map-diagram{
+    position:relative;aspect-ratio:1/1;border-radius:20px;
+    background:radial-gradient(circle at 50% 50%, rgba(232,176,75,0.06), transparent 60%), var(--bg-panel);
+    border:1px solid var(--line);overflow:hidden;
+  }
+  .ring{
+    position:absolute;border:1px dashed var(--line);border-radius:50%;
+    top:50%;left:50%;transform:translate(-50%,-50%);
+  }
+  .ring.r1{width:92%;height:92%;border-color:rgba(63,215,196,0.25);}
+  .ring.r2{width:62%;height:62%;border-color:rgba(91,141,239,0.35);}
+  .ring.r3{width:30%;height:30%;border-color:rgba(232,176,75,0.5);}
+  .map-label{
+    position:absolute;font-size:11px;color:var(--text-3);
+    letter-spacing:0.05em;background:var(--bg-deep);padding:2px 6px;border-radius:4px;
+  }
+  .map-corner{
+    position:absolute;width:15%;height:15%;border-radius:50%;
+    background:rgba(63,215,196,0.5);box-shadow:0 0 18px rgba(63,215,196,0.6);
+  }
+  .map-corner.c1{top:6%;left:6%;} .map-corner.c2{top:6%;right:6%;}
+  .map-corner.c3{bottom:6%;left:6%;} .map-corner.c4{bottom:6%;right:6%;}
+  .map-throne{
+    position:absolute;top:50%;left:50%;width:9%;height:9%;
+    transform:translate(-50%,-50%);border-radius:4px;
+    background:var(--gold);box-shadow:0 0 24px rgba(232,176,75,0.7);
+  }
+  .map-nest{
+    position:absolute;border-radius:50%;transform:translate(-50%,-50%);
+    border:1.5px solid rgba(255,255,255,0.35);
+  }
+  .map-nest.lv1{width:2.4%;height:2.4%;background:#3fd7c4;box-shadow:0 0 6px rgba(63,215,196,0.7);}
+  .map-nest.lv2{width:2.7%;height:2.7%;background:#3fc2d0;box-shadow:0 0 7px rgba(63,194,208,0.7);}
+  .map-nest.lv3{width:3.0%;height:3.0%;background:#48a8dd;box-shadow:0 0 8px rgba(72,168,221,0.75);}
+  .map-nest.lv4{width:3.4%;height:3.4%;background:#5b8def;box-shadow:0 0 10px rgba(91,141,239,0.8);}
+  .map-nest.lv5{width:3.8%;height:3.8%;background:#8a6fe8;box-shadow:0 0 12px rgba(138,111,232,0.85);}
+  .map-nest.lv6{width:4.3%;height:4.3%;background:#c85fd6;box-shadow:0 0 16px rgba(200,95,214,0.9);}
+  .nest-scale{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;}
+  .nest-scale .ns-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-3);}
+  .nest-scale .ns-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .map-legend{display:flex;flex-direction:column;gap:20px;}
+  .legend-item{display:flex;gap:14px;align-items:flex-start;}
+  .legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .legend-item h4{font-size:16px;color:var(--text-1);margin-bottom:6px;}
+  .legend-item p{font-size:14px;color:var(--text-2);margin:0;}
+
+  /* ---------- Loop cards ---------- */
+  .loop-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+  .loop-card{
+    background:linear-gradient(160deg, var(--bg-panel-2), var(--bg-panel));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 22px;position:relative;overflow:hidden;
+    transition:transform .25s ease, border-color .25s ease;
+  }
+  .loop-card:hover{transform:translateY(-4px);border-color:var(--teal);}
+  .loop-card .step{
+    font-size:12px;color:var(--text-3);letter-spacing:0.12em;margin-bottom:14px;
+  }
+  .loop-card .icon{
+    width:44px;height:44px;border-radius:10px;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+  }
+  .loop-card h4{font-size:17px;color:var(--text-1);margin-bottom:10px;}
+  .loop-card p{font-size:13.5px;color:var(--text-2);margin:0;}
+  .loop-card .arrow{
+    position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+    color:var(--text-3);font-size:20px;z-index:2;display:none;
+  }
+  .icon-fort{background:rgba(63,215,196,0.15);color:var(--teal);}
+  .icon-nest{background:rgba(91,141,239,0.15);color:var(--blue);}
+  .icon-altar{background:rgba(232,176,75,0.15);color:var(--gold);}
+  .icon-throne{background:rgba(224,101,79,0.15);color:var(--red);}
+
+  /* ---------- Feature rows ---------- */
+  .feature-row{
+    display:grid;grid-template-columns:0.9fr 1.1fr;gap:48px;align-items:center;
+    padding:56px 0;border-top:1px solid var(--line-soft);
+  }
+  .feature-row:first-of-type{border-top:none;}
+  .feature-row.reverse{grid-template-columns:1.1fr 0.9fr;}
+  .feature-row.reverse .f-visual{order:2;}
+  .f-tag{
+    display:inline-block;font-size:12px;color:var(--teal);
+    border:1px solid rgba(63,215,196,0.35);padding:4px 12px;border-radius:999px;
+    margin-bottom:16px;letter-spacing:0.05em;
+  }
+  .f-text h3{font-size:24px;color:var(--text-1);margin-bottom:14px;}
+  .f-text p{color:var(--text-2);font-size:15px;margin-bottom:14px;}
+  .f-list{list-style:none;margin:18px 0 0;padding:0;}
+  .f-list li{
+    display:flex;gap:10px;font-size:14px;color:var(--text-2);
+    padding:9px 0;border-top:1px solid var(--line-soft);
+  }
+  .f-list li:first-child{border-top:none;}
+  .f-list li .dot{color:var(--gold);flex-shrink:0;}
+  .f-visual{
+    background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px;min-height:220px;display:flex;flex-direction:column;justify-content:center;gap:16px;
+  }
+
+  /* fog levels visual */
+  .fog-levels{display:flex;flex-direction:column;gap:14px;}
+  .fog-bar{display:flex;align-items:center;gap:14px;}
+  .fog-bar .fb-label{width:88px;font-size:13px;color:var(--text-2);flex-shrink:0;}
+  .fog-bar .fb-track{flex:1;height:10px;background:var(--line-soft);border-radius:6px;overflow:hidden;}
+  .fog-bar .fb-fill{height:100%;border-radius:6px;}
+  .fog-bar .fb-day{width:46px;text-align:right;font-size:13px;color:var(--gold);font-weight:600;flex-shrink:0;}
+
+  /* mini compare table */
+  .compare-visual{padding:8px;}
+  .compare-row{
+    display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;
+    padding:12px 10px;font-size:13.5px;align-items:center;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .compare-row.head{color:var(--text-3);font-size:12px;letter-spacing:0.05em;}
+  .compare-row .old{color:var(--text-3);text-decoration:line-through;text-decoration-color:rgba(224,101,79,0.5);}
+  .compare-row .new{color:var(--teal);font-weight:500;}
+
+  /* alliance chips */
+  .chip-group{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{
+    font-size:13px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);
+    color:var(--text-2);background:rgba(255,255,255,0.02);
+  }
+  .chip.off{color:var(--text-3);text-decoration:line-through;border-color:var(--line-soft);}
+  .chip.on{color:var(--teal);border-color:rgba(63,215,196,0.4);}
+
+  /* ---------- FAQ ---------- */
+  .faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:1px;}
+  .faq-item{
+    background:var(--bg-panel);border:1px solid var(--line-soft);border-radius:10px;
+    margin-bottom:12px;overflow:hidden;
+  }
+  .faq-q{
+    padding:20px 24px;display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;font-size:15.5px;font-weight:500;color:var(--text-1);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .faq-q .plus{color:var(--teal);font-size:20px;transition:transform .25s ease;flex-shrink:0;margin-left:16px;}
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);}
+  .faq-a{
+    max-height:0;overflow:hidden;transition:max-height .3s ease;
+  }
+  .faq-a-inner{padding:0 24px 20px;color:var(--text-2);font-size:14.5px;}
+  .faq-item.open .faq-a{max-height:240px;}
+
+  /* ---------- Not-doing ---------- */
+  .notdo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  .notdo-item{
+    display:flex;gap:12px;align-items:flex-start;padding:16px 18px;
+    background:rgba(224,101,79,0.05);border:1px solid rgba(224,101,79,0.2);
+    border-radius:10px;font-size:14px;color:var(--text-2);
+  }
+  .notdo-item .x{color:var(--red);font-weight:700;flex-shrink:0;}
+
+  /* ---------- Footer ---------- */
+  footer{
+    text-align:center;padding:60px 0 50px;color:var(--text-3);font-size:13px;
+    border-top:1px solid var(--line-soft);
+  }
+  footer .v{color:var(--gold-soft);}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:860px){
+    section{padding:60px 0;}
+    .hero{min-height:auto;padding:100px 0 50px;}
+    .hero-stats{flex-direction:column;}
+    .hero-stat{border-right:none;border-bottom:1px solid var(--line-soft);}
+    .hero-stat:last-child{border-bottom:none;}
+    .timeline-track{flex-direction:column;gap:28px;align-items:flex-start;padding-left:20px;}
+    .timeline-track::before{top:0;bottom:0;left:16px;right:auto;width:2px;height:auto;}
+    .t-node{display:flex;gap:16px;text-align:left;align-items:flex-start;}
+    .t-dot{margin:0;flex-shrink:0;}
+    .map-visual{grid-template-columns:1fr;}
+    .loop-grid{grid-template-columns:1fr 1fr;}
+    .feature-row,.feature-row.reverse{grid-template-columns:1fr;}
+    .feature-row.reverse .f-visual{order:0;}
+    .compare-row{font-size:12.5px;}
+    .notdo-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:520px){
+    .loop-grid{grid-template-columns:1fr;}
+    .wrap{padding:0 18px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="wrap hero-inner">
+    <span class="hero-tag">K1 · 新服玩法升级　<b>方案宣讲</b></span>
+    <h1>从落地第一天起，<br>就给你一张<span class="accent">看得懂目标</span>的战场</h1>
+    <p class="sub">新服大地图重构，把原本松散的自由扩张，变成一条有节奏、有目标、有终点的 21 天赛季之路——出生即分区，扩张必相邻，迷雾按天开，王座在中心等你。</p>
+
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="num">4</span><span class="label">扇形出生区</span></div>
+      <div class="hero-stat"><span class="num">21<small style="font-size:14px;">天</small></span><span class="label">赛季节奏</span></div>
+      <div class="hero-stat"><span class="num">3</span><span class="label">层迷雾逐步开放</span></div>
+      <div class="hero-stat"><span class="num">1</span><span class="label">王座，终极目标</span></div>
+    </div>
+  </div>
+  <div class="scroll-hint"><span>向下滚动</span><span class="line"></span></div>
+</section>
+
+<!-- ============ 21天节奏 ============ -->
+<section id="timeline">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">赛季节奏</span>
+      <h2>不需要报名等待，D0 直接开始的 21 天赛季</h2>
+      <p>新服进程对标 KVK 三周节奏，但去掉了前置报名和匹配流程——你落地的第一天，赛季就已经开始。</p>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-track">
+        <div class="t-node">
+          <div class="t-dot">D0</div>
+          <div class="t-day">开服当天</div>
+          <div class="t-title">自由选区 · 首战开局</div>
+          <div class="t-desc">4 个扇形区自由落城，加入联盟即可打第一场堡垒战</div>
+        </div>
+        <div class="t-node">
+          <div class="t-dot">D8</div>
+          <div class="t-day">第一阶段</div>
+          <div class="t-title">中间圈开放</div>
+          <div class="t-desc">迷雾第一层揭开，联盟扩张进入正式竞争</div>
+        </div>
+        <div class="t-node">
+          <div class="t-dot">D15</div>
+          <div class="t-day">第二阶段</div>
+          <div class="t-title">中心圈开放</div>
+          <div class="t-desc">高级资源与龙巢争夺全面展开</div>
+        </div>
+        <div class="t-node gold">
+          <div class="t-dot">D21</div>
+          <div class="t-day">赛季高潮</div>
+          <div class="t-title">王座开放</div>
+          <div class="t-desc">本服最强联盟的终极战场正式开启</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 地图结构 ============ -->
+<section id="map" style="background:var(--bg-panel);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">地图结构</span>
+      <h2>一张有战略纵深的地图，而不是无边界的空地</h2>
+      <p>地图从 4 个角的出生区，向中心层层递进——每一步扩张，都能在地图上看见方向。</p>
+    </div>
+
+    <div class="map-visual">
+      <div class="map-diagram">
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div class="map-corner c1"></div>
+        <div class="map-corner c2"></div>
+        <div class="map-corner c3"></div>
+        <div class="map-corner c4"></div>
+        <div class="map-throne"></div>
+
+        <!-- 龙巢：沿 4 个出生区对角连线方向，由外环(Lv1)向内环(Lv6)递进分布；四条放射线避开正十字与王座区域 -->
+        <!-- 方向：左上(西北) -->
+        <div class="map-nest lv1" style="top:16%;left:16%;" title="Lv.1"></div>
+        <div class="map-nest lv2" style="top:26%;left:26%;" title="Lv.2"></div>
+        <div class="map-nest lv3" style="top:34.5%;left:34.5%;" title="Lv.3"></div>
+        <div class="map-nest lv4" style="top:42%;left:42%;" title="Lv.4"></div>
+        <!-- 方向：右上(东北) -->
+        <div class="map-nest lv1" style="top:16%;left:84%;" title="Lv.1"></div>
+        <div class="map-nest lv2" style="top:26%;left:74%;" title="Lv.2"></div>
+        <div class="map-nest lv3" style="top:34.5%;left:65.5%;" title="Lv.3"></div>
+        <div class="map-nest lv5" style="top:42%;left:58%;" title="Lv.5"></div>
+        <!-- 方向：右下(东南) -->
+        <div class="map-nest lv1" style="top:84%;left:84%;" title="Lv.1"></div>
+        <div class="map-nest lv2" style="top:74%;left:74%;" title="Lv.2"></div>
+        <div class="map-nest lv3" style="top:65.5%;left:65.5%;" title="Lv.3"></div>
+        <div class="map-nest lv4" style="top:58%;left:58%;" title="Lv.4"></div>
+        <!-- 方向：左下(西南) -->
+        <div class="map-nest lv1" style="top:84%;left:16%;" title="Lv.1"></div>
+        <div class="map-nest lv2" style="top:74%;left:26%;" title="Lv.2"></div>
+        <div class="map-nest lv3" style="top:65.5%;left:34.5%;" title="Lv.3"></div>
+        <div class="map-nest lv6" style="top:58%;left:42%;" title="Lv.6"></div>
+
+        <div class="map-label" style="top:4%;left:50%;transform:translateX(-50%);">出生区 ×4</div>
+        <div class="map-label" style="top:19%;left:50%;transform:translateX(-50%);">中间圈</div>
+        <div class="map-label" style="top:36%;left:50%;transform:translateX(-50%);">中心圈</div>
+      </div>
+
+      <div class="map-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--teal);box-shadow:0 0 10px rgba(63,215,196,0.6);"></div>
+          <div><h4>4 个扇形出生区</h4><p>分布在地图四角，只负责分流落城和早期低强度 PVE，不代表阵营对立——同服玩家不会因为出生角落不同而变成敌人。</p></div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--blue);box-shadow:0 0 10px rgba(91,141,239,0.6);"></div>
+          <div>
+            <h4>龙巢：外环到内环，1~6 级层层递进</h4>
+            <p>每个出生区推进方向上都均匀分布着由低到高的龙巢，越靠近地图中心等级越高——不管从哪个角落出发，联盟都能沿着自己的方向一路打到高等级龙巢，不存在"起点偏了就没资源"的情况。</p>
+            <div class="nest-scale">
+              <span class="ns-item"><i class="ns-dot" style="background:#3fd7c4;"></i>Lv.1</span>
+              <span class="ns-item"><i class="ns-dot" style="background:#3fc2d0;"></i>Lv.2</span>
+              <span class="ns-item"><i class="ns-dot" style="background:#48a8dd;"></i>Lv.3</span>
+              <span class="ns-item"><i class="ns-dot" style="background:#5b8def;"></i>Lv.4</span>
+              <span class="ns-item"><i class="ns-dot" style="background:#8a6fe8;"></i>Lv.5</span>
+              <span class="ns-item"><i class="ns-dot" style="background:#c85fd6;"></i>Lv.6</span>
+            </div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--gold);box-shadow:0 0 10px rgba(232,176,75,0.7);"></div>
+          <div><h4>中心王座</h4><p>地图正中心的终极目标，D21 迷雾开放后才可见、可攻，属于本服最强联盟的荣耀战场。</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 核心玩法循环 ============ -->
+<section id="loop">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">核心玩法循环</span>
+      <h2>四个目标，串成一条看得见终点的扩张路线</h2>
+      <p>从落地那一刻起，你和联盟要做的事情始终清晰：打下身边的堡垒，向战略要点推进。</p>
+    </div>
+
+    <div class="loop-grid">
+      <div class="loop-card">
+        <div class="step">STEP 01</div>
+        <div class="icon icon-fort">⛨</div>
+        <h4>占领堡垒</h4>
+        <p>从公共的初始共享堡垒出发，打下第一块领地；此后只能沿着已占领的堡垒向相邻方格继续扩张，一步都跳不过。</p>
+      </div>
+      <div class="loop-card">
+        <div class="step">STEP 02</div>
+        <div class="icon icon-altar">✦</div>
+        <h4>收获圣坛</h4>
+        <p>圣坛藏在特定堡垒内部，不需要额外攻打——打下带圣坛的堡垒，加成自动到手。</p>
+      </div>
+      <div class="loop-card">
+        <div class="step">STEP 03</div>
+        <div class="icon icon-nest">🐉</div>
+        <h4>争夺龙巢</h4>
+        <p>推进到堡垒交叉点时，任何占有相邻堡垒的联盟都能出手争夺龙巢——归属独立于堡垒，谁都有机会翻盘。</p>
+      </div>
+      <div class="loop-card">
+        <div class="step">STEP 04</div>
+        <div class="icon icon-throne">♛</div>
+        <h4>问鼎王座</h4>
+        <p>D21 迷雾散去，地图中心的王座正式开放，联盟的所有积累都在这里迎来赛季高潮。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 特性详解 · 堡垒占领规则 ============ -->
+<section id="rules" style="background:var(--bg-panel);border-top:1px solid var(--line-soft);">
+  <div class="wrap">
+
+    <div class="feature-row">
+      <div class="f-text">
+        <span class="f-tag">扩张方式</span>
+        <h3>不再是无限蔓延，而是一步一个脚印的相邻扩张</h3>
+        <p>过去联盟靠建造方尖碑就能凭空扩张领地；现在，联盟领地由已占领的堡垒方格集合决定，只能向东南西北四个相邻方向推进。</p>
+        <ul class="f-list">
+          <li><span class="dot">●</span>没有堡垒的新联盟，可从公共的「初始共享堡垒」旁打响第一战，不用等、不用求人带</li>
+          <li><span class="dot">●</span>打下的堡垒有一段免战保护期，新生联盟不会被立刻反打</li>
+          <li><span class="dot">●</span>就算领地被切断形成孤立的飞地，归属和加成依然保留，还能继续当扩张起点</li>
+        </ul>
+      </div>
+      <div class="f-visual">
+        <div class="compare-visual">
+          <div class="compare-row head"><span>扩张方式</span><span>旧规则</span><span>新规则</span></div>
+          <div class="compare-row"><span>领地获取</span><span class="old">建造方尖碑</span><span class="new">占领相邻堡垒</span></div>
+          <div class="compare-row"><span>扩张范围</span><span class="old">自由落点</span><span class="new">仅四邻方向</span></div>
+          <div class="compare-row"><span>新联盟起步</span><span class="old">需先立足</span><span class="new">共享堡垒直接开战</span></div>
+          <div class="compare-row"><span>领地断连</span><span class="old">—</span><span class="new">飞地归属不变</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="f-text">
+        <span class="f-tag">迷雾机制</span>
+        <h3>全服共享的迷雾，把地图变成一部倒计时</h3>
+        <p>迷雾不是你个人的视野迷雾，而是整个服务器共享的进度状态——所有人看到的地图开放程度完全一致，任何人都无法靠付费提前解锁。</p>
+        <ul class="f-list">
+          <li><span class="dot">●</span>出生区与初始堡垒始终可见，新手落地无门槛</li>
+          <li><span class="dot">●</span>迷雾覆盖的区域部队无法进入，只能等它按进度自然揭开</li>
+          <li><span class="dot">●</span>迷雾开放依据服务器运行时间，节奏对全服玩家公平一致</li>
+        </ul>
+      </div>
+      <div class="f-visual">
+        <div class="fog-levels">
+          <div class="fog-bar"><span class="fb-label">出生区</span><div class="fb-track"><div class="fb-fill" style="width:100%;background:var(--teal);"></div></div><span class="fb-day">D0</span></div>
+          <div class="fog-bar"><span class="fb-label">中间圈</span><div class="fb-track"><div class="fb-fill" style="width:38%;background:var(--blue);"></div></div><span class="fb-day">D8</span></div>
+          <div class="fog-bar"><span class="fb-label">中心圈</span><div class="fb-track"><div class="fb-fill" style="width:71%;background:var(--blue);"></div></div><span class="fb-day">D15</span></div>
+          <div class="fog-bar"><span class="fb-label">王座</span><div class="fb-track"><div class="fb-fill" style="width:100%;background:var(--gold);"></div></div><span class="fb-day">D21</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="f-text">
+        <span class="f-tag">联盟体验</span>
+        <h3>联盟的“魂”不变，只是扩张的“手”换了一套动作</h3>
+        <p>报名、退出、弹劾、盟主竞选、联盟商店、联盟科技主干等你熟悉的联盟玩法完全不变；变化只发生在领地扩张这一件事上。</p>
+        <div class="chip-group" style="margin-top:18px;">
+          <span class="chip off">方尖碑建造</span>
+          <span class="chip off">中心堡垒</span>
+          <span class="chip off">远征堡垒</span>
+          <span class="chip on">堡垒占领指令</span>
+          <span class="chip on">龙巢占领指令</span>
+          <span class="chip on">火龙巢占领指令</span>
+        </div>
+      </div>
+      <div class="f-visual">
+        <ul class="f-list" style="margin:0;">
+          <li><span class="dot">●</span>联盟解散后，堡垒进入短暂中立过渡期，不会立刻被瓜分</li>
+          <li><span class="dot">●</span>退盟不影响原联盟已占领的堡垒、龙巢、圣坛归属</li>
+          <li><span class="dot">●</span>加入新联盟后，跟随新联盟当前的领地权限，不继承个人历史战功</li>
+          <li><span class="dot">●</span>联盟新增两条科技分支：堡垒占领上限、龙巢占领上限，扩张越强也需要科技支撑</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ KVK 衔接 ============ -->
+<section id="kvk">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">与 KVK 的关系</span>
+      <h2>提前熟悉打法，为将来参战 KVK 打好基础</h2>
+      <p>新服地图借用了 K1 KVK 里大家熟悉的方格、堡垒、王座结构，但它本质仍是原服玩法——不引入跨服匹配、天气、女神等完整 KVK 机制。</p>
+    </div>
+
+    <div class="notdo-grid" style="max-width:760px;margin:0 auto;">
+      <div class="notdo-item"><span class="x">✕</span>报名、进入、回归 KVK 的规则完全不变</div>
+      <div class="notdo-item"><span class="x">✕</span>参战 KVK 期间，原服的堡垒、龙巢、圣坛归属会保留，不会被清空</div>
+      <div class="notdo-item"><span class="x">✕</span>原服地图不会因为你去打 KVK 而暂停，迷雾和堡垒争夺照常进行</div>
+      <div class="notdo-item"><span class="x">✕</span>回归原服后看到的是服务器当前最新状态，不会给你“时间倒流”</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 本期不做的事 ============ -->
+<section id="scope" style="background:var(--bg-panel);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">边界说明</span>
+      <h2>这次升级改的是什么，没碰的是什么</h2>
+    </div>
+    <div class="notdo-grid" style="max-width:760px;margin:0 auto;">
+      <div class="notdo-item"><span class="x">✕</span>不改动 KVK 玩法本身</div>
+      <div class="notdo-item"><span class="x">✕</span>不改造老服的大地图</div>
+      <div class="notdo-item"><span class="x">✕</span>不改联盟主干规则（报名/弹劾/机器人/盟主竞选等）</div>
+      <div class="notdo-item"><span class="x">✕</span>不改动商业化模型本身</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">常见问题</span>
+      <h2>你可能会关心的几件事</h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q"><span>老服会同步改成这种地图吗？</span><span class="plus">+</span></div>
+        <div class="faq-a"><div class="faq-a-inner">不会。本次重构仅适用于新开的服务器，老服继续保持原有的大地图形态，不迁移、不兼容新地图规则。</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>出生的扇形区会不会变成四个互相敌对的阵营？</span><span class="plus">+</span></div>
+        <div class="faq-a"><div class="faq-a-inner">不会。扇形区只用来分流出生位置和早期空间分布，不代表阵营划分，同服玩家之间不会因为出生角落不同而变成敌对关系。</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>新联盟起步会不会特别难，抢不到地？</span><span class="plus">+</span></div>
+        <div class="faq-a"><div class="faq-a-inner">不会。每个出生区都配有「初始共享堡垒」作为公共起点，任何联盟只要占领堡垒数为 0，都能在共享堡垒旁打响第一战，且首个占领的堡垒会有免战保护期。</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>迷雾能靠付费提前打开吗？</span><span class="plus">+</span></div>
+        <div class="faq-a"><div class="faq-a-inner">不能。迷雾是全服共享的进度状态，任何个人付费行为都不允许提前解锁，保证所有玩家看到的地图节奏是一致的。</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>联盟解散了，占的地怎么办？</span><span class="plus">+</span></div>
+        <div class="faq-a"><div class="faq-a-inner">联盟解散后，堡垒会在一段配置时间后转为中立，重新开放给其他联盟争夺；圣坛跟随所在堡垒一起变化，龙巢则按失去相邻堡垒的规则处理。</div></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q"><span>去打 KVK 会不会让原服的地跟着被抢光？</span><span class="plus">+</span></div>
+        <div class="faq-a"><div class="faq-a-inner">参战期间原服普通堡垒的占领耗时会按倍率延长，降低留守玩家被快速翻盘的压力；但原服地图不会被冻结，仍会正常推进。</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    K1 新服大地图重构 · 方案宣讲页　|　依据功能策划案 <span class="v">v1.3</span> 整理　|　面向用户视角，具体数值以正式上线为准
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.faq-item').forEach(function(item){
+  item.querySelector('.faq-q').addEventListener('click', function(){
+    var isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(function(o){ if(o!==item) o.classList.remove('open'); });
+    item.classList.toggle('open', !isOpen);
+  });
+});
+</script>
+
+</body>
+</html>
