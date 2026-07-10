@@ -296,6 +296,33 @@
   }
   footer .v{color:var(--gold-soft);}
 
+  /* ---------- Discuss appendix (D23 data reference) ---------- */
+  .discuss-sec{
+    background:#f4f5f7;color:#1c2230;border-top:3px solid #cbd2e0;
+  }
+  .discuss-head{max-width:720px;margin:0 auto 40px;text-align:center;}
+  .discuss-tag{
+    display:inline-block;font-size:12px;letter-spacing:0.14em;color:#6b5bd6;
+    border:1px solid #cfc9f0;background:#efecfc;padding:5px 14px;border-radius:999px;
+    margin-bottom:16px;text-transform:uppercase;
+  }
+  .discuss-head h2{font-size:24px;color:#1c2230;margin-bottom:12px;}
+  .discuss-head p{font-size:13.5px;color:#5b6478;line-height:1.75;}
+  .discuss-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+  .discuss-card{
+    background:#ffffff;border:1px solid #dde1ea;border-radius:12px;
+    padding:22px 24px;box-shadow:0 1px 2px rgba(20,26,40,0.04);
+  }
+  .discuss-card h4{font-size:15px;color:#2a3350;margin-bottom:10px;}
+  .discuss-card p{font-size:13.5px;color:#4b5468;margin:0;line-height:1.75;}
+  .discuss-card strong{color:#5b4bc4;font-weight:600;}
+  .discuss-note{
+    max-width:820px;margin:26px auto 0;padding:18px 22px;
+    background:#eef0ff;border:1px solid #d4d8f5;border-radius:10px;
+    font-size:13.5px;color:#3c4360;line-height:1.8;
+  }
+  .discuss-note strong{color:#2a3350;}
+
   /* ---------- Responsive ---------- */
   @media (max-width:860px){
     section{padding:60px 0;}
@@ -313,6 +340,7 @@
     .feature-row.reverse .f-visual{order:0;}
     .compare-row{font-size:12.5px;}
     .notdo-grid{grid-template-columns:1fr;}
+    .discuss-grid{grid-template-columns:1fr;}
   }
   @media (max-width:520px){
     .loop-grid{grid-template-columns:1fr;}
@@ -636,6 +664,44 @@
         <div class="faq-q"><span>去打 KVK 会不会让原服的地跟着被抢光？</span><span class="plus">+</span></div>
         <div class="faq-a"><div class="faq-a-inner">参战期间原服普通堡垒的占领耗时会按倍率延长，降低留守玩家被快速翻盘的压力；但原服地图不会被冻结，仍会正常推进。</div></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 附：D23 新地图数据参考（供讨论，非宣讲正文） ============ -->
+<section id="discuss" class="discuss-sec">
+  <div class="wrap">
+    <div class="discuss-head">
+      <span class="discuss-tag">附录 · 供讨论</span>
+      <h2>参考：D23 项目新地图上线后的数据结论</h2>
+      <p>以下内容整理自《D23 新地图回归 vs 老地图：付费成长系数拆解》（数据分析部，2026-07-02，内部机密），
+      与本宣讲页正文无关，附在此处仅供 K1 新服大地图重构方案讨论时参考对照。原始报告对比的是
+      D23 项目新地图首批 27 服（4/7~5/28 开服）与紧邻的 27 个老地图服，口径为整体累计付费，非个体玩家均值。</p>
+    </div>
+
+    <div class="discuss-grid">
+      <div class="discuss-card">
+        <h4>01　KVK 延后是最大的付费贡献点</h4>
+        <p>D23 新地图通过<strong>联盟准入条件收紧（G4）</strong>与<strong>终身卡推迟到 D15（G7）</strong>两个机制变量，把 KVK 开打时间从 D28 主动推迟到 D43，本服周期拉长 15 天。这让原本会在 D28 后流失去跨服的高 R 玩家继续留在本服付费——D30~D60 段付费成长系数因此涨了 8.8%，是六段里涨幅最大的一段，且经同期同渠道复核确认是机制效应而非投放噪声。</p>
+      </div>
+      <div class="discuss-card">
+        <h4>02　本服玩法节奏调整本身可独立起效</h4>
+        <p>剥离广告素材换新的干扰后，D23 新地图在 D14~D28 阶段的<strong>联盟对决条件、艺人轮换节奏、巡演 BattlePass</strong> 等玩法参数调整，能独立抬升付费次数留存 1.5~2.9 个百分点（D14/D21/D28 三个时点）。说明地图机制本身的节奏设计，能在不依赖买量/素材的情况下产生真实留存增量。</p>
+      </div>
+      <div class="discuss-card">
+        <h4>03　提高联盟门槛是"双刃剑"</h4>
+        <p>D23 项目在新地图期内提高了联盟创建门槛（联盟更少更集中）。同渠道复核后：<strong>高 R 玩家（$100~$1000）留存明显提升</strong>（D14/D21/D28 各高 4~6 个百分点），但<strong>中小 R 玩家留存反而下降</strong>（低 1~3 个百分点）。核心玩家体验因"联盟更少更强"而改善，边缘玩家进盟门槛变高、体验受损——这与 K1 新服重构中"联盟科技占领上限""首战规则"等机制在保护核心玩家扩张效率的同时，也需要关注对新/弱联盟的门槛效应，是同类设计取舍。</p>
+      </div>
+      <div class="discuss-card">
+        <h4>04　归因方法论提示</h4>
+        <p>报告反复强调：表面数据差异中，很大一部分（如联盟门槛调整前后对比里的 +115% 人均付费）实际来自<strong>同期投放结构切换</strong>，剥离渠道/素材因素后机制本身的真实效应通常小得多（如留存差距由 +48% 收窄到 +5.3%）。K1 新服大地图重构灰度评估时，同样需要控制投放结构、对比同 cohort，避免把买量效应误记为地图机制效应——这与本方案《灰度观测指标》章节的思路一致，可作为具体执行时的方法论参照。</p>
+      </div>
+    </div>
+
+    <div class="discuss-note">
+      <strong>与 K1 大地图调整相关的讨论方向：</strong>
+      是否需要在赛季节奏（D8/D15/D21）中考虑类似"主动延后 KVK 窗口"的机制，进一步拉长本服高价值玩家的留存周期；
+      联盟科技上限、首战免战等门槛类设计是否也会出现"核心玩家受益、边缘/新联盟受损"的分化，需要在灰度指标中拆分付费档/联盟规模来观察，而不仅看整体均值。
     </div>
   </div>
 </section>
