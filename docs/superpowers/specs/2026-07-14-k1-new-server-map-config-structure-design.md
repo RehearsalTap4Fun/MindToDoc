@@ -27,9 +27,10 @@
 
 ### 格子与战略建筑
 
-- `UnionWarAreaCfg`：作为新服地图堡垒格子的主配置，承载格子 ID、圈层/等级、中心坐标、建筑坐标和建筑配置引用；补充新服模板、`D2NpcZoneCfg` 区域引用、格子序号、堡垒类别、初始共享标记、是否可占领及附属圣坛引用等必要字段。
+- `UnionWarAreaCfg`：作为新服地图堡垒格子的主配置，承载格子 ID、圈层/等级、中心坐标、建筑坐标和系统堡垒配置引用；补充新服模板、`D2NpcZoneCfg` 区域引用、格子序号、堡垒类别、初始共享标记及是否可占领等必要字段。
+- `RandomMapUnitCfg`：继续承载龙巢、圣坛和王座的独立点位，通过 `MapSizeCfg.RandomUnit` 选择新服专用数据集；扩展区域、所在格子和相邻格子引用，不新增平行点位表。
 - `UnionTerritoryCfg`：继续承载联盟自建要塞、旗帜和联盟祭坛。新服模板关闭自建入口，不把系统堡垒格子改造成该表的新对象。
-- `UnionWarBuildingCfg`：复用系统堡垒、龙巢、小祭坛等固定战略建筑的占领、和平期、守军、产出和属性规则；新服地图通过 `UnionWarAreaCfg.BuildingID` 及点位关系引用。
+- `UnionWarBuildingCfg`：复用系统堡垒、龙巢、小祭坛等固定战略建筑的占领、和平期、守军、产出和属性规则；系统堡垒由 `UnionWarAreaCfg.BuildingID` 引用，龙巢和圣坛由 `RandomMapUnitCfg.BuildingID` 引用。
 - `UnionWarBuildingPropertyCfg`：继续承载固定战略建筑属性加成。
 - `KingWarBuildingCfg`：继续承载王座与瞭望塔规则、坐标和属性，不新增 `ThronePoint` 逻辑页签。
 
@@ -61,8 +62,8 @@
 正式派生文档按以下顺序重写：
 
 1. 配置改造总览：列出复用、扩展、新增、工具产出四类配置。
-2. 依赖链：说明 `MapTypeCfg → NavMesh` 与 `MapTypeCfg → D2NpcZoneCfg → D2NpcBandCfg` 两条主链，以及 `UnionWarAreaCfg → UnionWarBuildingCfg / KingWarBuildingCfg` 的建筑引用。
-3. 现有表扩展：逐表给出保留字段、建议新增字段、使用端和填表约束。
+2. 依赖链：说明 `MapTypeCfg → NavMesh` 与 `MapTypeCfg → D2NpcZoneCfg → D2NpcBandCfg` 两条主链，以及 `UnionWarAreaCfg → UnionWarBuildingCfg`、`RandomMapUnitCfg → UnionWarBuildingCfg / KingWarBuildingCfg` 的建筑引用。
+3. 现有表扩展：逐表给出保留字段、建议新增字段、使用端和填表约束，包含 `RandomMapUnitCfg` 的独立点位关系。
 4. 新增表：完整列出 `FortressAdjacencyCfg`、`FogLayerCfg` 的字段结构。
 5. 外部依赖：列出联盟科技、任务、成就、排行、多语言和地图工具产物，但不虚构字段。
 6. 填表与导表自检：覆盖模板隔离、外键有效性、四邻拓扑、出生区、迷雾时序、建筑类型和三端读取范围。
@@ -73,5 +74,6 @@
 - 每项新服地图需求都能映射到现有正式表或两张新增表之一。
 - 明确 NavMesh 才是地图实际宽高和通行数据来源，`MapSizeCfg` 不越权。
 - 明确系统堡垒、龙巢、小祭坛与王座继续复用现有对象配置。
+- 明确龙巢、圣坛和王座点位复用 `RandomMapUnitCfg`，并使用新服专用数据集隔离旧服/KVK。
 - 新增字段均说明所属正式表、用途、类型、读取端和新旧模板隔离方式。
 - 不写入存档字段、协议字段或运行时状态。
