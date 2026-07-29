@@ -18,6 +18,7 @@ examples/*/output/dingtalk-source/
 
 # 本地 diff/调试临时目录
 .diff-tmp/
+.worktrees/
 
 # 测试配置生成失败时的备用产物
 examples/*/output/test-config/ActivitySoccer_preview.generated.xlsx
