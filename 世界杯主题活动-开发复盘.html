@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026世界杯主题活动 · 开发复盘</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#161a22;
+    --panel-2:#1c212b;
+    --border:#2a3040;
+    --text:#e7eaf0;
+    --text-dim:#9aa4b8;
+    --brand:#4fd1c5;
+    --brand-2:#63b3ed;
+    --warn:#f6ad55;
+    --danger:#fc8181;
+    --ok:#68d391;
+    --p0:#fc8181;
+    --p1:#f6ad55;
+    --radius:12px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#0b0d11,#0f1115 400px);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.65;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 120px;}
+  header.hero{
+    padding:56px 0 40px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:40px;
+  }
+  header.hero .tag{
+    display:inline-block;
+    font-size:13px;
+    color:var(--brand);
+    background:rgba(79,209,197,.12);
+    border:1px solid rgba(79,209,197,.35);
+    border-radius:20px;
+    padding:4px 14px;
+    margin-bottom:18px;
+    letter-spacing:.5px;
+  }
+  header.hero h1{
+    font-size:34px;
+    margin:0 0 12px;
+    font-weight:700;
+    letter-spacing:.5px;
+  }
+  header.hero p.sub{
+    color:var(--text-dim);
+    font-size:16px;
+    max-width:720px;
+    margin:0;
+  }
+  .meta-row{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    margin-top:28px;
+  }
+  .meta-item{color:var(--text-dim);font-size:13px;}
+  .meta-item b{color:var(--text);font-weight:600;display:block;font-size:20px;margin-bottom:2px;}
+
+  nav.toc{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:48px;
+    position:sticky;
+    top:0;
+    background:rgba(15,17,21,.92);
+    backdrop-filter:blur(6px);
+    padding:12px 0;
+    z-index:10;
+    border-bottom:1px solid var(--border);
+  }
+  nav.toc a{
+    color:var(--text-dim);
+    text-decoration:none;
+    font-size:13px;
+    padding:6px 12px;
+    border-radius:8px;
+    border:1px solid transparent;
+    transition:.15s;
+  }
+  nav.toc a:hover{color:var(--text);background:var(--panel-2);border-color:var(--border);}
+
+  section{margin-bottom:64px;}
+  section h2{
+    font-size:22px;
+    margin:0 0 6px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  section h2 .num{
+    color:var(--brand);
+    font-family:"SF Mono",Consolas,monospace;
+    font-size:15px;
+  }
+  section .lead{color:var(--text-dim);font-size:14px;margin:0 0 24px;max-width:760px;}
+  h3{font-size:17px;margin:28px 0 12px;color:var(--text);}
+  h3.sub-warn{color:var(--warn);}
+
+  p{color:#c7ccd8;}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:22px 24px;
+    margin-bottom:16px;
+  }
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    text-align:left;
+  }
+  .stat .n{font-size:28px;font-weight:700;color:var(--brand);font-family:"SF Mono",Consolas,monospace;}
+  .stat .l{font-size:13px;color:var(--text-dim);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:16px 0;}
+  table caption{text-align:left;color:var(--text-dim);font-size:12px;margin-bottom:6px;}
+  th,td{border-bottom:1px solid var(--border);padding:9px 10px;text-align:left;vertical-align:top;}
+  th{color:var(--text-dim);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px;}
+  tr:hover td{background:rgba(255,255,255,.02);}
+  td.mono, .mono{font-family:"SF Mono",Consolas,monospace;font-size:12.5px;color:var(--brand-2);}
+
+  .badge{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11.5px;font-weight:600;letter-spacing:.3px;}
+  .badge.p0{background:rgba(252,129,129,.15);color:var(--p0);}
+  .badge.p1{background:rgba(246,173,85,.15);color:var(--p1);}
+  .badge.done{background:rgba(104,211,145,.15);color:var(--ok);}
+  .badge.new{background:rgba(99,179,237,.15);color:var(--brand-2);}
+  .badge.client{background:rgba(99,179,237,.15);color:var(--brand-2);}
+  .badge.server{background:rgba(246,173,85,.15);color:var(--warn);}
+  .badge.config{background:rgba(159,122,234,.15);color:#b794f4;}
+
+  .timeline{position:relative;margin-left:8px;padding-left:28px;border-left:2px solid var(--border);}
+  .tl-item{position:relative;margin-bottom:22px;}
+  .tl-item::before{
+    content:"";
+    position:absolute;left:-34px;top:4px;
+    width:11px;height:11px;border-radius:50%;
+    background:var(--brand);
+    border:2px solid var(--bg);
+  }
+  .tl-item .tl-date{font-family:"SF Mono",Consolas,monospace;color:var(--brand);font-size:13px;font-weight:600;}
+  .tl-item .tl-title{font-weight:600;margin:2px 0 4px;}
+  .tl-item .tl-desc{color:var(--text-dim);font-size:13.5px;}
+  .tl-item.flag::before{background:var(--danger);}
+  .tl-item.flag .tl-date{color:var(--danger);}
+
+  .quote{
+    border-left:3px solid var(--brand);
+    padding:4px 18px;
+    color:#c7ccd8;
+    font-size:14px;
+    background:var(--panel-2);
+    border-radius:0 8px 8px 0;
+    margin:14px 0;
+  }
+  .quote code{color:var(--brand-2);}
+
+  .commit-list{list-style:none;margin:0;padding:0;}
+  .commit-list li{
+    display:grid;
+    grid-template-columns:88px 90px 1fr;
+    gap:10px;
+    padding:7px 0;
+    border-bottom:1px dashed var(--border);
+    font-size:13px;
+  }
+  .commit-list li:last-child{border-bottom:none;}
+  .commit-list .c-date{font-family:"SF Mono",Consolas,monospace;color:var(--text-dim);}
+  .commit-list .c-author{color:var(--brand-2);font-weight:600;}
+  .commit-list .c-msg{color:#c7ccd8;}
+  .commit-list .c-msg .mark{color:var(--warn);}
+
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;}
+  .bar-row .b-label{width:150px;flex-shrink:0;color:var(--text-dim);}
+  .bar-track{flex:1;background:var(--panel-2);border-radius:6px;height:20px;position:relative;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--brand),var(--brand-2));}
+  .bar-row .b-val{width:46px;text-align:right;color:var(--text);font-family:"SF Mono",Consolas,monospace;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:760px){.two-col{grid-template-columns:1fr;} .commit-list li{grid-template-columns:70px 1fr;} .commit-list .c-author{grid-column:2;order:1;} }
+
+  .verdict{
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin:14px 0;
+    border:1px solid var(--border);
+  }
+  .verdict.root{background:rgba(252,129,129,.06);border-color:rgba(252,129,129,.3);}
+  .verdict.root .v-title{color:var(--danger);}
+  .verdict .v-title{font-weight:700;margin-bottom:8px;font-size:15px;}
+
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0;}
+  .pill{
+    background:var(--panel-2);border:1px solid var(--border);
+    padding:4px 12px;border-radius:20px;font-size:12.5px;color:var(--text-dim);
+  }
+
+  footer{
+    border-top:1px solid var(--border);
+    margin-top:60px;
+    padding-top:24px;
+    color:var(--text-dim);
+    font-size:12.5px;
+  }
+
+  .cause-effect{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:10px 0;}
+  .cause-effect .arrow{color:var(--text-dim);font-size:20px;}
+  .ce-box{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;}
+  .ce-box.cause{border-left:3px solid var(--warn);}
+  .ce-box.effect{border-left:3px solid var(--danger);}
+  @media (max-width:640px){.cause-effect{grid-template-columns:1fr;} .cause-effect .arrow{transform:rotate(90deg);text-align:center;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="tag">项目复盘 · CLIENT / SERVER / CONFIG / QA 四源交叉分析</span>
+    <h1>2026世界杯主题活动 · 开发复盘</h1>
+    <p class="sub">世界杯期间限时主题活动：「足球切片小游戏 + 球星生涯养成 + 配套活动」三层结构。本复盘交叉整合钉钉需求文档版本演进、236 条验收反馈、以及客户端 / 服务端 / 配置端三个代码仓库的完整提交历史，还原从立项到收尾的真实开发过程与关键坑点。</p>
+    <div class="meta-row">
+      <div class="meta-item"><b>2026-06-09 → 07-03</b>开发周期跨度</div>
+      <div class="meta-item"><b>604+</b>客户端相关提交</div>
+      <div class="meta-item"><b>236</b>验收反馈条目</div>
+      <div class="meta-item"><b>3</b>端仓库（client / game / dataconfig）</div>
+      <div class="meta-item"><b>5</b>版本需求文档迭代</div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#overview">01 概览</a>
+    <a href="#requirement">02 需求演进</a>
+    <a href="#timeline">03 三端开发时间线</a>
+    <a href="#rework">04 核心返工分析</a>
+    <a href="#feedback">05 验收反馈画像</a>
+    <a href="#crosscheck">06 三源交叉验证</a>
+    <a href="#rootcause">07 根因与结论</a>
+    <a href="#actions">08 改进建议</a>
+  </nav>
+
+  <!-- 01 概览 -->
+  <section id="overview">
+    <h2><span class="num">01</span> 项目概览</h2>
+    <p class="lead">世界杯活动是一次跨客户端 / 服务端 / 配置端 / 美术 / TA 多工种协同的限时活动开发，核心玩法为原创的"切片式"足球操作引擎（划线 / 弹弓两种模式），外层包裹球星养成与淘汰赛竞猜系统。</p>
+
+    <div class="card-grid">
+      <div class="stat"><div class="n">343</div><div class="l">客户端提交（hesen 主导，关卡/AI/框架）</div></div>
+      <div class="stat"><div class="n">163</div><div class="l">客户端提交（wenchao 主导，切片操作手感）</div></div>
+      <div class="stat"><div class="n">195</div><div class="l">客户端提交（sheqinglong 主导，UI/淘汰赛）</div></div>
+      <div class="stat"><div class="n">40</div><div class="l">服务端提交（lixianglong 主导，养成/反作弊）</div></div>
+      <div class="stat"><div class="n">122</div><div class="l">配置端提交（jiangzhenyu 主导，占比 87%）</div></div>
+      <div class="stat"><div class="n">236</div><div class="l">验收反馈条目，P0 占比 86%</div></div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-top:0;">三端分工速览</h3>
+      <table>
+        <tr><th>端</th><th>仓库</th><th>核心任务号</th><th>主要负责人</th><th>职责范围</th></tr>
+        <tr><td><span class="badge client">客户端</span></td><td class="mono">k1_client</td><td class="mono">NK-7658 / 7464 / 7428 / 7887</td><td>hesen / wenchao / sheqinglong / qinkanghao</td><td>关卡状态机、AI、切片操作引擎、UI、淘汰赛、竞猜</td></tr>
+        <tr><td><span class="badge server">服务端</span></td><td class="mono">game</td><td class="mono">NK-7429 / 7890</td><td>lixianglong / zhangdi</td><td>养成存档、反作弊校验、排行榜、淘汰赛与竞猜后端逻辑</td></tr>
+        <tr><td><span class="badge config">配置端</span></td><td class="mono">dataconfig</td><td class="mono">NK-7427 / 7430</td><td>jiangzhenyu / caozhongtian</td><td>全量策划配置表、数值、引导步骤、本地化占位</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 02 需求演进 -->
+  <section id="requirement">
+    <h2><span class="num">02</span> 需求文档版本演进</h2>
+    <p class="lead">需求文档在开发过程中经历了 5 次版本迭代，其中 <b>v1.3（核心操作规则定案）发生在 06-17</b>，而客户端切片代码从 06-09 就已经开始编写——需求定案晚于代码启动 8 天，是后续核心手感返工的直接源头。</p>
+
+    <table>
+      <caption>钉钉需求文档《2026世界杯主题活动》变更记录</caption>
+      <tr><th>版本</th><th>日期</th><th>变更类型</th><th>内容</th></tr>
+      <tr><td class="mono">v0.9</td><td class="mono">06-11</td><td><span class="badge new">修订</span></td><td>养成双线许可奖励 OR 生效等业务规则更新</td></tr>
+      <tr><td class="mono">v1.0</td><td class="mono">06-15</td><td><span class="badge new">迁移</span></td><td>自 MindToDoc 开发文档迁移为正式功能策划案</td></tr>
+      <tr><td class="mono">v1.1</td><td class="mono">06-15</td><td><span class="badge new">派生</span></td><td>界面原型拆出为独立《界面标注》文档</td></tr>
+      <tr><td class="mono">v1.2</td><td class="mono">06-16</td><td><span class="badge new">规范</span></td><td>清理失效编号引用、字段 schema 下沉给程序、数值统一改为"由配置表定义"</td></tr>
+      <tr><td class="mono">v1.3</td><td class="mono"><b style="color:var(--danger)">06-17</b></td><td><span class="badge p0">核心定案</span></td><td>切片操作模式最终落地：取消"整关锁定"改为"切片默认模式 + 沿用上一切片"；补充相机粗瞄、力度基准动态计算、起手区扩大等细节</td></tr>
+    </table>
+
+    <div class="verdict root">
+      <div class="v-title">⚠ 关键时间差</div>
+      <p style="margin:0;">客户端 <span class="mono">wenchao</span> 于 <b>06-09</b> 提交第一版切片核心代码（<span class="mono">提交切片相关代码 处理一些射门和传球的逻辑</span>），而操作模式的核心规则（默认模式覆盖逻辑、守门切片独立 Performer、带球调整算法）直到 <b>06-17</b> 才在需求文档 v1.3 中真正定案 —— 中间 <b>8 天</b>里代码是在需求未完全冻结的情况下持续推进的，为后续 3 周的反复重构埋下直接原因。</p>
+    </div>
+  </section>
+
+  <!-- 03 时间线 -->
+  <section id="timeline">
+    <h2><span class="num">03</span> 三端开发时间线</h2>
+    <p class="lead">按周还原客户端 / 服务端 / 配置端的关键节点，标注赶工高峰与异常事件。</p>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-date">06-09 ~ 06-13　第一周</div>
+        <div class="tl-title">切片操作引擎起步 · 框架搭建</div>
+        <div class="tl-desc">wenchao 提交首版切片代码（传射逻辑对象化重构）；hesen 搭建客户端框架并接入切片；配置端 jiangzhenyu 同步新增测试配置、字段迭代。此时需求文档仍在 v0.9，核心操作规则尚未冻结。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">06-15 ~ 06-18　第二周</div>
+        <div class="tl-title">需求集中定案 · AI 与切片串联</div>
+        <div class="tl-desc">06-15 需求文档迁移为正式策划案（v1.0/1.1）；06-16 规范化清理（v1.2）；06-17 <b>核心操作规则定案（v1.3）</b>，同日客户端接入振动反馈、服务端首次提交"世界杯养成"初版代码；sheqinglong 接入淘汰赛 UI 与排行榜框架。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">06-22 ~ 06-26　第三周（赶工高峰）</div>
+        <div class="tl-title">全量联调 · 提交量峰值 71 条/天</div>
+        <div class="tl-desc">06-23~06-26 客户端单日提交量持续攀升（46→51→54→<b>71</b>），为整个周期峰值；配置端几乎每天多次调整球衣号码、球员坐标、AI 强度等联调参数；06-26 出现唯一一次明确标注的"代码 review，反馈修改"提交。</div>
+      </div>
+      <div class="tl-item flag">
+        <div class="tl-date">06-29 ~ 06-30　收尾冲刺</div>
+        <div class="tl-title">淘汰赛 / 竞猜服务端代码补齐 · 二次峰值</div>
+        <div class="tl-desc">服务端淘汰赛与竞猜逻辑（NK-7890, zhangdi）<b>直到 07-01~07-02 才提交</b>，而客户端对应 UI（NK-7428）早在 06-17 就已开始开发——服务端明显滞后近两周；客户端 06-30 单日提交 63 条，第二个赶工峰值。</div>
+      </div>
+      <div class="tl-item flag">
+        <div class="tl-date">07-02 02:37　异常事件</div>
+        <div class="tl-title">dev 环境临时屏蔽世界杯活动（NK-8257）</div>
+        <div class="tl-desc">配置端提交 <span class="mono">屏蔽世界杯活动</span>，通过 <span class="mono">ActivityOnline.xlsx</span> 活动开关表下线活动入口。发生在服务端淘汰赛代码刚合并、策划仍在密集调整引导与操作配置的同一天，推测为联调期间的临时管控手段。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">07-01 ~ 07-03　最终收尾</div>
+        <div class="tl-title">引导链修复 · BP活动补充配置</div>
+        <div class="tl-desc">策划（jiangzhenyu）在 06-30~07-01 才处理新手引导相关配置；客户端同期由 jiangzhenyu（策划侵入代码）直接修复"足球引导：开场镜头跳变、合同列表手指定位、三阶段引导流转"；07-03 配置端仍在补充 BP 活动与获取途径配置，是三端中收尾最晚的一端。</div>
+      </div>
+    </div>
+
+    <h3>客户端每日提交量分布（赶工曲线）</h3>
+    <div class="card">
+      <div class="bar-row"><div class="b-label">06-23</div><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><div class="b-val">46</div></div>
+      <div class="bar-row"><div class="b-label">06-24</div><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><div class="b-val">51</div></div>
+      <div class="bar-row"><div class="b-label">06-25</div><div class="bar-track"><div class="bar-fill" style="width:76%"></div></div><div class="b-val">54</div></div>
+      <div class="bar-row"><div class="b-label">06-26 <span style="color:var(--danger)">峰值</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,var(--danger),var(--warn));"></div></div><div class="b-val">71</div></div>
+      <div class="bar-row"><div class="b-label">06-29</div><div class="bar-track"><div class="bar-fill" style="width:83%"></div></div><div class="b-val">59</div></div>
+      <div class="bar-row"><div class="b-label">06-30 <span style="color:var(--warn)">次峰</span></div><div class="bar-track"><div class="bar-fill" style="width:89%;background:linear-gradient(90deg,var(--warn),var(--brand-2));"></div></div><div class="b-val">63</div></div>
+      <div class="bar-row"><div class="b-label">07-01</div><div class="bar-track"><div class="bar-fill" style="width:48%"></div></div><div class="b-val">34</div></div>
+      <div class="bar-row"><div class="b-label">07-02（收尾）</div><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div><div class="b-val">7</div></div>
+    </div>
+  </section>
+
+  <!-- 04 核心返工分析 -->
+  <section id="rework">
+    <h2><span class="num">04</span> 核心返工分析：热点文件溯源</h2>
+    <p class="lead">按修改次数排序客户端代码文件，排除自动生成的配置 / i18n 文件后，真正的高频返工文件全部集中在切片操作与关卡状态机两处。</p>
+
+    <table>
+      <tr><th>文件</th><th>修改次数</th><th>职责</th></tr>
+      <tr><td class="mono">Config/MetaConfig.cs</td><td>89</td><td>配置元数据（跟随策划配置变化被动更新）</td></tr>
+      <tr><td class="mono">Config/TableConfigEnum.cs</td><td>85</td><td>配置表枚举（同上）</td></tr>
+      <tr><td class="mono" style="color:var(--danger)">FSM/SoccerMatchFlowStateMachine.cs</td><td><b>69</b></td><td>关卡流程状态机 —— 核心返工点 #1</td></tr>
+      <tr><td class="mono">Config/CfgG.cs</td><td>69</td><td>配置全局入口</td></tr>
+      <tr><td class="mono" style="color:var(--danger)">Presentation/SoccerSliceManagerBridge.cs</td><td><b>61</b></td><td>切片管理桥接层 —— 核心返工点 #2</td></tr>
+      <tr><td class="mono" style="color:var(--danger)">ParametricShot/ShotAimController.cs</td><td><b>53</b></td><td>瞄准 / 出脚方向控制 —— 核心返工点 #3</td></tr>
+      <tr><td class="mono">Presentation/SoccerPlayerView.cs</td><td>41</td><td>球员视图表现</td></tr>
+    </table>
+
+    <h3 class="sub-warn">返工点 #1：ShotAimController.cs（切片瞄准控制器）</h3>
+    <p>从 06-10 到 07-01，同一套"划线/弹弓"手感逻辑被推倒重来至少 4 次：</p>
+    <ul class="commit-list" style="list-style:none;padding:0;">
+      <li><div class="c-date mono">06-10</div><div class="c-author">wenchao</div><div class="c-msg"><span class="mark">对象化重构</span> · 传射方式逻辑重构，删除冻结接口改为订阅模式</div></li>
+      <li><div class="c-date mono">06-17</div><div class="c-author">wenchao</div><div class="c-msg"><span class="mark">去掉切片吸附逻辑</span> · 完全依靠球的摆放位置</div></li>
+      <li><div class="c-date mono">06-22</div><div class="c-author">wenchao</div><div class="c-msg"><span class="mark">重新标定手感</span> · 当天两次提交"重新标定"与"修复draw手感"</div></li>
+      <li><div class="c-date mono">06-30</div><div class="c-author">wenchao</div><div class="c-msg">处理正式场景反馈：切片拖拽超出限制夹角会导致摄像机恢复默认视角 <span style="color:var(--text-dim)">（对应验收反馈 #78，临上线前才修）</span></div></li>
+      <li><div class="c-date mono">07-01</div><div class="c-author">wenchao</div><div class="c-msg"><span class="mark">参考DrawToTarget 重新调试Draw手感</span> · MR 合并前一天仍在重做</div></li>
+    </ul>
+
+    <h3 class="sub-warn">返工点 #2：SoccerMatchFlowStateMachine.cs（关卡状态机）</h3>
+    <p>提交历史显示同一批问题被"修复—复现—再修复"：</p>
+    <ul class="commit-list">
+      <li><div class="c-date mono">06-29</div><div class="c-author">hesen</div><div class="c-msg">进球时直接在球门被弹出来了，没有进网 <span style="color:var(--text-dim)">（与验收反馈 #24 描述几乎一致）</span></div></li>
+      <li><div class="c-date mono">06-30</div><div class="c-author">hesen</div><div class="c-msg">修复扑球成功的反弹逻辑，修复回放时会有很多其他无关的球员 <span style="color:var(--text-dim)">（对应验收反馈 #81 #117）</span></div></li>
+      <li><div class="c-date mono">07-02</div><div class="c-author">hesen</div><div class="c-msg"><span class="mark">处理莫名其妙失败的问题</span> · MR 合并当天，根因仍不明确</div></li>
+    </ul>
+
+    <div class="verdict root">
+      <div class="v-title">核心洞察</div>
+      <p style="margin:0;">这不是常规意义上的"修 bug"，而是<b>同一套核心手感在 3 周内被架构级重做了 4 次以上</b>。343 条 hesen 提交里仅有 <b>1 条</b>明确标注为"代码 review"，且发生在开发中期（06-26）——核心玩法代码基本处于"边写边试、边试边推倒"的状态，缺乏中间检查点去提前收敛设计。</p>
+    </div>
+  </section>
+
+  <!-- 05 验收反馈画像 -->
+  <section id="feedback">
+    <h2><span class="num">05</span> 验收反馈画像（236 条）</h2>
+    <p class="lead">数据来源：钉钉表格《世界杯主题活动-任务拆分和验收反馈》· 开发验收反馈 sheet。</p>
+
+    <div class="card-grid">
+      <div class="stat"><div class="n">213</div><div class="l">已完成（90.3%）</div></div>
+      <div class="stat"><div class="n">18</div><div class="l">新增待处理</div></div>
+      <div class="stat"><div class="n">202</div><div class="l">P0 优先级（85.6%）</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">未复现</div></div>
+    </div>
+
+    <h3>按模块分布</h3>
+    <div class="card">
+      <div class="bar-row"><div class="b-label">关卡</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="b-val">84</div></div>
+      <div class="bar-row"><div class="b-label">淘汰赛</div><div class="bar-track"><div class="bar-fill" style="width:81%"></div></div><div class="b-val">68</div></div>
+      <div class="bar-row"><div class="b-label">通用</div><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><div class="b-val">69</div></div>
+      <div class="bar-row"><div class="b-label">养成</div><div class="bar-track"><div class="bar-fill" style="width:9.5%"></div></div><div class="b-val">8</div></div>
+      <div class="bar-row"><div class="b-label">统计</div><div class="bar-track"><div class="bar-fill" style="width:4.7%"></div></div><div class="b-val">4</div></div>
+      <div class="bar-row"><div class="b-label">引导 / 比赛 / 晋级赛</div><div class="bar-track"><div class="bar-fill" style="width:3.5%"></div></div><div class="b-val">3</div></div>
+    </div>
+
+    <h3>四类可归因的问题模式</h3>
+    <table>
+      <tr><th>模式</th><th>典型条目</th><th>规模</th><th>归因</th></tr>
+      <tr>
+        <td><b>核心手感反复调整</b></td>
+        <td>操作夹角判定、拖拽取消逻辑、镜头跟随、带球转向</td>
+        <td>关卡模块 84 条中占大半</td>
+        <td>需求定案晚于代码启动，规则边开发边补</td>
+      </tr>
+      <tr>
+        <td><b>本地化 key 后置补齐</b></td>
+        <td>导航栏文案、等级加成描述、回溯弹窗、赛程弹窗标题写死</td>
+        <td>贯穿几乎每个模块</td>
+        <td>文案 key 未与配置表同步提前定稿</td>
+      </tr>
+      <tr>
+        <td><b>多语言 / RTL 适配滞后</b></td>
+        <td>阿拉伯语镜像显示、数字镜像、俄语文本溢出</td>
+        <td>集中在验收后期</td>
+        <td>UI 组件未预留镜像与溢出兼容设计</td>
+      </tr>
+      <tr>
+        <td><b>淘汰赛状态机边界缺失</b></td>
+        <td>页签数据不分离、空状态提示缺失、倒计时/背景图切换错乱</td>
+        <td>淘汰赛+竞猜合计约 90 条</td>
+        <td>复用 X1 竞猜经验时未系统穷举淘汰赛自身的全部状态组合</td>
+      </tr>
+    </table>
+
+    <h3>典型严重问题（数值/规则层，非 UI 表现）</h3>
+    <div class="card">
+      <p><span class="badge p0">#222</span> <b>守门切片过于简单</b> —— 只要扑了，即便扑空很多次也能判定成功。核心判定逻辑问题，出现在反馈表后半段，说明中后期才做整体可玩性评估。</p>
+      <p><span class="badge p0">#70</span> <b>大关卡通关未重新触发合同</b>，合同星级显示异常 —— 主链路规则缺陷。</p>
+      <p><span class="badge p0">#56</span> <b>可操作夹角目标传参策略需要调整</b> —— 禁区内外目标优先级未区分，核心规则漏洞。</p>
+      <p><span class="badge p0">#179 #180 #232</span> <b>配置问题导致功能性阻断</b>（活动预告页跳转错误、对阵表未生成提示、有门票进不去关卡）—— 出现在反馈表末尾且状态多为"新增"未闭环，暴露配置上线前缺少完整端到端回归。</p>
+    </div>
+  </section>
+
+  <!-- 06 三源交叉验证 -->
+  <section id="crosscheck">
+    <h2><span class="num">06</span> 三源交叉验证：同一个坑,三处留痕</h2>
+    <p class="lead">将验收反馈条目与代码提交 message 逐一对照，多条问题在<b>需求文档、开发提交、验收反馈</b>三处都留下了几乎相同的描述 —— 证明这些不是随机 bug，而是系统性的过程问题。</p>
+
+    <div class="card">
+      <h3 style="margin-top:0;">案例 A · 进球判定</h3>
+      <div class="cause-effect">
+        <div class="ce-box cause">代码提交 06-29<br><span class="mono" style="font-size:12px;">"进球的时候直接在球门被弹出来了，没有进网"</span></div>
+        <div class="arrow">≈</div>
+        <div class="ce-box effect">验收反馈 #24<br><span class="mono" style="font-size:12px;">"进球的时候直接在球门被弹出来了，没有进网"</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">措辞几乎完全一致，说明该问题被开发自测发现修复后，在独立验收环节又被重新触发一次 —— 开发自测记录与验收测试清单之间没有共享，同一坑测了两遍。</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">案例 B · 操作夹角越界处理</h3>
+      <div class="cause-effect">
+        <div class="ce-box cause">代码提交 06-30<br><span class="mono" style="font-size:12px;">"拖拽超出限制夹角会导致摄像机恢复默认视角"</span></div>
+        <div class="arrow">≈</div>
+        <div class="ce-box effect">验收反馈 #78<br><span class="mono" style="font-size:12px;">"拖动范围超出夹角时会切换回默认视角，无法操作"</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);margin-top:8px;">需求文档 v1.3 未覆盖此边界场景，直到临上线前（06-30）才在代码里第一次处理，随后验收环节仍标记为问题——说明该边界情况在设计阶段完全没被考虑到。</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">案例 C · 淘汰赛服务端进度 vs 客户端进度错位</h3>
+      <p style="font-size:13.5px;">客户端淘汰赛 UI（<span class="mono">NK-7428</span>）从 <b>06-17</b> 就已启动开发（sheqinglong "淘汰赛UI"提交）；而服务端对应的淘汰赛与竞猜逻辑（<span class="mono">NK-7890</span>，zhangdi）直到 <b>07-01~07-02</b> 才提交第一版代码。两端错位近 <b>两周</b>，直接解释了为什么淘汰赛/竞猜模块的验收反馈（约 90 条）里有大量"数据显示 0:0""对阵表未生成""比分错误"类问题 —— 客户端长期只能对着假数据 / mock 联调，真实服务端逻辑接入后集中暴雷。</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">案例 D · 本地化 key 全程滞后</h3>
+      <p style="font-size:13.5px;">配置端 i18n 各语言 tsv 文件在整个开发周期里均被修改 <b>130+ 次</b>，且改动分布贯穿始终而非集中批处理——直接对应验收反馈里贯穿几乎每个模块的"文案 key 缺失/写死"问题（约 30+ 条独立条目）。这不是漏做，是流程上从未把文案 key 提前于功能开发定稿。</p>
+    </div>
+  </section>
+
+  <!-- 07 根因结论 -->
+  <section id="rootcause">
+    <h2><span class="num">07</span> 根因结论</h2>
+
+    <div class="verdict root">
+      <div class="v-title">根因 1 · 核心玩法规则边开发边定稿</div>
+      <p style="margin:0;">切片操作核心（划线/弹弓、可操作夹角、带球调整）的代码 06-09 启动，需求规则 06-17 才真正冻结（v1.3），此后仍持续到 07-01 反复调整手感参数与边界逻辑。<b>3 周开发周期里，同一模块被架构级重做了至少 4 次</b>，是全项目返工成本最高的部分。</p>
+    </div>
+
+    <div class="verdict root">
+      <div class="v-title">根因 2 · 淘汰赛服务端接入滞后近两周</div>
+      <p style="margin:0;">客户端淘汰赛 UI 06-17 启动，服务端对应逻辑 07-01 才提交——两端脱节导致客户端长期基于假数据联调，真数据接入后（07-01~07-02）集中暴露约 90 条淘汰赛/竞猜相关反馈，且这批问题里"新增未闭环"占比明显高于其他模块。</p>
+    </div>
+
+    <div class="verdict root">
+      <div class="v-title">根因 3 · 本地化与多语言适配习惯性推后</div>
+      <p style="margin:0;">i18n 文件全程被动追加（130+ 次/文件），而非在配置表定稿阶段批量规划；阿拉伯语/俄语等 RTL 与文本溢出问题集中在验收后期才发现，说明 UI 组件设计阶段没有把多语言兼容性纳入默认要求。</p>
+    </div>
+
+    <div class="verdict">
+      <div class="v-title" style="color:var(--brand-2);">对照总结</div>
+      <p style="margin:0;">这次开发并非"细节问题多"，而是<b>三处结构性缺口</b>叠加：核心玩法规则该冻结却持续变动、跨端进度该同步却出现两周窗口差、通用性设计（本地化/多语言）该前置却习惯性推到最后。三者共同解释了 236 条验收反馈中 90% 以上的问题分布，且都属于"设计 / 排期阶段多花一天讨论，就能省下后面一周返工"的类型。</p>
+    </div>
+  </section>
+
+  <!-- 08 改进建议 -->
+  <section id="actions">
+    <h2><span class="num">08</span> 改进建议</h2>
+
+    <table>
+      <tr><th>问题</th><th>建议动作</th></tr>
+      <tr>
+        <td><b>核心玩法手感类系统</b>易边写边改</td>
+        <td>先用最小可玩 Demo（不接正式框架）把操作参数与判定边界跑通、评审通过后再进入正式框架开发；正式框架代码启动前，核心规则文档应标记为"冻结"状态。</td>
+      </tr>
+      <tr>
+        <td>跨端（客户端/服务端）进度<b>可能出现窗口差</b></td>
+        <td>涉及双端联动的模块（如淘汰赛/竞猜），在排期阶段明确双端接入的里程碑对齐点，避免某一端用 mock 数据空转超过一周。</td>
+      </tr>
+      <tr>
+        <td>本地化 / 多语言<b>习惯性推后</b></td>
+        <td>文案 key 表与配置表结构同步定稿，作为开发启动的前置条件之一；UI 组件默认按"需兼容 RTL + 文本溢出"设计，而非事后补丁。</td>
+      </tr>
+      <tr>
+        <td>核心状态机代码<b>缺少中间 review 节点</b></td>
+        <td>为关卡状态机、切片管理桥接层等高复杂度文件设置强制 review 检查点（如每周一次），而非仅在开发中期偶发进行。</td>
+      </tr>
+      <tr>
+        <td>开发自测与验收测试<b>信息不互通</b></td>
+        <td>建立共享的问题追踪清单，开发自测中修复的问题同步标记，避免验收阶段对同一坑重复报告。</td>
+      </tr>
+      <tr>
+        <td>配置上线前<b>缺少端到端回归</b></td>
+        <td>针对活动开关、门票、跳转链路等配置项，上线前跑一次完整的端到端场景回归，而非仅验证单点改动。</td>
+      </tr>
+    </table>
+  </section>
+
+  <footer>
+    数据来源：钉钉文档《2026世界杯主题活动》需求文档全部版本 · 钉钉表格《世界杯主题活动-任务拆分和验收反馈》· k1_client / game / dataconfig 三仓库 <span class="mono">dev_NK-7426</span> 分支完整提交历史（2026-06-09 ~ 2026-07-03）。本文档由 AI 助手基于以上一手数据交叉分析生成。
+  </footer>
+
+</div>
+</body>
+</html>
