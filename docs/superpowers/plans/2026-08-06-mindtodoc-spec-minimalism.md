@@ -154,6 +154,7 @@ Confirm all three outputs:
 Run:
 
 ```powershell
+$env:PYTHONUTF8='1'
 python C:\Users\jiangzhenyu\.skills\.system\skill-creator\scripts\quick_validate.py C:\Project\MindToDoc
 python -m compileall -q scripts
 git diff --check
