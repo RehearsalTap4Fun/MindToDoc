@@ -22,6 +22,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 - `SKILL.md`：工作流、写作判断、跨 reference 的硬性总则、何时读取哪个 reference。
 - `references/feature-spec-boundaries.md`：主功能案内容边界——写什么、不写什么、数值奖励粒度。
 - `references/feature-spec-writing.md`：起草顺序、功能/界面规则分工、常见错误。
+- `references/spec-minimalism-ladder.md`：起草前的必要性判断梯；精简、压缩、去重、删减、派生物或过度设计审查的保护项与输出契约。
 - `references/mobile-system-rules-reference.md`：逐系统交付物判定、红点规则、线上数据兼容、配置表边界。
 - `references/k1-common-configs.md`：K1 项目公共配置表清单（活动框架 / 通行证 / 排行 / 礼包 / 邮件 / 联盟 / KVK 等），写派生 `-配置表结构.md` 的「公共 / 外部依赖」时直接挑用。
 - `references/ui-annotation-reference.md`：UI 识图、归类、标注、上传、左图右文、界面下方 key 录入表。
@@ -92,6 +93,8 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ## 流程
 
+> **精简审查旁路**：用户要求精简、压缩、去重、删减、审查派生物或审查过度设计时，完整读取 `references/spec-minimalism-ladder.md`，先按其输出契约报告；用户确认后再修改交付物。
+
 ### 阶段 0 · 读取输入
 
 扫描 `input/` 及用户指定的既有 md/xlsx。若全无素材：提示放入 `input/` 或指定旧稿，停止不硬跑。
@@ -104,6 +107,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 2. **问参考玩法**：主动问“有没有参考游戏的某个玩法作为参考？”有则先梳理骨架，无则走标准设计。
 3. **批判性分析**：对参考规则或用户给出的规则主动指出不合理处、优化空间和遗漏边界，给建议而非照抄。
 4. **关键决策**：把开放条件、核心循环、与其他系统的边界做成**决策表**（维度｜决策｜关键约束/备注）。有分歧时写明为什么选它。
+5. **范围与最小交付审查**：按 `references/spec-minimalism-ladder.md` 对模块和计划交付物走一次判断梯；排除项写入关键决策的本期范围，不为排除项创建空章节或空派生文档。
 
 产出：**变更记录、简介、关键决策**；线上项目写 **数据兼容总则**。
 
@@ -136,6 +140,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ### 阶段 3 · 派生文档与收尾
 
+**派生文档闸门**：创建前按 `references/spec-minimalism-ladder.md` 的已有来源、文档归属和事实依据逐项判定。已有同用途文档则复用；无截图不创建界面标注，无音频需求不创建音效需求，无分析目标不创建 BI 日志需求。
 **配置表结构**：`templates/derived-config-tables.md` — 概览、各模块字段。
 **界面 E 节**：主案占位 + 子界面清单；**二选一** — 供图走阶段 4，或明确待补图。
 **其他派生**：Checklist、美术等 + `# 派生文档说明`。
@@ -175,9 +180,8 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ## 主案 / 派生写作要点
 
-**整稿覆盖/大幅重写**
+**文件编辑与同步**
 
-- ≥ 200 行的全文覆盖**用 Bash heredoc 多段追加**(`cat >> file.md << 'EOF' ... EOF`),不要一次 Write 大字符串。一次 Write 20k+ 字符极易触发 API Error 然后被迫拆段重写,反而更慢。第一段用 Write 起头,后续段全部 heredoc 追加;最后跑一次校验脚本(如 `scripts/dingtalk_md_unescape.py --check`)。
 - 钉钉 ↔ 本地双向同步必须做转义清洗,详见 `references/dingtalk-sync-reference.md §七`。
 
 **主案**
