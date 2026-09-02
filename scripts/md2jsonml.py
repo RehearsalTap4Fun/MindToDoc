@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""md → 完整 jsonml 转换器（A 方案）。
+r"""md → 完整 jsonml 转换器（A 方案）。
 读设计文档 md，输出整篇 jsonml（每个块带好 ind.left，每个标题带好 list 自动编号），
 供 update_document(format=jsonml) 一次性 overwrite 写全；同时输出大文档 markdown 主体。
 
@@ -9,10 +9,12 @@
 - # / ## / ### 标题：转 h1/h2/h3，全部带 list 编号 + ind.left（H1=0,H2=32,H3=64）
 - 两级无序列表（- 项 / 两空格缩进 - 子项）：转 p+list bullet，ind = 所属标题正文档(标题+32)，二级再+? 这里列表本身有 level，ind 用所属标题的正文档值
 - 普通段落：转 p，ind = 所属标题正文档值
-- 表格 | a | b |：转 〚TBL-N〛 占位段（前后留空行），并写入 tables sidecar
+- 表格 | a | b |：转 〚TBL-N〛 占位段（前后留空行），并写入 tables sidecar；
+  sidecar 中的空方括号 `[]` 编码为 `\[\]`，避免钉钉误解析成待办项
 - 图片占位 <!-- IMG: 界面名 | image_id --> ：转成 〚IMG-N〛 占位段（前后留空行），并写入 images sidecar
 - 大文档 markdown 主体：输出 <out>.body.md，保留 〚TBL-N〛 / 〚IMG-N〛 占位
-- 行内格式：**加粗**、{{red:红字}}
+- 行内格式：**加粗**、{{red:红字}}、`行内代码`、[链接](URL)
+- fenced code：保留语言与代码内容
 
 ind 规则（正文比标题多缩一档，每级 32）：
 - H1 标题 ind=0，其下正文/列表 ind=32
@@ -20,12 +22,13 @@ ind 规则（正文比标题多缩一档，每级 32）：
 - H3 标题 ind=64，其下正文 ind=96
 """
 import sys, json, re
+from pathlib import Path
 
 SRC = sys.argv[1]
 OUT = sys.argv[2]
 LIST_ID = sys.argv[3] if len(sys.argv) > 3 else "doc-h"
 
-lines = open(SRC, encoding="utf-8").read().split("\n")
+lines = Path(SRC).read_text(encoding="utf-8").split("\n")
 
 blocks = []
 cur_heading_level = 0  # 当前所属标题级别（0=文档顶，无标题）
@@ -59,9 +62,11 @@ def leaf(text, bold=False, color=None):
     return ["span", {"data-type": "text"}, ["span", span, text]]
 
 def inline_nodes(text):
-    """Parse the two supported inline formats: **bold** and {{red:text}}."""
+    """Parse supported inline marks without flattening links or inline code."""
     nodes = []
-    token_re = re.compile(r"(\{\{red:.*?\}\}|\*\*.*?\*\*)")
+    token_re = re.compile(
+        r"(\{\{red:.*?\}\}|\*\*.*?\*\*|`[^`\n]+`|\[[^\]\n]+\]\(https?://[^)\n]+\))"
+    )
     pos = 0
     for m in token_re.finditer(text):
         if m.start() > pos:
@@ -69,8 +74,13 @@ def inline_nodes(text):
         tok = m.group(0)
         if tok.startswith("{{red:"):
             nodes.append(leaf(tok[6:-2], color="#FE0300"))
-        else:
+        elif tok.startswith("**"):
             nodes.append(leaf(tok[2:-2], bold=True))
+        elif tok.startswith("`"):
+            nodes.append(["inlineCode", {} , leaf(tok[1:-1])])
+        else:
+            link = re.match(r"^\[([^\]]+)\]\((https?://[^)]+)\)$", tok)
+            nodes.append(["a", {"href": link.group(2)}, leaf(link.group(1))])
         pos = m.end()
     if pos < len(text):
         nodes.append(leaf(text[pos:]))
@@ -119,10 +129,37 @@ def table_block(rows, hlevel):
 def strip_inline(t):
     return t
 
+def escape_dingtalk_table_markdown(table_markdown):
+    # 钉钉会把任何形态的 [] 识别成待办项；放在 inline code 中转义又会显示反斜杠。
+    # 传输层仅对空数组示例临时去掉反引号，再转义方括号；本地 SSOT 不变。
+    table_markdown = table_markdown.replace("`[]`", "[]")
+    return table_markdown.replace("[]", r"\[\]")
+
 while i < n:
     line = lines[i]
     raw = line.rstrip("\n")
     s = raw.strip()
+
+    # fenced code：保留语言与内容，不能降级成三个普通段落
+    if s.startswith("```"):
+        syntax = s[3:].strip() or "plaintext"
+        body_lines.append(raw)
+        i += 1
+        code_lines = []
+        while i < n and not lines[i].strip().startswith("```"):
+            code_lines.append(lines[i].rstrip("\n"))
+            body_lines.append(lines[i].rstrip("\n"))
+            i += 1
+        if i < n:
+            body_lines.append(lines[i].rstrip("\n"))
+            i += 1
+        blocks.append(["code", {
+            "syntax": syntax,
+            "code": "\n".join(code_lines),
+            "wrap": True,
+            "showLineNumber": True,
+        }])
+        continue
 
     # 注释：IMG 占位转成可回读锚点；普通注释跳过（含多行）
     if s.startswith("<!--"):
@@ -170,7 +207,8 @@ while i < n:
             tbl_lines.append(lines[i].strip())
             i += 1
         marker = "〚TBL-%d〛" % len(tables_md)
-        tables_md.append("\n".join(tbl_lines))
+        table_markdown = escape_dingtalk_table_markdown("\n".join(tbl_lines))
+        tables_md.append(table_markdown)
         # 占位段：ind 跟随当前标题正文档；文本是 marker，便于写入后定位替换
         blocks.append(["p", {"ind": {"hanging": 0, "left": body_ind(cur_heading_level)}}, leaf(marker)])
         # body.md 中，占位段前后强制留空行：避免钉钉 markdown 解析时把占位
@@ -204,15 +242,15 @@ while i < n:
     i += 1
 
 root = ["root", {}] + blocks
-json.dump(root, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
+Path(OUT).write_text(json.dumps(root, ensure_ascii=False), encoding="utf-8")
 import os
 # sidecar：表格 markdown（按 〚TBL-i〛 顺序），写入主体后用 markdown 单独补
 side = os.path.splitext(OUT)[0] + ".tables.json"
-json.dump(tables_md, open(side, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+Path(side).write_text(json.dumps(tables_md, ensure_ascii=False, indent=1), encoding="utf-8")
 # sidecar：图片占位元数据（按 〚IMG-i〛 顺序），写入主体后定位并替换成左图右文表
 img_side = os.path.splitext(OUT)[0] + ".images.json"
-json.dump(images_md, open(img_side, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+Path(img_side).write_text(json.dumps(images_md, ensure_ascii=False, indent=1), encoding="utf-8")
 # 大文档 markdown 主体：保留 〚TBL〛/〚IMG〛 占位，供 markdown overwrite 后继续定位
 body_side = os.path.splitext(OUT)[0] + ".body.md"
-open(body_side, "w", encoding="utf-8").write("\n".join(body_lines) + "\n")
+Path(body_side).write_text("\n".join(body_lines) + "\n", encoding="utf-8")
 print("BLOCKS", len(blocks), "TABLES", len(tables_md), "IMAGES", len(images_md), "->", OUT, "+", side, "+", img_side, "+", body_side)

@@ -64,6 +64,12 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
 
 **占位字符（v2 起统一）**：md2jsonml.py 现在生成 `〚TBL-N〛` / `〚IMG-N〛`（生僻中文标点，不会被钉钉 markdown 误识为强调/分隔），且占位段**前后强制空行**，避免与上一段列表/正文合并到同一 block。旧文档残留的 `__TABLE_n__` 经钉钉 markdown 解析会变成 `TABLE_n`（下划线被吃掉）；处理旧文档时记得识别两种形态。
 
+**空方括号安全编码（硬性）**：钉钉 Markdown 会把表格单元格中的 `ext[]`、`int[]`、`string[]` 或独立 `[]` 误解析成待办项，当前表会从该行开始截断，剩余内容散成 task/paragraph。`md2jsonml.py` 生成 table sidecar 时会把空方括号编码为 `\[\]`，钉钉生成的表格单元格仍显示 `[]`；本地正式 md 始终保留干净原文。不要使用 `&#91;&#93;`，钉钉会把实体原样显示在单元格中。若源单元格写的是 `` `[]` ``，converter 会仅在 sidecar 中去掉这对反引号后再发送 `\[\]`，否则钉钉会把反斜杠显示出来；最终文本仍为 `[]`，但该空数组示例不保留行内代码底色。
+
+- 补表必须直接使用 converter 生成的 tables sidecar，不得重新从源 md 复制表格，也不得把实体改回 `[]`。
+- 只编码空方括号 token；普通 Markdown 链接 `[文字](URL)` 保持不变。
+- 绕过 converter 的临时操作也必须在发送前执行等价转换，但不得反写本地 SSOT。
+
 对每个占位段：
 1. `list_document_blocks` 找到占位段 blockId 与其全局 `index`；
 2. 用 **markdown 管道表格** `update_document(append, index=占位index+1)` 把表插到占位段**之后**，或 `insert_document_block` 写在占位段前/后；
@@ -95,6 +101,7 @@ python scripts/dingtalk_table_inserter.py \
 钉钉 markdown 解析对超大或含特殊字符的表会**逐行拆段**，结果不是单个 `table` 块、而是若干 `paragraph` 块（每行甚至每两个 `|` 一段）。已观察的触发条件（任一即可）：
 - **行数 ≥ ~30**：典型如玩法常量大表。
 - **单元格内含连续下划线标识符**（如 `ActvSoccer_bet_constraint_return_rate`）：底层 markdown parser 把 `_..._` 当 emphasis 解析失败、降级。
+- **单元格内含空方括号 `[]`**：可能被识别为 task list；常见于 `ext[]`、`int[]`、`string[]` 与空数组示例。必须使用 converter 生成的 `\[\]` 传输编码，单纯拆表不能消除该触发条件。
 - **行长过长**：单行总字符数 > ~200 时观察到散开。
 
 **规避方案**：
@@ -132,7 +139,13 @@ H1 模板（H2/H3 改 level、text、ind.left、sz 即可）：
 2. 新建用 `create_document`；整稿替换用上面的写入流程。内容源始终是本地正式 md。
 3. **纯文字表绝不能走 jsonml**（必炸 columns）；只能 markdown 管道。带 `img` 的图文表走 jsonml 不炸。
 4. **加粗与红字**：源 md 只使用 `**加粗**` 与 `{{red:红字}}`；不要用 markdown 的 `<span style>`、代码块、链接、删除线等未支持格式。
-5. **回读抽查**（写入后必做）：`list_document_blocks` 抽查——标题有 `list`、正文 `ind.left ≠ 0`、表格用 `element` 模式确认是 `table` 而非 `columns`。
+5. **回读结构验收**（写入后必做，禁止只比较 table 块数量）：
+   - 标题有 `list`，正文 `ind.left ≠ 0`；
+   - 每张源表按顺序核对标题、列数和数据行数，远端必须逐表相等；
+   - 表格必须是 `table`，不能是 `columns`，也不能只保留表头或前几行；
+   - 全文不得出现由表格散开产生的 task list，表外 paragraph 不得残留以 `|` 开头/结尾的表格行；
+   - fenced code 的内容以 JSONML `code.attrs.code` 为准；钉钉 Markdown 导出可能只返回空围栏，禁止据此判定线上代码为空或把空内容反写本地；
+   - 任一项不符都视为同步失败，修正编码或拆表后重新写入并完整回读。
 6. 终端中文乱码属正常（GBK），写进文档的内容是对的。
 7. **block id 在编辑后会变动（重要）**：每次 `update_document` overwrite / 补表 / 补编号等写操作后，受影响范围的 blockId **可能全部重新分配**（前缀都变）。后果：
    - 上一次 `list_document_blocks` 拿到的 id **可能失效**（删/改时报 `invalidRequest.resource.notFound … expected to be found`）。
@@ -152,6 +165,6 @@ python scripts/dingtalk_md_unescape.py dingtalk-raw.md -o "output/2026世界杯�
 python scripts/dingtalk_md_unescape.py --check "output/<name>.md"
 ```
 
-反向(本地 → 钉钉)**不要手工加 `\\+` `\\*\\*` 等转义**，本地写干净 markdown 即可，钉钉 `update_document` / `insert_document_block` 接 markdown 时会自动转义；**只需保证 `markdown` 参数里换行是真实 `\n`(U+000A)**，不能是字面字符串 `\n`(反斜杠+字母 n)，否则全部塞到一行。
+反向(本地 → 钉钉)**不要在本地 SSOT 手工加 `\\+` `\\*\\*` 等 GFM 转义**，本地写干净 markdown 即可，钉钉 `update_document` / `insert_document_block` 接 markdown 时会自动转义；**只需保证 `markdown` 参数里换行是真实 `\n`(U+000A)**，不能是字面字符串 `\n`(反斜杠+字母 n)，否则全部塞到一行。表格 sidecar 对 `[]` 的 `\[\]` 编码属于 converter 的传输层安全处理，不属于本地 SSOT 手工转义，必须保留。
 
 详细规则与全部转义对照见 memory/dingtalk-md-escape-diff.md。
