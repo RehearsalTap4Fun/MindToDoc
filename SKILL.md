@@ -34,6 +34,7 @@ description: 把移动游戏想法转化为功能策划案，固定生成 BI 日
 > **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑：`C:\Project\K1Game\game` 是服务器仓库。 `C:\Project\K1Client\k1_client` 是客户端仓库。
 > **维护说明**：主案规范与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动核对，保留本项目生成条件。
 > **专用派生 Skill（已 vendor 到本项目）**：BI 日志需求、音效需求、开发 Checklist、测试用例这四类派生所依赖的专用 Skill 已整体拷贝至 `vendor/skills/<skill-name>/`，随本仓库分发，clone 后即可直接调用，不依赖本机全局 skill 安装。清单见 `references/derived-documents-workflow.md`。`vendor/skills/slg-testcase-generator/` 下的 `scripts/config.json`、`scripts/token.json`、`K1-testcase-config/config.json`（含 Google OAuth 凭据与 Sheet/Drive 资源 ID）未随仓库分发，只保留同目录 `.example`/`.template` 版本；新设备使用前需参照 example 自行创建并填入真实凭据，且已在 `.gitignore` 中排除防止误提交。上游 skill 更新时需人工比对差异后决定是否同步覆盖 vendor 副本。
+> **宣讲 / 演示 Skill（已 vendor 到本项目）**：主案定稿后如需向其他职能（策划/程序/测试/运营等）做方案宣讲，可调用 `vendor/skills/guizang-ppt-skill/`（单文件 HTML 横向翻页 PPT，杂志风/瑞士风两套视觉体系，中文排版规则内置）生成宣讲网页；页面内的流程图、对比图等图表元素可参考 `vendor/skills/diagram-design/`（40 种图表类型的编辑器级设计规范）提升视觉质量。这两个 Skill 不是派生文档生成链路的固定环节，按需触发，不影响四类固定派生的生成判定。许可证：`guizang-ppt-skill` 为 AGPL-3.0（本项目私有内部使用，未对外分发或作为网络服务提供，不触发开源回馈义务），`diagram-design` 为 MIT（无使用限制）。`guizang-ppt-skill` 原生的"启动前检查上游更新"逻辑（`git fetch`）已在 vendor 副本的 SKILL.md 中标注跳过，因 vendor 后不是独立 git 仓库；如需同步上游更新需人工比对 diff。
 > **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重——K1 用**功能名前缀**（如 `ActvSoccer_`），X1/X15 用 `LC_<页签>_`；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
 
 ---
