@@ -112,6 +112,8 @@ python scripts/dingtalk_table_inserter.py \
 
 ## 五、补界面图
 
+**本地化参数保护**：已实测钉钉会吞掉表格单元格末尾的 `{0}`，反斜杠转义也不能保护。`md2jsonml.py` 在 tables sidecar 内用行内代码保护数字参数（已有行内代码不重复包装），远端仍显示原始 `{0}`；本地正式 md 不改。回读须逐个比较参数，不能只验证行列数。
+
 按 images sidecar 中的 `__IMG_n__` 占位段插图：
 1. `list_document_blocks` 找到占位段 blockId；
 2. 用 `insert_document_block`（jsonml）在占位段后插左图右文表（左 `tc` `fill:#E8F2FE` 放 `img`、右 `tc` `fill:#FFFAE5` 放编号说明）；

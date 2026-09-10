@@ -1,6 +1,6 @@
 ---
 name: mindtodoc
-description: 把粗糙的移动游戏想法（脑图、框架文档、参考游戏名）转化为功能策划案及派生文档。读取 input/ 素材，澄清规则后输出主案 + 配置表结构/界面标注等派生 md，可选同步钉钉。Use when 用户要把游戏创意整理成开发文档、生成游戏开发文档、game design doc、功能策划案。
+description: 把移动游戏想法转化为功能策划案，固定生成 BI 日志、美术、音效需求及配置结构；供图后生成界面标注，确认后生成 Checklist 和测试用例，可选同步钉钉。Use when 用户要把游戏创意整理成开发文档、生成游戏开发文档、game design doc、功能策划案。
 ---
 
 # MindToDoc
@@ -10,8 +10,8 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 ## 本技能定位
 
 - **职责**：从素材到成稿的工作流 —— `input/` 扫描、逐模块澄清、产出路径、迁移旧稿。
-- **格式来源**：采用 system-design-doc 文档格式（章节结构、内容边界、界面标注、钉钉落地）。**相关规范与脚本已随附进本技能 `references/` 与 `scripts/`，self-contained，不依赖任何外部路径或技能。**
-- **默认产出**：主案 + 配置表结构 / 界面标注等派生 md，可选同步钉钉。
+- **格式来源**：主案、配置结构、美术及界面规范随附于本项目；BI、音效、Checklist、测试用例按派生流程调用对应专用 Skill。
+- **默认产出**：一份主案 + BI 日志需求、美术需求、音效需求、配置结构四类固定派生；界面标注需用户供图，Checklist 与测试用例需用户确认。交付前完成联合检查，可选同步钉钉。
 
 ---
 
@@ -22,7 +22,9 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 - `SKILL.md`：工作流、写作判断、跨 reference 的硬性总则、何时读取哪个 reference。
 - `references/feature-spec-boundaries.md`：主功能案内容边界——写什么、不写什么、范围信息落点、数值奖励粒度。
 - `references/feature-spec-writing.md`：起草顺序、功能/界面规则分工、常见错误。
-- `references/spec-minimalism-ladder.md`：起草前的必要性判断梯；精简、压缩、去重、删减、派生物或过度设计审查的保护项与输出契约。
+- `references/spec-minimalism-ladder.md`：生成、检测、精简的模式分流；起草范围判断、成稿前自动精简门禁、保护项与审查输出契约。
+- `references/derived-documents-workflow.md`：派生文档类型、固定与条件交付、专用 Skill 入口、生成顺序和变更联动；生成或调整派生时必读。
+- `references/art-requirements-reference.md`：独立视觉资产提取与美术需求表规范。
 - `references/mobile-system-rules-reference.md`：逐系统交付物判定、红点规则、线上数据兼容、配置表边界。
 - `references/k1-common-configs.md`：K1 项目公共配置表清单（活动框架 / 通行证 / 排行 / 礼包 / 邮件 / 联盟 / KVK 等），写派生 `-配置表结构.md` 的「公共 / 外部依赖」时直接挑用。
 - `references/ui-annotation-reference.md`：UI 识图、归类、标注、上传、左图右文、界面下方 key 录入表。
@@ -30,7 +32,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
 
 > **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑：`C:\Project\K1Game\game` 是服务器仓库。 `C:\Project\K1Client\k1_client` 是客户端仓库。
-> **维护说明**：`references/` 与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动同步，保持本技能自包含。
+> **维护说明**：主案规范与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动核对，保留本项目生成条件。专用派生 Skill 按派生流程发现并读取。
 > **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重——K1 用**功能名前缀**（如 `ActvSoccer_`），X1/X15 用 `LC_<页签>_`；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
 
 ---
@@ -42,8 +44,8 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 | **主功能案** | `output/<功能名>.md` | 变更记录 + 简介 + 关键决策 + 详细规则 + 按需项 |
 | **配置表结构**（派生） | `output/<功能名>-配置表结构.md` | 仅数值策划 Excel；含文档边界与概览 |
 | **界面标注**（派生） | `output/<功能名>-界面标注.md` | 左图右文 + 红圈 + key SSOT |
-| **界面素材** | `output/ui-annotation/assets/` | `{界面ID}.png`、`*_annotated.png/json` |
-| **其他派生**（按需） | `output/<功能名>-checklist.md` 等 | Checklist、美术、程序结构 |
+| **界面素材** | `output/ui-annotation/assets/{功能标识}/` | `{界面ID}.png`、`*_annotated.png/json`，按功能隔离 |
+| **其他派生** | 见 `references/derived-documents-workflow.md` | 固定的 BI、美术、音效；经确认的 Checklist、测试用例 |
 | **旧版（只读素材）** | `output/<游戏名>-开发文档.md` | 迁移源，新稿不覆盖 |
 
 模板：`templates/doc-structure.md`（主案）、`templates/feature-module.md`（模块章）、`templates/derived-config-tables.md`、`templates/derived-ui-annotation.md`。
@@ -52,8 +54,8 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ## 文档粒度（硬性）
 
-- **一个完整功能 = 一份主功能案 + 多个派生文档**，不按子模块拆成多份独立策划案。
-- 仅下列内容拆 **派生文档**：配置表字段、界面标注、Checklist、美术需求、音效需求、BI日志需求。
+- **一个完整功能 = 一份主功能案 + 四类固定派生 + 满足条件的派生**，不按子模块拆成多份独立策划案。
+- 类型、格式与生成条件统一按 `references/derived-documents-workflow.md` 执行；不生成技术交接文档。
 
 ---
 
@@ -87,13 +89,13 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 | 界面标注 | **不用 HTML 原型**；供图 → 标准流程 |
 | 钉钉 | 本地 md SSOT；按需 `references/dingtalk-sync-reference.md` |
 
-起草前必读：`references/feature-spec-boundaries.md`、`references/feature-spec-writing.md`；手游/红点/兼容/配表 → `references/mobile-system-rules-reference.md`。
+起草前必读：`references/feature-spec-boundaries.md`、`references/feature-spec-writing.md`、`references/spec-minimalism-ladder.md`；手游/红点/兼容/配表 → `references/mobile-system-rules-reference.md`。
 
 ---
 
 ## 流程
 
-> **精简审查旁路**：用户要求精简、压缩、去重、删减、审查派生物或审查过度设计时，完整读取 `references/spec-minimalism-ladder.md`，先按其输出契约报告；用户确认后再修改交付物。
+先按 `references/spec-minimalism-ladder.md`「模式与触发」区分生成／重整、仅检测、已授权精简和仅同步。生成／重整必须在交付前自动完成 L1 及必要的 L2，无需用户另提精简；仅检测不改稿，已有修改授权不重复确认。
 
 ### 阶段 0 · 读取输入
 
@@ -129,7 +131,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 **确认规则**（必选）—— 触发条件、分支、不满足提示；红点/数据兼容必考虑或显式跳过。
 - 按真实对象与阶段拆分规则。
 - 每条规则尽量具体到**触发条件 + 各分支 + 不满足提示**。
-- 单列「边界情况处理」章节，覆盖状态变化、关系变化、服务器维护、异常态、重复请求等。
+- 异常分支在对应模块写完整；「边界情况处理」只补跨模块或尚未覆盖的场景，已有规则留具体引用。
 - 需要时补文案包装：对外命名、世界观包装、提示语语气。
 - 需要时补流程图、线上数据兼容处理。
 - 只收用户明确未定的真待定项。内部讨论、草稿记录和未决问题不写进主功能案正文。无真待定项时本节不写。
@@ -140,18 +142,19 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 用户确认 → 下一模块。
 
-### 阶段 3 · 派生文档与收尾
+### 阶段 3 · 派生文档与成稿检查
 
-**派生文档闸门**：创建前按 `references/spec-minimalism-ladder.md` 的已有来源、文档归属和事实依据逐项判定。已有同用途文档则复用；无截图不创建界面标注，无音频需求不创建音效需求，无分析目标不创建 BI 日志需求。
-**配置表结构**：`templates/derived-config-tables.md` — 概览、各模块字段。
-**界面 E 节**：主案占位 + 子界面清单；**二选一** — 供图走阶段 4，或明确待补图。
-**其他派生**：Checklist、美术等 + `# 派生文档说明`。
-主案补 **边界情况处理**。
+**派生生成**：读取 `references/derived-documents-workflow.md`，生成或更新四类固定交付，并按条件处理界面标注、Checklist 和测试用例。已有同用途文档须核验内容与版本后复用；精简不能取消固定交付。
+**界面 E 节**：保留有依据的子界面清单；用户供图走阶段 4，无图不创建界面标注。
+**派生引用**：主案 `# 派生文档说明` 只列真实完成且内容匹配的文件。
+按需补主案尚未覆盖的 **边界情况处理**。
+
+**成稿门禁（生成／重整必做）**：全文与本次派生齐备后，按派生流程完成联合检查及 `references/spec-minimalism-ladder.md` 的自动精简门禁。阶段 4 属于本次交付时，在其完成后再做最终检查；无图时可先交付其余已完成文档。阶段 1 的范围筛选、逐模块确认和排版验收不能替代本步；后补派生或修改规则后重新核查受影响内容。
 
 ### 阶段 4 · 界面标注（用户提供图片后）
 
 ```
-供图 → assets/{界面ID}.png → 识图+归类+编号 → *_annotated.png/json
+供图 → assets/{功能标识}/{界面ID}.png → 识图+归类+编号 → *_annotated.png/json
 → 用户审核 → 写入 -界面标注.md（左图右文 + key 表）→（可选）钉钉
 ```
 
@@ -166,7 +169,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 
 ### 阶段 5 · 钉钉落地（按需）
 
-先改本地 md，再 `references/dingtalk-sync-reference.md` + `scripts/md2jsonml.py`。
+生成／重整的主案通过阶段 3 成稿门禁后，再按 `references/dingtalk-sync-reference.md` + `scripts/md2jsonml.py` 同步。仅同步已有文档时按选定源执行，不借同步自动重整正文；已检查且内容未变化时可复用验收记录。
 
 ---
 
@@ -196,7 +199,7 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 - 源 md 只使用两种行内强调：`**加粗**` 与 `{{red:红字}}`。转换和钉钉落地细节见 `references/dingtalk-sync-reference.md`。
 - 凡设计必附“为什么”。影响实现判定的限制写成对应规则的正向约束，不另设“必须避免的方向”或排除项清单。
 - 写法要像人写的策划案：成段叙述与分层 bullet 结合，讲清因果与条件，不堆标签碎句。
-- 默认假设是"一切都该写清楚"。「待确认」是例外，不是兜底。
+- 每个业务原子应在一个详细落点写清楚，其他位置只保留摘要、具体引用或独有展示信息。「待确认」是例外，不是兜底。
 - 只有用户明确未定，才标待定；待定项必须写明待谁拍板。
 - 不用"待确认"掩盖没问够或没写细；能继续写细就继续写，必须决策才提问。
 - 待定项一旦确认，结论必须合并回主功能案，不能只停留在临时记录里。
@@ -245,6 +248,8 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 **主案**
 
 - [ ] ABC + 关键决策齐全；边界情况 / 数据兼容
+- [ ] 生成／重整已执行成稿门禁：详细规则无多处完整副本，概览只留摘要或独有信息，已清理讨论残留。
+- [ ] 合并前后的主体、触发、条件、动作、分支、反馈、重置和异常对应一致；保护项及派生迁移未闭环项仍有落点。
 - [ ] 无“目标与范围 / 目标与对标 / 目标与参考 / 非目标”独立章节；范围信息已按内容性质落入设计目的、关键决策或详细规则
 - [ ] 无完整字段 schema、无平铺 UI 大表、规则层无 key 名
 - [ ] 待确认仅真待定项
@@ -252,7 +257,9 @@ description: 把粗糙的移动游戏想法（脑图、框架文档、参考游�
 **派生**
 
 - [ ] `-配置表结构.md` 含文档边界与概览；无运行时/存档/协议
-- [ ] `-界面标注.md` 含流程与进度表；有图界面已审核后左图右文
+- [ ] 四类固定派生均已生成或核验复用；必要输入缺失的明确报告未完成，无虚构需求
+- [ ] 界面标注仅在用户供图后生成，已审核后左图右文；Checklist、测试用例已有用户确认；未生成技术交接
+- [ ] 按专用 Skill 完成各类校验；主案与派生规则、引用和版本一致
 - [ ] `# 派生文档说明` 链接齐全
 
 **流程**

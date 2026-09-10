@@ -12,13 +12,14 @@
 flowchart TD
     A[0. 主案功能规则已写清] --> B{1. 用户是否提供截图/UI稿?}
     B -->|否| C[主案 E 节只列子界面清单<br/>不写控件级内容]
-    B -->|是| D[2. 原图存入 ui-annotation/assets/]
+    B -->|是| D[2. 原图存入 ui-annotation/assets/功能目录/]
     D --> E[3. 识图+归类+编号]
     E --> F[4. 生成 *_annotated.png + .json]
     F --> G[5. 用户审核标注图]
     G -->|不通过| E
     G -->|通过| H[6. 写入本文：左图右文 + key 表]
-    H --> I[7. 上传钉钉 + insert 图文块]
+    H --> I[7. 与主案联合检查]
+    I --> J[8. 按授权同步钉钉]
 ```
 
 ### 硬性约束
@@ -32,7 +33,8 @@ flowchart TD
 | 类型 | 规则 | 示例 |
 |------|------|------|
 | 界面 ID | `{模块}-{简述}` 小写连字符 | `shop-main` |
-| 原图 | `ui-annotation/assets/{界面ID}.png` | `shop-main.png` |
+| 功能目录 | `ui-annotation/assets/{功能标识}/` | `ui-annotation/assets/cold-server/` |
+| 原图 | `ui-annotation/assets/{功能标识}/{界面ID}.png` | `cold-server/shop-main.png` |
 | 标注图 | `{界面ID}_annotated.png` | `shop-main_annotated.png` |
 
 ---
@@ -52,8 +54,8 @@ flowchart TD
 | 项 | 内容 |
 |----|------|
 | 界面 ID | `{{界面ID}}` |
-| 源图 | `ui-annotation/assets/{{界面ID}}.png` |
-| 标注图 | `ui-annotation/assets/{{界面ID}}_annotated.png` |
+| 源图 | `ui-annotation/assets/{{功能标识}}/{{界面ID}}.png` |
+| 标注图 | `ui-annotation/assets/{{功能标识}}/{{界面ID}}_annotated.png` |
 | 钉钉占位 | `<!-- IMG: {{界面名}} \| {{界面ID}} -->` |
 
 #### 概述
@@ -62,10 +64,9 @@ flowchart TD
 
 #### 左图右文
 
-| 编号 | 说明 |
-|------|------|
-| 1 | {{归类后的要素说明；二级 bullet 展开子项}}；凡界面文案要素，在该条**注明对应本地化 key**（前缀按项目规范，如 K1 功能名前缀 `ActvSoccer_tab_home`），新建 key 用 `{{red:<前缀>_xxx}}` 标红 |
-| 2 | {{…}} |
+<table><colgroup><col style="width:38.46%"><col style="width:61.54%"></colgroup><tr><td style="vertical-align:top;background:#E8F2FE"><img src="ui-annotation/assets/{{功能标识}}/{{界面ID}}_annotated.png" width="236" alt="{{界面名}}标注图"></td><td style="vertical-align:top;background:#FFFAE5"><ol><li><b>{{要素分组名称}}</b><ul><li>{{对应状态与交互说明}}</li><li>{{本地化 key；新建标红，复用黑色}}</li></ul></li></ol></td></tr></table>
+
+本地 HTML 表用于表达真实图文两栏；钉钉须按图文表结构单独生成 JSONML，不把本段 HTML 直接交给 Markdown 转换器。每屏先校验同一行内左图、右栏全部说明，再按 reference 完成远端回读与实际页面验收。
 
 > 每条涉及界面文案的说明都要标出它采用的本地化枚举 key；key 的中文与传参在文末「本地化文本汇总」统一登记，此处只引用 key 名，不重复写中文。
 
@@ -73,10 +74,20 @@ flowchart TD
 
 ## 本地化文本汇总
 
-> 汇总**本文档全部标注图涉及的界面文案**：每个 key 一行。复用已有 key 与新建 key 都列入；新建 key（文中以 `{{red:...}}` 标红的）在备注注明「新建·未查重/已查重」。
+> 汇总**本文档全部标注图涉及的界面文案**：复用 key 和新增 key 分别列入独立小节与表格，标题注明条数，每个 key 只登记一次。新增组统一说明查重状态；过长时在本组内拆表。
 > **key 前缀按所在项目规范**：K1 用功能名前缀（如 `ActvSoccer_`），不用 `LC_`+页签名；X1/X15 可能用 `LC_<页签>_`。全文档前缀统一。
 > 占位符用 `{0}{1}` 从 0 起连续编号；有占位符必须在「占位符传参说明」列写清每个参数的含义、来源与示例。
+
+### 复用 key（{{数量}} 条）
 
 | 枚举 KEY | 中文内容 | 占位符传参说明 |
 |----------|----------|----------------|
 | {{<前缀>_key}} | {{中文文案}} | {{无／或：`{0}`=队伍名（来源…），`{1}`=轮次}} |
+
+### 新增 key（{{数量}} 条）
+
+查重状态：{{已查重及来源／未查重及原因}}。
+
+| 枚举 KEY | 中文内容 | 占位符传参说明 |
+|----------|----------|----------------|
+| {{<前缀>_key}} | {{中文文案}} | {{无／或：`{0}`=参数来源与示例}} |

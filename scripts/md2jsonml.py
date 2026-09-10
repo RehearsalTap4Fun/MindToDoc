@@ -133,7 +133,10 @@ def escape_dingtalk_table_markdown(table_markdown):
     # 钉钉会把任何形态的 [] 识别成待办项；放在 inline code 中转义又会显示反斜杠。
     # 传输层仅对空数组示例临时去掉反引号，再转义方括号；本地 SSOT 不变。
     table_markdown = table_markdown.replace("`[]`", "[]")
-    return table_markdown.replace("[]", r"\[\]")
+    table_markdown = table_markdown.replace("[]", r"\[\]")
+    # 钉钉将单元格末尾的 {0} 当作属性并丢弃，反斜杠转义无效。
+    # 仅在传输 sidecar 中用行内代码保护数字占位符，已在代码内的不重复包装。
+    return re.sub(r"(`[^`]*`)|(\{\d+\})", lambda m: m.group(1) or "`" + m.group(2) + "`", table_markdown)
 
 while i < n:
     line = lines[i]
