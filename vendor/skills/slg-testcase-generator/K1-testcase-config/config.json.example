@@ -1,0 +1,7 @@
+{
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "google_sheets_credentials_file": "YOUR_CREDENTIALS_FILE.json",
+    "google_sheet_id": "YOUR_GOOGLE_SHEET_ID",
+    "template_sheet_id": "YOUR_TEMPLATE_SHEET_ID",
+    "testcase_root_folder_id": "YOUR_TESTCASE_ROOT_FOLDER_ID"
+}

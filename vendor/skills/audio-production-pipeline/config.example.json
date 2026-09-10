@@ -1,0 +1,5 @@
+{
+  "api_key": "<paste_tts_api_key_after_login>",
+  "jwt_token": "",
+  "tapper_auth_token": "<legacy_or_openclaw_token_optional>"
+}

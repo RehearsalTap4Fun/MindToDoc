@@ -27,3 +27,12 @@ examples/*/output/test-config/ActivitySoccerLanguage.generated.xlsx
 # 关卡 tag 工具产物(由 apply_level_tags.py 生成)
 examples/*/output/test-config/level-tags/ActivitySoccer.LevelTagged.generated.xlsx
 examples/*/output/test-config/level-tags/level-tag-summary.json
+
+# vendor 派生 skill 的真实凭据/配置(含 Google OAuth token、Sheet ID 等敏感信息)，
+# 仅保留 .example / .template 版本供新设备自行填写，真实值不入库
+vendor/skills/*/scripts/config.json
+vendor/skills/*/scripts/token.json
+vendor/skills/*/K1-testcase-config/config.json
+vendor/skills/*/**/token.json
+vendor/skills/*/**/*.token.json
+vendor/skills/*/.pytest_cache/

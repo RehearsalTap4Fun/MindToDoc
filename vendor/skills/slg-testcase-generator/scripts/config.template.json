@@ -1,0 +1,7 @@
+{
+    "gemini_api_key": "YOUR_GEMINI_API_KEY（可选，用于复杂PRD智能解析，从 https://aistudio.google.com/apikey 获取，不需要可留空字符串）",
+    "google_sheets_credentials_file": "YOUR_CREDENTIALS_FILE.json",
+    "google_sheet_id": "YOUR_DEFAULT_SHEET_ID",
+    "template_sheet_id": "YOUR_TEMPLATE_SHEET_ID",
+    "testcase_root_folder_id": "YOUR_DRIVE_ROOT_FOLDER_ID"
+}

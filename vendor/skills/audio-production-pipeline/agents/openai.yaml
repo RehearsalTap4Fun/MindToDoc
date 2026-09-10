@@ -1,0 +1,6 @@
+interface:
+  display_name: "X15/K1 音频生产流程"
+  short_description: "拆音效需求、K1复用库检查、公司库选型、AI 补缺与音频交付"
+  default_prompt: "Use $audio-production-pipeline with the requested sheetName (and K1 audio-library reuse check when project is K1) to split reviewable sound requirements, screen company-library candidates first, auto-fill unresolved low-score gaps with AI candidates, and let the planner submit decisions into a validated one-click audio delivery package."
+policy:
+  allow_implicit_invocation: true

@@ -32,7 +32,8 @@ description: 把移动游戏想法转化为功能策划案，固定生成 BI 日
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
 
 > **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑：`C:\Project\K1Game\game` 是服务器仓库。 `C:\Project\K1Client\k1_client` 是客户端仓库。
-> **维护说明**：主案规范与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动核对，保留本项目生成条件。专用派生 Skill 按派生流程发现并读取。
+> **维护说明**：主案规范与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动核对，保留本项目生成条件。
+> **专用派生 Skill（已 vendor 到本项目）**：BI 日志需求、音效需求、开发 Checklist、测试用例这四类派生所依赖的专用 Skill 已整体拷贝至 `vendor/skills/<skill-name>/`，随本仓库分发，clone 后即可直接调用，不依赖本机全局 skill 安装。清单见 `references/derived-documents-workflow.md`。`vendor/skills/slg-testcase-generator/` 下的 `scripts/config.json`、`scripts/token.json`、`K1-testcase-config/config.json`（含 Google OAuth 凭据与 Sheet/Drive 资源 ID）未随仓库分发，只保留同目录 `.example`/`.template` 版本；新设备使用前需参照 example 自行创建并填入真实凭据，且已在 `.gitignore` 中排除防止误提交。上游 skill 更新时需人工比对差异后决定是否同步覆盖 vendor 副本。
 > **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重——K1 用**功能名前缀**（如 `ActvSoccer_`），X1/X15 用 `LC_<页签>_`；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
 
 ---

@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# OAuth 凭证和密钥（敏感信息）
+**/token.json
+**/credentials.json
+**/*-4ce5d8c0ebb5.json
+**/brutal-age-*.json
+
+# 实际配置文件（含 API Key，只上传模板）
+scripts/config.json
+**/testcase-config/config.json
+**/K1-testcase-config/config.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 临时文件
+*.tmp
+test_cases.json
+test_cases_*.json
