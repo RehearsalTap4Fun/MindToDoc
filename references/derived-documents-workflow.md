@@ -6,7 +6,7 @@
 
 | 类型 | 生成规则 | 内容来源与生成入口 | 产物 |
 |---|---|---|---|
-| BI 日志需求 | 固定生成 | `vendor/skills/bi-log-requirements/`（vendor 自本机 `bi-log-requirements` skill）：从主案提取分析目标与行为，核对现有打点及公共日志，再写字段级需求 | Markdown 或 Excel，遵循专用 Skill 和用户指定格式 |
+| BI 日志需求 | 固定生成 | `vendor/skills/bi-log-requirements/`（vendor 自本机 `bi-log-requirements` skill）：从主案提取分析目标与行为，核对现有打点及公共日志，再写字段级需求；四列表结构固定为「日志触发逻辑｜日志表名/类型｜字段名｜字段含义/取值」，一张连续表不按模块拆分 | 钉钉表格（axls），结构对齐《K1_BI日志统计需求》样例库（node `dpYLaezmVNLROXARIZwOlNLK8rMqPxX6`），挂主案子节点；本地保留同内容 `output/<功能名>-BI日志需求.xlsx`（权威，用该 skill 的 `scripts/gen_bi_requirements_excel.py` 生成）与 `.md`（可编辑源，供人工改字段用） |
 | 美术需求 | 固定生成 | `art-requirements-reference.md` + `../templates/derived-art-requirements.md`：提取独立视觉资产 | `output/<功能名>-美术需求.md` |
 | 音效需求 | 固定生成 | `vendor/skills/audio-production-pipeline/` 的 K1 独立需求模式（`references/k1-demand-only.md`）；先查音效库，按该模式生成与校验 | `output/<功能名>-音效需求/audio_demand.xlsx`，不进入生产包流程 |
 | 配置结构 | 固定生成 | `../templates/derived-config-tables.md`；核对现有配置并描述新增、修改及复用结构 | `output/<功能名>-配置表结构.md` |
@@ -21,6 +21,10 @@
 四类固定文档不得因精简、完全复用或未提供成品素材而跳过。先核查主案和现有来源：没有新增项时，在对应文档保留简短的核查结论与可定位的复用依据，不虚构资产、日志或配置字段，也不制造空白需求行。缺少影响正确性的业务决策或必要输入时，继续澄清，说明该文档尚未完成；“未查到”不等于“没有需求”。无现成音频不妨碍拆音效需求。已有同用途且版本一致的文档可作为该类交付，不重复另建。
 
 专用 Skill 在使用前发现并读取；不可用时说明缺失及受影响的产物，不以自编格式冒充已按该 Skill 完成。这里只承接需求生成；音频生产、资源导入、配置落地和发布按各自任务授权执行。
+
+自由格式的派生文档（美术需求、BI 日志需求的本地 `.md`、音效需求钉钉端的只读镜像）只写两部分：**需求正文本身**（资产清单/复用清单、四列日志表等）和**待确认项**。不写整理日期、来源文档、规则依据、生成方式等元信息段落，不写"结论先行"式的过程叙述，不写"交付格式建议"或"关联文档"链接列表——判断过程是起草动作不是交付内容，关联文档已经在主案「派生文档说明」里有了；命名建议、切图规格这类零碎信息并入表格备注列，暂时无法确定的信息折进待确认项，不单独开章节铺陈"核对了什么/没核对什么"。
+
+派生文档的目标格式若为 axls（钉钉表格）而当前环境没有 spreadsheet 读写 MCP（`get_all_sheets`/`get_range`/`update_spreadsheet_range` 一类）时，不代表做不了——改用「本地生成 xlsx + 导入」路径落地为真正的钉钉表格，具体步骤见 `dingtalk-sync-reference.md`「导入本地表格生成钉钉表格」一节；不要因为读不到就退回到 adoc 里贴一张 markdown 表格充数。
 
 ## 宣讲 / 演示（按需，非固定派生）
 
