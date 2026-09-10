@@ -170,3 +170,23 @@ python scripts/dingtalk_md_unescape.py --check "output/<name>.md"
 反向(本地 → 钉钉)**不要在本地 SSOT 手工加 `\\+` `\\*\\*` 等 GFM 转义**，本地写干净 markdown 即可，钉钉 `update_document` / `insert_document_block` 接 markdown 时会自动转义；**只需保证 `markdown` 参数里换行是真实 `\n`(U+000A)**，不能是字面字符串 `\n`(反斜杠+字母 n)，否则全部塞到一行。表格 sidecar 对 `[]` 的 `\[\]` 编码属于 converter 的传输层安全处理，不属于本地 SSOT 手工转义，必须保留。
 
 详细规则与全部转义对照见 memory/dingtalk-md-escape-diff.md。
+
+## 八、导入本地表格生成钉钉表格（无 spreadsheet MCP 时的正确做法）
+
+某些环境没有 `get_all_sheets`/`get_range`/`update_spreadsheet_range` 这类读写钉钉表格（axls）单元格的 MCP 工具——对 axls 节点调用 `get_document_content`/`download_file`/`submit_export_job` 都会报错并提示"改用 get_spreadsheet_range 等表格相关 MCP Tool"，但那些工具在这类环境里并不存在，不是记错名字。**这不代表交付不了钉钉表格**：真正可行的路径是"本地生成 + 导入"，不是"远程读写"。
+
+1. 本地用 openpyxl（或对应专用 Skill 自带的生成脚本，如 `vendor/skills/bi-log-requirements/scripts/gen_bi_requirements_excel.py`）生成 `.xlsx`。
+2. `create_import_session(fileName, suffix="xlsx", fileSize, targetFolderId=<挂载位置的 nodeId>)`，拿到 `uploadUrl`、`sessionId`。
+3. HTTP PUT 上传文件二进制到 `uploadUrl`：
+
+   ```bash
+   curl -X PUT -H "Content-Type:" --data-binary @本地文件.xlsx "<uploadUrl>"
+   ```
+
+   **必须显式传空 `Content-Type`**（`get_file_upload_info` 的工具说明写明了这条："Content-Type 必须设置为空字符串"，`create_import_session` 的 `uploadUrl` 同样适用）。不传时 curl 对 `--data-binary` 默认用 `application/x-www-form-urlencoded`，会导致 OSS 返回 `SignatureDoesNotMatch`——服务端签名时是按空 Content-Type 算的。确认返回 HTTP 200 再往下走。
+4. `confirm_import(sessionId)` 拿到 `taskId`；`query_import_task(taskId)` 轮询到 `status:"completed"`，返回新建节点的 `documentUrl`（32 位 nodeId 在其中）。
+5. `rename_document` 把节点名从默认的 `文件名.xlsx` 改成不带后缀的名字，对齐同级派生子节点的命名风格（如"BI日志需求"）。
+
+**覆盖更新的坑**：`get_file_upload_info(overwriteNodeId=<已存在的 axls 节点>)` 对着一个由「导入」生成的 ALIDOC 原生表格节点会稳定返回 `internalError`（不是偶发超时，重试仍一样）——这条覆盖上传路径大概率只认"直接上传产生的原始文件节点"，认不了"导入转换后的在线表格"。**需要更新内容时不要走 overwrite**，改为：`delete_document` 删旧节点（进回收站，30 天内可恢复，不是永久删除）→ 按上面 1-5 步重新导入一份。新节点会有新的 nodeId/URL，必须同步更新主案「派生文档说明」等处引用的链接。
+
+如果同一挂载位置下已有旧版本产物（例如之前生成的 adoc 版），确认新 axls 内容核对无误后可以 `delete_document` 旧节点，避免同名两份混着看；这一步同样是可恢复的软删除。

@@ -28,7 +28,7 @@ description: 把移动游戏想法转化为功能策划案，固定生成 BI 日
 - `references/mobile-system-rules-reference.md`：逐系统交付物判定、红点规则、线上数据兼容、配置表边界。
 - `references/k1-common-configs.md`：K1 项目公共配置表清单（活动框架 / 通行证 / 排行 / 礼包 / 邮件 / 联盟 / KVK 等），写派生 `-配置表结构.md` 的「公共 / 外部依赖」时直接挑用。
 - `references/ui-annotation-reference.md`：UI 识图、归类、标注、上传、左图右文、界面下方 key 录入表。
-- `references/dingtalk-sync-reference.md`：钉钉 MCP、`md2jsonml.py`、payload 限制、jsonml/markdown 双路径、补 ind、补表、补图。
+- `references/dingtalk-sync-reference.md`：钉钉 MCP、`md2jsonml.py`、payload 限制、jsonml/markdown 双路径、补 ind、补表、补图、无 spreadsheet MCP 时导入本地表格生成钉钉表格（axls）。
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
 
 > **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑：`C:\Project\K1Game\game` 是服务器仓库。 `C:\Project\K1Client\k1_client` 是客户端仓库。
@@ -217,6 +217,11 @@ description: 把移动游戏想法转化为功能策划案，固定生成 BI 日
 **界面标注派生**
 
 - 含：标准流程、子界面进度表、单屏左图右文模板；旧稿平铺表标「遗留，待升级」。
+
+**自由格式派生（美术需求等，无专用 Skill 固定格式时）**
+
+- 只写需求正文本身（资产清单、复用清单等）和待确认项；不写整理日期/来源文档/规则依据等元信息段落，不写"结论先行"式过程叙述，不写"交付格式建议"或"关联文档"链接列表——判断过程是起草动作不是交付内容，关联文档已在主案「派生文档说明」承接。命名建议、规格等零碎信息并入表格备注列，暂无法确定的信息折进待确认项。细则与判断准则见对应 reference（如 `references/art-requirements-reference.md`）。
+- 生成 BI 日志需求、音效需求、Checklist、测试用例前先确认 `vendor/skills/` 下是否有对应专用 Skill 并读它的 SKILL.md，不能凭经验自编格式；目标格式为钉钉表格但当前环境没有 spreadsheet 读写 MCP 时，改走 `references/dingtalk-sync-reference.md`「导入本地表格生成钉钉表格」的本地生成 + 导入路径，不退回成 adoc 贴 markdown 表格充数。
 
 ---
 
