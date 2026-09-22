@@ -1,0 +1,134 @@
+{
+  "project": "K1",
+  "sheets": [
+    {
+      "name": "秘宝时序特技",
+      "note": "来源：主案《秘宝时序特技》v1.8 的「时序特技」「特技等级与合成」「产出与投放」「装备与部队预览」「战报与提示」各节，以及界面清单中的 treasure_main / treasure_select / treasure_bag / treasure_merge / treasure_detail / battle_report_stunt。复用核对依据 references/k1-audio-library.md（源自 AudioListCfg.tsv + AudioConst.cs 注释），逐条命中后填真实 AudioList ID。本功能对玩家呈现的战斗是结算战报而非实时战斗画面，因此战斗内新机制（限时免疫、伤兵回战、一次性伤害）不拆实时战斗音，只拆战报条目展示音；该边界需战斗程序确认，见 note 末与主案待确认项。尚未提供界面效果图，界面类触发点按现有界面增量处理，收图后复核。",
+      "rows": [
+        {
+          "type": "module",
+          "name": "秘宝界面与装备"
+        },
+        {
+          "event": "ui_treasure_main_open",
+          "tag": "复用",
+          "asset": "15220071",
+          "trigger": "从英雄详情页秘宝入口打开秘宝主界面时",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「普通弹窗打开/关闭」：15220071 = Sound_UI_window_open.wav，现有通用窗口打开音；主案未要求秘宝界面有独立开场氛围，按常规 UI 反馈复用"
+        },
+        {
+          "event": "ui_treasure_main_close",
+          "tag": "复用",
+          "asset": "15220070",
+          "trigger": "关闭秘宝主界面或返回英雄详情页时",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「关闭/返回按钮」：15220070 = Sound_UI_window_close.wav，与 15220071 成对使用"
+        },
+        {
+          "event": "ui_treasure_slot_select",
+          "tag": "复用",
+          "asset": "15220087",
+          "trigger": "点击四个部位槽位切换、或在选择面板中选中一件秘宝时",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「页签/横向切换/选中」：15220087 = UI_click_label.ogg；主案「选择面板」只是在现有面板上增加节点与等级展示，交互形态未变"
+        },
+        {
+          "event": "ui_treasure_equip_success",
+          "tag": "复用",
+          "asset": "190000003",
+          "trigger": "装备秘宝到英雄部位、服务器校验通过并刷新部队预览时",
+          "priority": "P0",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「升级/解锁/成功反馈」：190000003 = ui_upgrade_effect_small.wav，轻量成长反馈；装备是本功能最高频的正反馈操作，故 P0"
+        },
+        {
+          "event": "ui_treasure_unequip",
+          "tag": "复用",
+          "asset": "15220034",
+          "trigger": "从英雄部位卸下秘宝、服务器落库时",
+          "priority": "P2",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「通用按钮点击」：15220034 = UI_i_generic.ogg（UIGeneric 通用UI点击音效）；卸下是中性操作，不做成长或损失表达"
+        },
+        {
+          "event": "ui_treasure_action_fail",
+          "tag": "复用",
+          "asset": "15220036",
+          "trigger": "合成或更换被拒绝时：已达特技等级上限、无可用材料、材料处于装备中、目标所属部队出征中",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「错误/不可点击反馈」：15220036 = UI_negative.wav；主案「合成操作」的四类失败分支共用一条否定反馈，不按分支细分"
+        },
+        {
+          "type": "module",
+          "name": "合成与产出"
+        },
+        {
+          "event": "ui_treasure_shard_merge_success",
+          "tag": "复用",
+          "asset": "22100002",
+          "trigger": "碎片数量达标、合成出一件整件新秘宝、结果弹窗出现时",
+          "priority": "P0",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「领取/获得奖励」：22100002 = kingdom_treasure_reward_popup.ogg，语义为秘宝类奖励弹窗，与本功能「拿到一件新秘宝」的情绪一致；若音频判定该资源与王国秘宝活动绑定过紧，退回新增，见待确认"
+        },
+        {
+          "event": "ui_treasure_stunt_levelup",
+          "tag": "复用",
+          "asset": "190000004",
+          "trigger": "同名件合成完成、目标秘宝特技等级提升并刷新显示时",
+          "priority": "P0",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「升级/解锁/成长」：190000004 = ui_upgrade_effect_big.wav，重于装备成功的 190000003，形成两级成长反馈层次"
+        },
+        {
+          "event": "ui_treasure_shard_get",
+          "tag": "复用",
+          "asset": "15220028",
+          "trigger": "秘宝碎片入账提示出现时（每日任务领取、商店购买、通行证发放、真实交战掉落结算后）",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「领取/获得奖励」：15220028 = UI_claim.ogg（Claim）；碎片属于常规资源入账，按标准领取反馈复用"
+        },
+        {
+          "event": "ui_treasure_system_unlock",
+          "tag": "复用",
+          "asset": "3",
+          "trigger": "玩家首次满足王国纪事解锁条件、秘宝系统对其开放的提示出现时",
+          "priority": "P2",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md「升级/解锁/成长」：3 = Sound_Scene_Unlock.wav（SOUND_UI_UNLOCK 解锁音效），现有系统解锁通用音"
+        },
+        {
+          "type": "module",
+          "name": "战报表现"
+        },
+        {
+          "event": "battle_report_stunt_trigger",
+          "tag": "新增",
+          "asset": "treasure_stunt_trigger（拟定）",
+          "trigger": "战报中逐条展示本场触发的时序特技条目时，每条展示瞬间播放一次",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "desc": "短促、有金属质感的单点提示音，用于标记「一条特技在这一场生效了」；长度控制在 0.3 秒内以便四条连播不糊，音色需与战报中现有羁绊契约触发条目的提示区分开，但音量层级保持一致，不抢兵损数字的注意力。四个节点（开战/战中/追击/战后）建议用同一音色的四档音高区分，不做四条独立素材",
+          "notes": "现有库中「通用按钮点击」「升级/解锁」两类语义均不贴合——战报条目不是玩家操作也不是成长反馈，而是战斗结果回放的节拍标记，故判定新增；若音频评估后认为可用 15220087 一类轻点击音替代，可退回复用"
+        }
+      ]
+    }
+  ]
+}

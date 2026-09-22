@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>冷库服召集转出机制 · 方案宣讲</title>
+<title>秘宝时序特技 · 方案宣讲</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* ============ 主题色(🍂 牛皮纸 Kraft Paper) ============
+    /* ============ 主题色(默认:🖋 墨水经典) ============
        切换主题:从 references/themes.md 复制对应的 :root 块
        整体替换这几行(--ink / --ink-rgb / --paper / --paper-rgb)
        其他地方散落的 rgba() 都走 var(--ink-rgb) / var(--paper-rgb),无需逐处改 */
-    --ink:#2a1e13;
-    --ink-rgb:42,30,19;
-    --paper:#eedfc7;
-    --paper-rgb:238,223,199;
-    --paper-tint:#e0d0b6;
-    --ink-tint:#3a2a1d;
+    --ink:#0a1f3d;
+    --ink-rgb:10,31,61;
+    --paper:#f1f3f5;
+    --paper-rgb:241,243,245;
+    --paper-tint:#e4e8ec;
+    --ink-tint:#152a4a;
 
     /* ============ 字体(跨主题固定) ============ */
     --mono:"IBM Plex Mono",ui-monospace,monospace;
@@ -534,435 +534,370 @@
      页面组件参考 references/components.md
      ============================================================ -->
 
-<!-- ============ 1 · 封面(Layout 1 开场封面) ============ -->
-<section class="slide hero dark" data-slide-id="cover">
+<!-- 01 · hero dark · 开场封面 -->
+<section class="slide hero light">
   <div class="chrome">
-    <div>开场 · Kickoff</div>
-    <div>01 / 12</div>
+    <div>K1 · 秘宝系统 · 2026.09</div>
+    <div>Vol.01</div>
   </div>
-  <div class="frame" style="display:grid;gap:4vh;align-content:center;min-height:80vh">
-    <div class="kicker" data-anim>CROSS-FUNCTIONAL BRIEFING</div>
-    <h1 class="h-hero" style="font-size:5.6vw;line-height:1.18" data-anim>冷库服召集<br>转出机制。</h1>
-    <p class="lead" style="max-width:56vw" data-anim>用一期联盟跨服召集活动，把冷库关闭前的主动转出、关闭强转、落地补救串成一条线。</p>
+  <div class="frame" style="display:grid; gap:4vh; align-content:center; min-height:80vh">
+    <div class="kicker" data-anim>方案宣讲 · 策划组过方向</div>
+    <h1 class="h-hero" style="font-size:8.2vw" data-anim>秘宝时序特技</h1>
+    <h2 class="h-sub" data-anim>从静态战力乘区，到一场战斗的四个时刻</h2>
+    <p class="lead" style="max-width:62vw" data-anim>
+      秘宝上线三年，配置里大半是玩家看不到的坑位，仅有的两条特技还和羁绊契约共用同一组属性。这一版给它一个契约不做的定位：契约决定每一次攻击如何结算，秘宝决定一场战斗的四个时刻发生什么。
+    </p>
     <div class="meta-row" data-anim>
-      <span>MindToDoc</span><span>·</span><span>v1.2 · 2026-09-10</span>
+      <span>主案 v1.8</span><span>·</span><span>投放诊断 v6</span><span>·</span><span>2026.09.18</span>
     </div>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Kickoff</div>
+    <div>四个节点 · 三个方向 · 两级投放</div>
+    <div>— 2026 —</div>
   </div>
 </section>
 
-<!-- ============ 2 · 背景与目的(Layout 9 并列对比) ============ -->
-<section class="slide light" data-animate="directional" data-slide-id="background">
+<!-- 02 · light · 数据大字报 -->
+<section class="slide light">
   <div class="chrome">
-    <div>开场 · Kickoff</div>
-    <div>02 / 12</div>
+    <div>Diagnosis · 现状</div>
+    <div>02 / 10</div>
   </div>
-  <div class="frame" style="padding-top:5vh">
-    <div class="kicker" data-anim>为什么要做这件事</div>
-    <div class="grid-2-6-6" style="gap:5vw 4vh;margin-top:2vh">
-      <div data-anim="left" style="padding:3vh 2vw;border-left:3px solid currentColor;opacity:.55">
-        <div class="kicker" style="opacity:.9">Problem · 现状</div>
-        <h3 class="h-md" style="margin-top:2vh">冷库关闭是兜底，<br>不是好体验。</h3>
-        <p class="body-zh" style="margin-top:2vh;max-width:32ch">活跃玩家被动换服、丢失联盟关系，容易流失。强转只该是最后一道保障。</p>
-      </div>
-      <div data-anim="right" style="padding:3vh 2vw;border-left:3px solid currentColor">
-        <div class="kicker" style="opacity:.9">Goal · 目标</div>
-        <h3 class="h-md" style="margin-top:2vh">让活跃玩家<em>主动</em>转出，<br>并保留联盟关系。</h3>
-        <p class="body-zh" style="margin-top:2vh;max-width:32ch">剩下的人走强转兜底；落地无盟的玩家，再给一次补救机会。</p>
-      </div>
-    </div>
-  </div>
-  <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Kickoff</div>
-  </div>
-</section>
+  <div class="frame" style="padding-top:3vh">
+    <div class="kicker" data-anim>六个数字，先看清它现在是什么。</div>
+    <h2 class="h-xl" data-anim>一个空壳</h2>
+    <p class="lead" style="margin-bottom:2vh" data-anim>有部位、有品质、有图鉴、有分享的完整外观，内在只有一条战力百分比。</p>
 
-<!-- ============ 3 · 三条通道(pillar + grid-3) ============ -->
-<section class="slide dark" data-slide-id="overview">
-  <div class="chrome">
-    <div>方案 · Solution</div>
-    <div>03 / 12</div>
-  </div>
-  <div class="frame" style="padding-top:4vh;padding-bottom:2vh">
-    <div class="kicker" data-anim>OVERVIEW · 三选一</div>
-    <h2 class="h-xl" data-anim>三条通道，<br>一句话讲清楚</h2>
-    <div class="grid-3" style="margin-top:2.6vh;align-items:start">
-      <div class="pillar" style="padding:1.6vh 1.4vw;gap:1.1vh" data-anim>
-        <div class="ic">01</div>
-        <div class="t">加入别人的<br>召集联盟</div>
-        <div class="d"><strong>通道① 申请迁入</strong> —— 无盟玩家申请加入其他服已发布召集的联盟，R4+ 审批通过后迁服入盟。</div>
-        <div class="tag" style="align-self:flex-start">→ 唯一可补救重复使用的通道</div>
+    <div class="grid-6" style="margin-top:2vh">
+      <div class="stat-card" data-anim>
+        <div class="stat-label">Visible · 可见</div>
+        <div class="stat-nb">10 <span class="stat-unit">件</span></div>
+        <div class="stat-note">配置共 35 行，12 个橙色坑位仍是占位图标</div>
       </div>
-      <div class="pillar" style="padding:1.6vh 1.4vw;gap:1.1vh" data-anim>
-        <div class="ic">02</div>
-        <div class="t">整盟一起<br>搬家</div>
-        <div class="d"><strong>通道② 联盟迁移</strong> —— 盟长发起，全盟携带成员一起迁往目标服，24 小时准备期后自动执行。</div>
-        <div class="tag" style="align-self:flex-start">→ 保留联盟关系最直接的方式</div>
+      <div class="stat-card" data-anim>
+        <div class="stat-label">Stagnant · 停滞</div>
+        <div class="stat-nb">36 <span class="stat-unit">个月</span></div>
+        <div class="stat-note">2023-09 之后没有实质迭代</div>
       </div>
-      <div class="pillar" style="padding:1.6vh 1.4vw;gap:1.1vh;border:1px solid currentColor;border-color:rgba(var(--paper-rgb),.28)" data-anim>
-        <div class="ic">03</div>
-        <div class="t">自己先走，<br>落地再入盟</div>
-        <div class="d"><strong>通道③ 个人迁移</strong> —— 非盟长个人迁往目标服，落地后无盟，走目标服现有联盟推荐/快捷入盟。</div>
-        <div class="tag" style="align-self:flex-start">→ 不保留联盟，但转出速度最快</div>
+      <div class="stat-card" data-anim>
+        <div class="stat-label">Overlap · 重叠</div>
+        <div class="stat-nb">2 <span class="stat-unit">条</span></div>
+        <div class="stat-note">连击与暴击，与契约共用同一组属性</div>
+      </div>
+      <div class="stat-card" data-anim>
+        <div class="stat-label">Implemented · 落地</div>
+        <div class="stat-nb">2/9</div>
+        <div class="stat-note">配置里 9 条特技，战斗代码只实现 2 条</div>
+      </div>
+      <div class="stat-card" data-anim>
+        <div class="stat-label">Coverage · 覆盖</div>
+        <div class="stat-nb">9 <span class="stat-unit">%</span></div>
+        <div class="stat-note">一个赛季能拿到征服金币的活跃玩家</div>
+      </div>
+      <div class="stat-card" data-anim>
+        <div class="stat-label">Per Season · 人均</div>
+        <div class="stat-nb">91.5 <span class="stat-unit">%</span></div>
+        <div class="stat-note">拿到金币的人里，一季只有 1 枚</div>
       </div>
     </div>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Solution</div>
+    <div>来源 · dataconfig / game origin/dev　|　近三个 KVK 赛季实测</div>
+    <div>Diagnosis</div>
   </div>
 </section>
 
-<!-- ============ 4 · 时间轴(Layout 6 两列流水线 Pipeline) ============ -->
-<section class="slide light" data-animate="pipeline" data-slide-id="timeline">
+<!-- 03 · dark · 并列对比 -->
+<section class="slide light" data-animate="directional">
   <div class="chrome">
-    <div>方案 · Solution</div>
-    <div>04 / 12</div>
+    <div>Positioning · 定位</div>
+    <div>03 / 10</div>
   </div>
-  <div class="frame">
-    <div class="kicker">SCHEDULE · 7 天</div>
-    <h2 class="h-xl">整体流程</h2>
+  <div class="frame" style="padding-top:4vh">
+    <div class="kicker" data-anim>撞车的地方，也是分界线。</div>
+    <h2 class="h-xl" style="margin-bottom:4vh" data-anim>从每一击，到每一场</h2>
+
+    <div class="grid-2-6-6" style="gap:5vw 4vh">
+      <div data-anim="left" style="padding:3vh 2vw; border-left:3px solid currentColor; opacity:.55">
+        <div class="kicker" style="opacity:.9">羁绊契约 · 已有</div>
+        <h3 class="h-md" style="margin-top:2vh">每一次攻击如何结算</h3>
+        <ul style="margin-top:3vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.4vh; font-family:var(--sans-zh); font-size:max(14px,1.1vw); line-height:1.55">
+          <li>闪避 · 暴击 · 连击 · 克制 · 额外伤害 · 反击</li>
+          <li>部队级，一支部队只有少量契约槽</li>
+          <li>概率触发，收益随攻击次数线性累积</li>
+          <li>秘宝现有的连击与暴击，用的就是它的属性</li>
+        </ul>
+      </div>
+      <div data-anim="right" style="padding:3vh 2vw; border-left:3px solid currentColor">
+        <div class="kicker" style="opacity:.9">秘宝 · 本案</div>
+        <h3 class="h-md" style="margin-top:2vh">一场战斗的四个时刻</h3>
+        <ul style="margin-top:3vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.4vh; font-family:var(--sans-zh); font-size:max(14px,1.1vw); line-height:1.55">
+          <li>开战 · 战中 · 追击 · 战后</li>
+          <li>英雄级，主将四件决定一支部队的打法</li>
+          <li>回合、兵力阈值与结算触发，每场每条一次</li>
+          <li>伤害独立结算：不引反击、不被闪避</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Page 03 · 两个系统各管一层</div>
+    <div>Before / After</div>
+  </div>
+</section>
+
+<!-- 04 · hero light · 章节幕封 -->
+<section class="slide hero light">
+  <div class="chrome">
+    <div>第一幕 · 结构</div>
+    <div>Act I · 04 / 10</div>
+  </div>
+  <div class="frame" style="display:grid; gap:6vh; align-content:center; min-height:80vh">
+    <div class="kicker" data-anim>Act I</div>
+    <h1 class="h-hero" style="font-size:8.5vw" data-anim>四个时刻</h1>
+    <p class="lead" style="max-width:58vw" data-anim>
+      一场战斗从建立到结算，有四个互不重合的时刻。四个部位各管一个，号角管追击，护符管下一场。
+    </p>
+  </div>
+  <div class="foot">
+    <div>第一幕引子</div>
+    <div>— · —</div>
+  </div>
+</section>
+
+<!-- 05 · light · Pipeline -->
+<section class="slide light" data-animate="pipeline">
+  <div class="chrome">
+    <div>Structure · 结构</div>
+    <div>Act I · 05 / 10</div>
+  </div>
+  <div class="frame" style="padding-top:3vh">
+    <div class="kicker">按什么触发，往哪个方向走。</div>
+    <h2 class="h-xl">四个时刻 · 三个方向</h2>
+
     <div class="pipeline-section">
-      <div class="pipeline-label">召集周期 · 每 28 天一期，每期 5 天</div>
-      <div class="pipeline">
+      <div class="pipeline-label">四个时刻 · 按什么触发</div>
+      <div class="pipeline" data-cols="4">
         <div class="step" data-anim="step">
-          <div class="step-nb">召集前 2 天</div>
-          <div class="step-title">预告</div>
-          <div class="step-desc">冷库预告提前 2 天</div>
+          <div class="step-nb">01</div>
+          <div class="step-title">开战 · 指环</div>
+          <div class="step-desc">战斗建立即生效，限时</div>
         </div>
         <div class="step" data-anim="step">
-          <div class="step-nb">D1–D2</div>
-          <div class="step-title"><span class="hi">主动转出开放</span></div>
-          <div class="step-desc">三通道同时开放</div>
+          <div class="step-nb">02</div>
+          <div class="step-title">战中 · 项链</div>
+          <div class="step-desc">我方兵力首次降至阈值</div>
         </div>
         <div class="step" data-anim="step">
-          <div class="step-nb">D3 结束</div>
-          <div class="step-title">关闭 · 强转</div>
-          <div class="step-desc">通道窗口关闭，剩余角色强转</div>
+          <div class="step-nb">03</div>
+          <div class="step-title">追击 · 号角</div>
+          <div class="step-desc">敌方兵力首次降至阈值</div>
         </div>
         <div class="step" data-anim="step">
-          <div class="step-nb">D4–D5</div>
-          <div class="step-title">召集补救</div>
-          <div class="step-desc">仅剩通道①可补救</div>
-        </div>
-        <div class="step" data-anim="step">
-          <div class="step-nb">D5 结束</div>
-          <div class="step-title"><span class="hi">当期结束</span></div>
-          <div class="step-desc">补救窗口关闭</div>
+          <div class="step-nb">04</div>
+          <div class="step-title">战后 · 护符</div>
+          <div class="step-desc">真实交战结算，作用于下一场</div>
         </div>
       </div>
     </div>
-    <p class="body-zh" style="margin-top:4vh;max-width:70ch">联盟准备倒计时按实际发起时间算，不按自然日取整。</p>
-  </div>
-  <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Solution</div>
-  </div>
-</section>
 
-<!-- ============ 5 · 三通道对比表(原生 table) ============ -->
-<section class="slide dark" data-slide-id="compare-table">
-  <div class="chrome">
-    <div>细节 · Detail</div>
-    <div>05 / 12</div>
-  </div>
-  <div class="frame" style="padding-top:3vh;gap:2vh">
-    <div class="kicker">DECISION TABLE</div>
-    <h2 class="h-xl">怎么选，看这张表</h2>
-    <table style="width:100%;border-collapse:collapse;font-family:var(--sans-zh);margin-top:2vh">
-      <thead>
-        <tr style="border-bottom:2px solid currentColor">
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--mono);font-size:max(11px,.82vw);font-weight:600;opacity:.6;letter-spacing:.12em;text-transform:uppercase">维度</th>
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--serif-zh);font-size:max(15px,1.15vw);font-weight:700">① 申请迁入</th>
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--serif-zh);font-size:max(15px,1.15vw);font-weight:700">② 联盟迁移</th>
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--serif-zh);font-size:max(15px,1.15vw);font-weight:700">③ 个人迁移</th>
-        </tr>
-      </thead>
-      <tbody style="font-size:max(14px,.95vw);line-height:1.55">
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw;opacity:.62;font-weight:500">开放窗口</td><td style="padding:1.1vh 1vw;opacity:.9">D1–D5（含补救）</td><td style="padding:1.1vh 1vw;opacity:.9">发起 D1–D2，最晚 D3 结束执行</td><td style="padding:1.1vh 1vw;opacity:.9">D1–D3</td></tr>
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw;opacity:.62;font-weight:500">是否保留联盟</td><td style="padding:1.1vh 1vw;font-weight:700">是（加入目标联盟）</td><td style="padding:1.1vh 1vw;font-weight:700">是（整盟带走）</td><td style="padding:1.1vh 1vw;opacity:.9">否（落地无盟）</td></tr>
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw;opacity:.62;font-weight:500">名额限制</td><td style="padding:1.1vh 1vw;opacity:.9">接收联盟单列冷库召集名额</td><td style="padding:1.1vh 1vw;opacity:.9">不占召集名额，按携带人数预占</td><td style="padding:1.1vh 1vw;opacity:.9">不占召集名额，正常计入</td></tr>
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw;opacity:.62;font-weight:500">审批</td><td style="padding:1.1vh 1vw;opacity:.9">目标联盟 R4+ 审批</td><td style="padding:1.1vh 1vw;opacity:.9">无需目标服审批</td><td style="padding:1.1vh 1vw;opacity:.9">无需目标服审批</td></tr>
-        <tr><td style="padding:1.1vh 1vw;opacity:.62;font-weight:500">成功后特权状态</td><td style="padding:1.1vh 1vw"><span class="hi" style="font-weight:700">当期特权结束</span></td><td style="padding:1.1vh 1vw;opacity:.9">保留一次①补救机会</td><td style="padding:1.1vh 1vw;opacity:.9">保留一次①补救机会</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Detail</div>
-  </div>
-</section>
-
-<!-- ============ 6 · 推荐标签规则(pillar + grid-3) ============ -->
-<section class="slide light" data-slide-id="recommend">
-  <div class="chrome">
-    <div>细节 · Detail</div>
-    <div>06 / 12</div>
-  </div>
-  <div class="frame" style="justify-content:center">
-    <div class="kicker" data-anim>推荐 ≠ 门槛</div>
-    <h2 class="h-xl" data-anim>目标范围统一，<br>"推荐"只是参考</h2>
-    <div class="grid-3" style="flex:none;align-content:start;margin-top:5vh">
-      <div class="pillar" data-anim>
-        <div class="ic">01</div>
-        <div class="t">语言匹配</div>
-        <div class="d">仅 ru/en 玩家检测：目标服占比超 30% 或排名第一的语言含玩家语言；其他语种不检测。</div>
-      </div>
-      <div class="pillar" data-anim>
-        <div class="ic">02</div>
-        <div class="t">活跃规模</div>
-        <div class="d">目标服活跃人数 50–200（含边界）。</div>
-      </div>
-      <div class="pillar" data-anim>
-        <div class="ic">03</div>
-        <div class="t">付费结构</div>
-        <div class="d">目标联盟近 30 天付费人数 ≥15，只看是否付费，不按比例。</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:1.4vw;flex-wrap:wrap;margin-top:5vh;padding-top:2.4vh;border-top:1px solid rgba(127,127,127,.3)" data-anim>
-      <div class="tag">三项同时满足才显示"推荐"</div>
-      <div class="tag">未获标签仍可选择</div>
-      <div class="tag">没有合法目标 → 告警，不回退无限制自选</div>
-    </div>
-  </div>
-  <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Detail</div>
-  </div>
-</section>
-
-<!-- ============ 7 · 特权与限流状态机(原生 table) ============ -->
-<section class="slide dark" data-slide-id="privilege-table">
-  <div class="chrome">
-    <div>细节 · Detail</div>
-    <div>07 / 12</div>
-  </div>
-  <div class="frame" style="padding-top:3vh;gap:2.6vh">
-    <div class="kicker">STATE MACHINE</div>
-    <h2 class="h-xl">一次机会怎么用</h2>
-    <table style="width:100%;border-collapse:collapse;font-family:var(--sans-zh);margin-top:2vh">
-      <thead>
-        <tr style="border-bottom:2px solid currentColor">
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--mono);font-size:max(11px,.82vw);font-weight:600;opacity:.6;letter-spacing:.12em;text-transform:uppercase">玩家状态</th>
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--mono);font-size:max(11px,.82vw);font-weight:600;opacity:.6;letter-spacing:.12em;text-transform:uppercase">当期冷库资格</th>
-          <th style="text-align:left;padding:1.2vh 1vw;font-family:var(--mono);font-size:max(11px,.82vw);font-weight:600;opacity:.6;letter-spacing:.12em;text-transform:uppercase">后续行为</th>
-        </tr>
-      </thead>
-      <tbody style="font-size:max(14px,.95vw);line-height:1.55">
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw">尚未成功转出</td><td style="padding:1.1vh 1vw">原冷库三通道资格</td><td style="padding:1.1vh 1vw;opacity:.62">按各通道窗口与条件选择</td></tr>
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw">经① 成功迁服入盟</td><td style="padding:1.1vh 1vw"><span class="hi" style="font-weight:700">当期特权结束</span></td><td style="padding:1.1vh 1vw;opacity:.62">后续迁服按常规规则，退盟不重置</td></tr>
-        <tr style="border-bottom:1px solid rgba(127,127,127,.28)"><td style="padding:1.1vh 1vw">经②③ 或强转落地</td><td style="padding:1.1vh 1vw;font-weight:700">保留一次①补救机会</td><td style="padding:1.1vh 1vw;opacity:.62">最晚至 D5 结束，不能在新服继续用②③</td></tr>
-        <tr><td style="padding:1.1vh 1vw">① 申请或迁入失败</td><td style="padding:1.1vh 1vw">未消耗成功次数</td><td style="padding:1.1vh 1vw;opacity:.62">窗口内满足条件可手动重新申请</td></tr>
-      </tbody>
-    </table>
-    <p class="body-zh" style="max-width:76ch">通道①能拿到别人的召集名额，价值最高，用一次即关闭当期特权；②③和强转是被动/半被动路径，落地无盟再给一次①补救，避免真的沦为无盟孤儿，但不会无限重复吃通道。</p>
-  </div>
-  <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Detail</div>
-  </div>
-</section>
-
-<!-- ============ 8 · 冷库服预告(Layout 4 左文右图) ============ -->
-<section class="slide dark" data-slide-id="ui-notice">
-  <div class="chrome">
-    <div>界面 · Evidence</div>
-    <div>08 / 12</div>
-  </div>
-  <div class="frame grid-2-8-4" style="padding-top:5vh">
-    <div style="display:flex;flex-direction:column;justify-content:space-between;gap:3vh">
-      <div>
-        <div class="kicker" data-anim>PRE-NOTICE · 预告触达</div>
-        <h2 class="h-xl" data-anim>预告页也要<br>引导来召集</h2>
-        <p class="body-zh" style="margin-top:3vh;max-width:36ch" data-anim>现有冷库服预告界面增加关闭倒计时以及召集活动前往按钮，帮玩家从"服务器要关了"直接跳转到"去召集找新家"。</p>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:1.8vh;border-top:1px solid rgba(255,255,255,.25);padding-top:2.2vh" data-anim>
-        <div style="display:flex;gap:1vw;align-items:baseline">
-          <span style="font-family:var(--serif-en);font-style:italic;font-weight:500;opacity:.5">01</span>
-          <span class="body-zh">服务器关闭倒计时 —— 距离召集活动 D3 结束的倒计时</span>
+    <div class="pipeline-section">
+      <div class="pipeline-label">三个方向 · 每个时刻各一条</div>
+      <div class="pipeline" data-cols="3">
+        <div class="step" data-anim="step">
+          <div class="step-nb">A</div>
+          <div class="step-title">进攻 · 多打</div>
+          <div class="step-desc">伤害加成与一次性伤害</div>
         </div>
-        <div style="display:flex;gap:1vw;align-items:baseline">
-          <span style="font-family:var(--serif-en);font-style:italic;font-weight:500;opacity:.5">02</span>
-          <span class="body-zh">前往召集按钮 —— 未开启时按钮置灰并提示开启倒计时；已开启时点击直接打开召集活动界面</span>
+        <div class="step" data-anim="step">
+          <div class="step-nb">B</div>
+          <div class="step-title">守御 · 少挨</div>
+          <div class="step-desc">限时减伤与免疫</div>
+        </div>
+        <div class="step" data-anim="step">
+          <div class="step-nb">C</div>
+          <div class="step-title">续战 · 不回城</div>
+          <div class="step-desc">战地回战与就地归队</div>
         </div>
       </div>
     </div>
-    <figure class="frame-img fit-contain" style="height:64vh" data-anim>
-      <img src="ui-annotation/assets/cold-server/prelaunch-notice-v1_annotated.png" alt="冷库服预告：关闭倒计时与前往召集按钮">
-      <figcaption class="img-cap">冷库服预告 · 关闭倒计时与前往按钮</figcaption>
-    </figure>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Evidence</div>
+    <div>Page 05 · 攻守双方节点对称，守城方同样有四个</div>
+    <div>Structure</div>
   </div>
 </section>
 
-<!-- ============ 9 · 界面标注 上(Layout 5 图片网格) ============ -->
-<section class="slide light" data-slide-id="ui-a">
+<!-- 06 · dark · 十二条特技表 -->
+<section class="slide light">
   <div class="chrome">
-    <div>界面 · Evidence</div>
-    <div>09 / 12</div>
+    <div>Structure · 结构</div>
+    <div>Act I · 06 / 10</div>
   </div>
   <div class="frame" style="padding-top:3vh">
-    <div class="kicker" data-anim>EVIDENCE · 上</div>
-    <h2 class="h-xl" style="font-size:4.2vw" data-anim>六屏实际交互长什么样 · 上</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.4vh 1.6vw;margin-top:4vh">
-      <figure class="frame-img fit-contain" style="height:48vh" data-anim>
-        <img src="ui-annotation/assets/cold-server/recruitment-tabs-recommendation-v1_annotated.png" alt="申请迁入：页签与推荐标识">
-        <figcaption class="img-cap">01 · 申请迁入 · 页签与推荐标识</figcaption>
-      </figure>
-      <figure class="frame-img fit-contain" style="height:48vh" data-anim>
-        <img src="ui-annotation/assets/cold-server/recruitment-alliance-transfer-v1_annotated.png" alt="联盟转移：未发起">
-        <figcaption class="img-cap">02 · 联盟转移 · 未发起</figcaption>
-      </figure>
-      <figure class="frame-img fit-contain" style="height:48vh" data-anim>
-        <img src="ui-annotation/assets/cold-server/recruitment-personal-transfer-v1_annotated.png" alt="个人转移：目标列表">
-        <figcaption class="img-cap">03 · 个人转移 · 目标列表</figcaption>
-      </figure>
+    <div class="kicker" data-anim>四行看完十二条。</div>
+    <h2 class="h-xl" data-anim>十二条特技</h2>
+    <p class="lead" style="margin-top:2vh; margin-bottom:1vh" data-anim>
+      一支部队每个时刻只生效一条，主将优先、副将补位；同方向四件凑齐就是一套完整打法。
+    </p>
+
+    <div style="margin-top:2vh">
+      <div class="rowline" data-anim>
+        <div class="k">开战 · 指环</div>
+        <div class="v">先声 我方伤害提高 · 战阵 我方受伤降低 · 救护 每次结算的伤兵部分回战</div>
+        <div class="m">限时生效</div>
+      </div>
+      <div class="rowline" data-anim>
+        <div class="k">战中 · 项链</div>
+        <div class="v">雷霆 按已损兵力反击 · 护身 短时免疫伤害 · 重整 本场伤兵部分回战</div>
+        <div class="m">我方阈值</div>
+      </div>
+      <div class="rowline" data-anim>
+        <div class="k">追击 · 号角</div>
+        <div class="v">斩杀 按敌方残兵追击 · 压制 敌方伤害降至战斗结束 · 整队 伤兵部分回战</div>
+        <div class="m">敌方阈值</div>
+      </div>
+      <div class="rowline" data-anim>
+        <div class="k">战后 · 护符</div>
+        <div class="v">乘胜 下一场伤害提高 · 坚守 下一场受伤降低 · 凯旋 伤兵就地归队不回城</div>
+        <div class="m">真实交战</div>
+      </div>
     </div>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Evidence</div>
+    <div>Page 06 · 等级由同名合成决定，只改特技参数，不改品质与基础战力</div>
+    <div>Timing × Direction</div>
   </div>
 </section>
 
-<!-- ============ 9 · 界面标注 下(Layout 5 图片网格) ============ -->
-<section class="slide light" data-slide-id="ui-b">
+<!-- 07 · hero dark · 大引用 -->
+<section class="slide hero light" data-animate="quote">
   <div class="chrome">
-    <div>界面 · Evidence</div>
-    <div>10 / 12</div>
+    <div>Value · 价值线</div>
+    <div>07 / 10</div>
+  </div>
+  <div class="frame" style="display:grid; gap:3.6vh; align-content:center; min-height:80vh">
+    <div class="kicker" data-anim>被否掉的第一版</div>
+    <blockquote style="font-family:var(--serif-zh); font-weight:700; font-size:4.5vw; line-height:1.22; letter-spacing:-.01em; max-width:72vw">
+      <span data-anim="line" style="display:block">补兵很便宜，</span>
+      <span data-anim="line" style="display:block">所以少死人不值钱。</span>
+      <span data-anim="line" style="display:block; margin-top:1.4vh">值钱的是不回城，</span>
+      <span data-anim="line" style="display:block">和带进下一场。</span>
+    </blockquote>
+    <p class="lead" style="max-width:60vw; opacity:.72" data-anim>
+      第一版有几条特技做的是「阵亡改判伤兵」和「额外产出」。K1 的补兵成本和战斗收益决定了它们没有吸引力，第三个方向因此从「保全」改成「续战」，战后节点整体改为影响下一场。
+    </p>
+  </div>
+  <div class="foot">
+    <div>Page 07 · 价值线</div>
+    <div>— · —</div>
+  </div>
+</section>
+
+<!-- 08 · light · 投放 -->
+<section class="slide light">
+  <div class="chrome">
+    <div>Supply · 投放</div>
+    <div>08 / 10</div>
   </div>
   <div class="frame" style="padding-top:3vh">
-    <div class="kicker" data-anim>EVIDENCE · 下</div>
-    <h2 class="h-xl" style="font-size:4.2vw" data-anim>六屏实际交互长什么样 · 下</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.4vh 1.6vw;margin-top:4vh">
-      <figure class="frame-img fit-contain" style="height:48vh" data-anim>
-        <img src="ui-annotation/assets/cold-server/recruitment-alliance-preparation-v1_annotated.png" alt="联盟转移：准备中">
-        <figcaption class="img-cap">04 · 联盟转移 · 准备中</figcaption>
-      </figure>
-      <figure class="frame-img fit-contain" style="height:48vh" data-anim>
-        <img src="ui-annotation/assets/cold-server/alliance-preparation-v1_annotated.png" alt="联盟转移：准备弹窗">
-        <figcaption class="img-cap">05 · 联盟转移 · 准备弹窗</figcaption>
-      </figure>
-      <figure class="frame-img fit-contain" style="height:48vh" data-anim>
-        <img src="ui-annotation/assets/cold-server/alliance-member-management-v1_annotated.png" alt="转移列表：盟长视角">
-        <figcaption class="img-cap">06 · 转移列表 · 盟长视角</figcaption>
-      </figure>
+    <div class="kicker" data-anim>一季一枚，喂不起十二件。</div>
+    <h2 class="h-xl" data-anim>供给要提一个量级</h2>
+    <p class="lead" style="margin-top:2vh; margin-bottom:1vh" data-anim>
+      征服金币只在 KVK 赛季内产出，来源是一条成就加名次礼物；一个玩家一个赛季实际能拿到的量，只够换走一件。而新体系是每部位三件、还要靠同名合成升级。
+    </p>
+
+    <div style="margin-top:2vh">
+      <div class="rowline" data-anim>
+        <div class="k">主路一 · 参与型金币</div>
+        <div class="v">按 KVK 个人积分设阶梯发放，成就发放条目扩容，名次奖励改为增量</div>
+        <div class="m">解决覆盖</div>
+      </div>
+      <div class="rowline" data-anim>
+        <div class="k">主路二 · 碎片层</div>
+        <div class="v">通用碎片，达量合成任意一件；每日任务、破碎大陆金币商店、通行证都投放</div>
+        <div class="m">解决节奏</div>
+      </div>
+      <div class="rowline" data-anim>
+        <div class="k">主路三 · 交战掉落</div>
+        <div class="v">真实交战胜利按概率掉碎片 + 保底；判定沿用战后节点，天然挡住打小号刷</div>
+        <div class="m">同一价值线</div>
+      </div>
+      <div class="rowline" data-anim style="opacity:.7">
+        <div class="k">两条辅线</div>
+        <div class="v">联盟礼物改按贡献自动发放（份数配置需先生效）；商店解锁提前、放开限购</div>
+        <div class="m">只动配置</div>
+      </div>
     </div>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Evidence</div>
+    <div>辅线单独做只能扩大覆盖，撑不起合成所需的重复件</div>
+    <div>Supply</div>
   </div>
 </section>
 
-<!-- ============ 10 · 效果指标(rowline) ============ -->
-<section class="slide dark" data-slide-id="metrics-table">
+<!-- 09 · dark · 范围与待拍板 -->
+<section class="slide light">
   <div class="chrome">
-    <div>总结 · Wrap-up</div>
-    <div>11 / 12</div>
+    <div>Scope · 落地</div>
+    <div>09 / 10</div>
   </div>
-  <div class="frame" style="padding-top:2.4vh">
-    <div class="kicker" style="margin-bottom:1.2vh">MEASUREMENT</div>
-    <h2 class="h-xl" style="font-size:4vw">怎么判断方案有没有效</h2>
-    <div style="margin-top:1.6vh">
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">01</div>
-        <div class="v"><span class="hi">冷库活跃玩家随盟/召集入盟落地比例</span></div>
-        <div class="m"><span class="tag">↑ 提升</span></div>
+  <div class="frame" style="padding-top:4vh">
+    <div class="kicker" data-anim>做什么，定什么。</div>
+    <h2 class="h-xl" style="margin-bottom:4vh" data-anim>本期范围</h2>
+
+    <div class="grid-2-6-6" style="gap:5vw 4vh">
+      <div data-anim="left" style="padding:3vh 2vw; border-left:3px solid currentColor">
+        <div class="kicker" style="opacity:.9">本期实现</div>
+        <ul style="margin-top:2.6vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.5vh; font-family:var(--sans-zh); font-size:max(14px,1.1vw); line-height:1.55">
+          <li>每个部位新增三件橙色秘宝，三个方向各一件</li>
+          <li>四个时刻各三条特技，一支部队每时刻生效一条</li>
+          <li>特技等级由累计合并的同名件数决定</li>
+          <li>两级投放：金币换整件，碎片走日常与战斗</li>
+          <li>存量秘宝全部保留，不削弱、不参与合成</li>
+        </ul>
       </div>
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">02</div>
-        <div class="v">活跃玩家被强转比例</div>
-        <div class="m"><span class="tag">↓ 下降</span></div>
-      </div>
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">03</div>
-        <div class="v">强转活跃玩家第 4 周留存与对照差距</div>
-        <div class="m"><span class="tag">↓ 缩小</span></div>
-      </div>
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">04</div>
-        <div class="v">召集拉入后续关闭服的人次</div>
-        <div class="m"><span class="tag">↓ 下降</span></div>
-      </div>
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">05</div>
-        <div class="v">联盟迁移发起数、携带人数与成功率</div>
-        <div class="m" style="opacity:.6">观察</div>
-      </div>
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">06</div>
-        <div class="v">①补救申请、通过与实际入盟率</div>
-        <div class="m" style="opacity:.6">观察</div>
-      </div>
-      <div class="rowline" style="padding:1.05vh 0">
-        <div class="k">07</div>
-        <div class="v">推荐标签目标的选择率、迁入率与留存</div>
-        <div class="m" style="opacity:.6">观察</div>
+      <div data-anim="right" style="padding:3vh 2vw; border-left:3px solid currentColor">
+        <div class="kicker" style="opacity:.9">需要拍板</div>
+        <ul style="margin-top:2.6vh; padding-left:1.2em; display:flex; flex-direction:column; gap:1.5vh; font-family:var(--sans-zh); font-size:max(14px,1.1vw); line-height:1.55">
+          <li>特技等级是否计入秘宝战力 · 数值</li>
+          <li>真实交战比例与连战窗口取值 · 数值 + 程序</li>
+          <li>生存类特技对 NPC 是否触发 · 数值</li>
+          <li>各来源投放量与定价 · 数值 + 运营</li>
+          <li>联盟礼物份数字段需先在服务端生效 · 程序</li>
+        </ul>
       </div>
     </div>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Wrap-up</div>
+    <div>Page 09 · 新增战斗机制中，部队级定时状态最重</div>
+    <div>Scope</div>
   </div>
 </section>
 
-<!-- ============ 11 · 收尾(hero + 两栏 manifesto/takeaways) ============ -->
-<section class="slide hero light" data-animate="quote" data-slide-id="closing">
+<!-- 10 · hero light · 收束问题 -->
+<section class="slide hero light">
   <div class="chrome">
-    <div>收束 · Closing</div>
-    <div>12 / 12</div>
+    <div>The Question</div>
+    <div>10 / 10</div>
   </div>
-  <div class="frame grid-2-6-6" style="align-content:center;min-height:76vh;gap:5vw 4vh">
-    <div data-anim style="display:flex;flex-direction:column;gap:3vh">
-      <div class="kicker">MANIFESTO</div>
-      <blockquote style="font-family:var(--serif-zh);font-weight:700;font-size:3.4vw;line-height:1.3;letter-spacing:-.005em">
-        <span data-anim="line" style="display:block">主动、可选、</span>
-        <span data-anim="line" style="display:block">能保联盟的<em>退路</em>。</span>
-      </blockquote>
-      <p class="body-zh" style="max-width:34ch">强转只兜底剩余角色，落地后还有一次补救，尽量把"被强制换服"的负面体验降到最低。</p>
-      <div class="meta-row">
-        <span>MindToDoc · 冷库服召集转出机制</span><span>·</span><span>v1.2 · 26.09.10</span>
-      </div>
-    </div>
-    <div data-anim style="display:flex;flex-direction:column;gap:0">
-      <div class="kicker" style="margin-bottom:1.4vh">TAKEAWAYS · 3 CORE METRICS</div>
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:1.6vw;align-items:start;padding:2.2vh 0;border-top:1px solid rgba(var(--ink-rgb),.18)">
-        <div style="font-family:var(--serif-en);font-weight:800;font-size:2.4vw;line-height:.9;opacity:.5">01</div>
-        <div>
-          <h3 class="h3-zh" style="font-size:1.3vw">随盟/召集入盟落地比例</h3>
-          <p class="body-zh" style="font-size:max(13px,.9vw);opacity:.65;margin-top:.6vh">核心成功指标 — 期望提升。</p>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:1.6vw;align-items:start;padding:2.2vh 0;border-top:1px solid rgba(var(--ink-rgb),.18)">
-        <div style="font-family:var(--serif-en);font-weight:800;font-size:2.4vw;line-height:.9;opacity:.5">02</div>
-        <div>
-          <h3 class="h3-zh" style="font-size:1.3vw">活跃玩家被强转比例</h3>
-          <p class="body-zh" style="font-size:max(13px,.9vw);opacity:.65;margin-top:.6vh">兜底规模指标 — 期望下降。</p>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:1.6vw;align-items:start;padding:2.2vh 0;border-top:1px solid rgba(var(--ink-rgb),.18);border-bottom:2px solid currentColor">
-        <div style="font-family:var(--serif-en);font-weight:800;font-size:2.4vw;line-height:.9"><span class="hi">03</span></div>
-        <div>
-          <h3 class="h3-zh" style="font-size:1.3vw"><span class="hi">强转玩家第 4 周留存差距 · 核心</span></h3>
-          <p class="body-zh" style="font-size:max(13px,.9vw);opacity:.65;margin-top:.6vh">体验兜底是否成功的最终检验，完整 7 项指标见上一页。</p>
-        </div>
-      </div>
-    </div>
+  <div class="frame" style="display:grid; gap:7vh; align-content:center; min-height:80vh">
+    <div class="kicker" data-anim>留给这次评审</div>
+    <h1 class="h-hero" style="font-size:6.6vw; line-height:1.18">
+      <span data-anim style="display:block">秘宝是第四个</span>
+      <span data-anim style="display:block">养成系统，</span>
+      <span data-anim style="display:block">还是更好的战力乘区？</span>
+    </h1>
+    <p class="lead" style="max-width:56vw" data-anim>
+      这一版按第一个答案设计。四个时刻、三个方向、两级投放，都建立在这个前提上；如果答案是第二个，方案要整体收敛。
+    </p>
   </div>
   <div class="foot">
-    <div>冷库服召集转出机制 · 方案宣讲</div>
-    <div>Closing</div>
+    <div>主案 output/秘宝时序特技.md · v1.8</div>
+    <div>— · —</div>
   </div>
 </section>
+
 
 </div>
 
@@ -971,78 +906,14 @@
 <!-- 演讲备注：每页一条，id 必须与 section[data-slide-id] 一致。见 references/presenter-mode.md -->
 <script>
 const SPEAKER_NOTES = [
-  {
-    id: 'cover', title: '封面', section: '开场', minutes: 0.5,
-    purpose: '建立主题与现场预期',
-    talk: ['一句话说明为什么现在要讲冷库服转出机制', '预告会覆盖背景、三通道、时间轴、界面和指标', '不展开细节，留悬念'],
-    transition: '进入背景与目的', cue: '停顿，确认观众屏已同步'
-  },
-  {
-    id: 'background', title: '背景与目的', section: '开场', minutes: 1,
-    purpose: '说明为什么要做这件事',
-    talk: ['冷库关闭是兜底，不是好体验——活跃玩家被动换服会流失', '目标是让玩家主动转出并保留联盟关系', '强调这是本次方案的核心设计出发点'],
-    transition: '从问题过渡到具体方案', cue: '左右两栏对照讲，先讲左边问题再讲右边目标'
-  },
-  {
-    id: 'overview', title: '方案总览 · 三通道', section: '方案', minutes: 1.5,
-    purpose: '一句话讲清楚三条通道的核心差异',
-    talk: ['通道①申请迁入：加入别人的召集联盟，保留联盟关系', '通道②联盟迁移：整盟一起搬家', '通道③个人迁移：速度最快但不保联盟'],
-    transition: '进入具体时间安排', cue: '按顺序讲三张支柱卡，第三张（个人迁移）用边框强调，放最后讲'
-  },
-  {
-    id: 'timeline', title: '时间轴流程', section: '方案', minutes: 1.5,
-    purpose: '讲清楚 7 天的关键节点',
-    talk: ['预告 2 天 → 主动转出 D1-D2 → 关闭强转 D3 → 补救 D4-D5', '强调 D3 结束是关闭节点，D5 结束是当期终点', '联盟准备倒计时按实际发起时间算，不按自然日'],
-    transition: '进入详细对比表', cue: '按 → 一步步点亮流水线，手指沿节点从左到右讲解'
-  },
-  {
-    id: 'compare-table', title: '三通道对比表', section: '细节', minutes: 1.5,
-    purpose: '给出可查阅的决策依据',
-    talk: ['按维度逐行对照，重点看"是否保留联盟"和"成功后特权状态"', '通道①唯一会消耗当期特权，②③不会', '与既有《跨服召集转服分析》做历史对照'],
-    transition: '进入目标范围规则', cue: '这页信息密度高，放慢速度，允许提问'
-  },
-  {
-    id: 'recommend', title: '推荐标签规则', section: '细节', minutes: 1,
-    purpose: '澄清"推荐"不是准入条件',
-    talk: ['标签落在联盟条目，条件同时满足才显示', '没有标签仍然可以选择，不是硬性门槛', '没有合法目标时会触发运营告警，不会放松限制'],
-    transition: '进入特权限流规则', cue: '强调"推荐仅供参考"这句话，容易被误解成强制'
-  },
-  {
-    id: 'privilege-table', title: '特权与限流', section: '细节', minutes: 1.5,
-    purpose: '讲清楚"一次机会"的消耗逻辑',
-    talk: ['通道①用一次就关闭当期特权，因为它占用别人的召集名额', '②③和强转是被动路径，落地无盟还能补救一次', '失败不消耗机会，可以重新尝试'],
-    transition: '进入界面实际效果', cue: '这是最容易被追问的一页，多留时间'
-  },
-  {
-    id: 'ui-notice', title: '界面标注 · 预告页', section: '界面', minutes: 0.5,
-    purpose: '展示冷库预告页新增的关闭倒计时与召集入口',
-    talk: ['预告页新增服务器关闭倒计时', '前往召集按钮未开启时置灰，已开启时直接跳转召集活动', '这是玩家从"预告"走到"召集"的第一个入口'],
-    transition: '进入六屏实际交互效果', cue: '这页信息量小，一带而过即可'
-  },
-  {
-    id: 'ui-a', title: '界面标注 上', section: '界面', minutes: 1,
-    purpose: '展示前三屏实际交互效果',
-    talk: ['申请迁入页签的推荐标识如何展示', '联盟转移未发起时盟长看到的目标列表', '个人转移的目标列表与费用说明'],
-    transition: '进入后三屏', cue: '结合截图逐个指出关键控件位置'
-  },
-  {
-    id: 'ui-b', title: '界面标注 下', section: '界面', minutes: 1,
-    purpose: '展示后三屏实际交互效果',
-    talk: ['联盟转移进入准备中状态后的页面变化', '准备弹窗与准备页读取同一状态', '转移列表里盟长如何管理携带名单'],
-    transition: '进入效果指标', cue: '强调这六屏已经过用户审核确认'
-  },
-  {
-    id: 'metrics-table', title: '效果指标', section: '总结', minutes: 1,
-    purpose: '给出可衡量的成功标准',
-    talk: ['核心看随盟/召集入盟落地比例是否提升，强转比例是否下降', '其余指标标注"观察"，不设具体基线目标', '与既有《跨服召集转服分析》做历史对照'],
-    transition: '进入收尾总结', cue: '不用逐条念完，挑 2-3 条讲透即可'
-  },
-  {
-    id: 'closing', title: '收尾', section: '收束', minutes: 0.8,
-    purpose: '收束全场并留下可记忆的判断',
-    talk: ['回扣开场问题：如何让活跃玩家主动转出并保留联盟', '一句话总结：主动、可选、能保联盟的退路', '给出会后可以查阅的完整指标页入口'],
-    transition: '结束演讲，进入提问', cue: '停顿 2 秒后致谢'
-  }
+  /* {
+    id: 'stable-slide-id', title: '页面标题', section: '主体', minutes: 1,
+    purpose: '这一页要让观众理解什么',
+    talk: ['只在台上说的补充信息', '例子、证据或语气提示', '不复述页面可见文字'],
+    transition: '为什么下一页紧接着出现', cue: '可选：停顿 / Demo / 视频',
+    interaction: '可选：现场提问', delivery: '可选：语气 / 重音',
+    advance: '可选：翻页时机', fallback: '可选：Demo 失败时的备用说法'
+  } */
 ];
 window.__SPEAKER_NOTES__ = SPEAKER_NOTES;
 </script>
