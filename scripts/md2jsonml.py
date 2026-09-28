@@ -16,6 +16,11 @@ r"""md → 完整 jsonml 转换器（A 方案）。
 - 行内格式：**加粗**、{{red:红字}}、`行内代码`、[链接](URL)
 - fenced code：保留语言与代码内容
 
+用法：python md2jsonml.py <src.md> <out.json> [listId] [--allow-missing-images]
+- 默认缺少本地图片时报出行号并退出 2，不写任何输出。
+- --allow-missing-images：缺图仍生成 〚IMG-N〛 占位，sidecar 标 missing=true 并在 stderr 列出，
+  用于先同步文字、后补图；带 missing 的条目不能算已交付。
+
 ind 规则（正文比标题多缩一档，每级 32）：
 - H1 标题 ind=0，其下正文/列表 ind=32
 - H2 标题 ind=32，其下正文/列表 ind=64
@@ -25,9 +30,13 @@ import sys, json, re
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-SRC = sys.argv[1]
-OUT = sys.argv[2]
-LIST_ID = sys.argv[3] if len(sys.argv) > 3 else "doc-h"
+ALLOW_MISSING_IMAGES = "--allow-missing-images" in sys.argv[1:]
+_args = [a for a in sys.argv[1:] if a != "--allow-missing-images"]
+if len(_args) < 2:
+    sys.exit("用法：python md2jsonml.py <src.md> <out.json> [listId] [--allow-missing-images]")
+SRC = _args[0]
+OUT = _args[1]
+LIST_ID = _args[2] if len(_args) > 2 else "doc-h"
 
 lines = Path(SRC).read_text(encoding="utf-8").split("\n")
 
@@ -38,6 +47,17 @@ images_md = []           # 图片占位元数据，占位段文本为 〚IMG-i�
 body_lines = []          # 大文档 markdown overwrite 主体，保留 TABLE/IMG 占位
 i = 0
 n = len(lines)
+missing_images = []    # (行号, 路径)，仅 --allow-missing-images 时收集
+
+# 分隔线：---、-----、***、___ 都不是正文
+HR_RE = re.compile(r"^(?:-{3,}|\*{3,}|_{3,})$")
+# 段落起始：标题、代码、注释、表格、列表、图片、引用、HTML 行，
+# 以及中文常见的无空格编号「1.xxx」「1、xxx」「1）xxx」
+BLOCK_START_RE = re.compile(r"^(#{1,4}\s|```|<!--|\||[-*+]\s|!\[|\d+[.)）、]|>|<)")
+
+def fail(line_no, message):
+    print(f"[error] {SRC}:{line_no} {message}", file=sys.stderr)
+    sys.exit(2)
 
 # 列表上下文：连续列表行共享一个 listId
 list_counter = [0]
@@ -189,7 +209,7 @@ while i < n:
             i += 1
         i += 1
         continue
-    if s == "" or s == "---":
+    if s == "" or HR_RE.match(s):
         if body_lines and body_lines[-1] != "":
             body_lines.append("")
         i += 1
@@ -206,13 +226,18 @@ while i < n:
             item["url"] = source
         else:
             if parsed.scheme and not re.match(r"^[A-Za-z]:[/\\]", source):
-                raise ValueError(f"Unsupported image URL: {source}")
+                fail(i + 1, f"不支持的图片地址：{source}")
             local_path = Path(unquote(source))
             if not local_path.is_absolute():
                 local_path = Path(SRC).resolve().parent / local_path
-            if not local_path.is_file():
-                raise ValueError(f"Missing image: {local_path}")
-            item["path"] = str(local_path.resolve())
+            if local_path.is_file():
+                item["path"] = str(local_path.resolve())
+            elif ALLOW_MISSING_IMAGES:
+                item["path"] = str(local_path.resolve())
+                item["missing"] = True
+                missing_images.append((i + 1, source))
+            else:
+                fail(i + 1, f"图片不存在：{source}（补图，或加 --allow-missing-images 先同步文字）")
         images_md.append(item)
         blocks.append(para_block(item["marker"], cur_heading_level))
         if body_lines and body_lines[-1].strip():
@@ -274,12 +299,15 @@ while i < n:
     i += 1
     while i < n:
         next_line = lines[i].strip()
-        if not next_line or next_line == "---" or re.match(r"^(#{1,4}\s|```|<!--|\||[-*+]\s|!\[|\d+[.)]\s|>)", next_line):
+        # 上一行以两个空格或反斜杠结尾是硬换行，与 body.md 的渲染保持一致
+        hard_break = lines[i - 1].endswith(("  ", "\\"))
+        if not next_line or hard_break or HR_RE.match(next_line) or BLOCK_START_RE.match(next_line):
             break
         paragraph.append(next_line)
         body_lines.append(lines[i])
         i += 1
-    blocks.append(para_block(strip_inline(" ".join(paragraph)), cur_heading_level))
+    # 硬换行的反斜杠只是 Markdown 语法，不进钉钉正文
+    blocks.append(para_block(strip_inline(" ".join(re.sub(r"\\$", "", t) for t in paragraph)), cur_heading_level))
 
 root = ["root", {}] + blocks
 Path(OUT).write_text(json.dumps(root, ensure_ascii=False), encoding="utf-8")
@@ -293,4 +321,6 @@ Path(img_side).write_text(json.dumps(images_md, ensure_ascii=False, indent=1), e
 # 大文档 markdown 主体：保留 〚TBL〛/〚IMG〛 占位，供 markdown overwrite 后继续定位
 body_side = os.path.splitext(OUT)[0] + ".body.md"
 Path(body_side).write_text("\n".join(body_lines) + "\n", encoding="utf-8")
+for line_no, source in missing_images:
+    print(f"[warn] {SRC}:{line_no} 图片缺失，已保留占位：{source}", file=sys.stderr)
 print("BLOCKS", len(blocks), "TABLES", len(tables_md), "IMAGES", len(images_md), "->", OUT, "+", side, "+", img_side, "+", body_side)

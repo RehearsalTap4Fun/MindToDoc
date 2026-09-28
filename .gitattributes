@@ -1,0 +1,6 @@
+# 交付登记按字节算指纹：文本产物在所有平台签出为 LF，避免 Windows autocrlf 让指纹失配
+*.md   text eol=lf
+*.json text eol=lf
+*.py   text eol=lf
+*.xlsx binary
+*.png  binary

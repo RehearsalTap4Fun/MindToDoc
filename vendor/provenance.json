@@ -1,6 +1,6 @@
 {
   "recorded_on": "2026-09-28",
-  "note": "Hashes identify the local pre-remediation entry, not an upstream release or a full tree lock.",
+  "note": "Hashes identify the local pre-remediation entry, not an upstream release or a full tree lock. pre_patch_file_sha256 records each patched file as of main before 2026-09-28 (null = added locally), for diffing against upstream later.",
   "skills": [
     {
       "name": "audio-production-pipeline",
@@ -13,7 +13,16 @@
         "scoped downloads and redirects",
         "local review server origin/session/static boundaries",
         "HTML data escaping and same-origin client"
-      ]
+      ],
+      "pre_patch_file_sha256": {
+        "SKILL.md": "5e1b758897d59fc8a6789c7829853a48d657d0fe70c554d4f9ec849223f9a3aa",
+        "references/first-run-workflow.md": "d607f2869f6816241250ffacdf001cc3dd0bba16e43bad7bc5bd7cf5b2a37e2d",
+        "scripts/build_company_library_review_page.py": "d57cbdfbb0d97117ed7c73ce94b54ce8a9e0808e5755ccf3390f15d524690047",
+        "scripts/company_audio_api.py": "322570adf5f26071756536635a42dc60d93f4e54ccddc483c36496deba738533",
+        "scripts/download_company_library_previews.py": "7b050ea9d8d3f16962c436680ce70bb0122872ad5b6787e3cd89e4b37f0194ec",
+        "scripts/review_browser_security.js": null,
+        "scripts/serve_review.py": "e3c2cd5583ada8ee28528cfbac876b6c3bae081306a44a73ae8b8475d65cdbf3"
+      }
     },
     {
       "name": "bi-log-requirements",
@@ -24,7 +33,10 @@
       "pre_remediation_entry_sha256": "fc4e0e2b5eb09750756c09e4d0f8642151bbdfa5cf5f53b20c91f0f5bccd29c7",
       "local_patches_20260928": [
         "explicit external Skill discovery"
-      ]
+      ],
+      "pre_patch_file_sha256": {
+        "SKILL.md": "fc4e0e2b5eb09750756c09e4d0f8642151bbdfa5cf5f53b20c91f0f5bccd29c7"
+      }
     },
     {
       "name": "dev-checklist-generator",
@@ -62,7 +74,10 @@
       "pre_remediation_entry_sha256": "d239477f5d744075ed64e62f3a89528459cce0c5982ab8d353bbcd73dcc44c94",
       "local_patches_20260928": [
         "required fields, unique IDs, step inheritance and literal probability validation"
-      ]
+      ],
+      "pre_patch_file_sha256": {
+        "scripts/validate_cases.py": "0d554ca4c1f35dd762bcc4b56d89252a86161d8fe12d0711ccb4f6b01f48574b"
+      }
     }
   ]
 }

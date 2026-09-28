@@ -34,9 +34,9 @@ def main():
     parser.add_argument('--skill-root', action='append', type=Path, default=[])
     args = parser.parse_args()
     roots = [root / 'vendor/skills', *args.skill_root]
-    failed = sys.version_info < (3, 10)
+    failed = sys.version_info < (3, 9)
     if failed:
-        print('需要 Python 3.10 或以上')
+        print('需要 Python 3.9 或以上')
     for name in args.capability or ['core']:
         errors = check_capability(root, definitions[name], roots)
         print(f'{name}: ' + ('缺少依赖' if errors else '本地依赖齐备'))

@@ -72,3 +72,44 @@ def test_alternate_list_markers_never_merge_with_prose_or_each_other(tmp_path, f
     assert 'first' in json.dumps(blocks[1]) and 'second' not in json.dumps(blocks[1])
     assert 'second' in json.dumps(blocks[2])
     assert text.strip() == out.with_suffix('.body.md').read_text(encoding='utf-8').strip()
+
+
+def test_missing_image_error_names_line_and_flag(tmp_path):
+    proc, out = convert(tmp_path, '# Rules\n\n![missing](missing.png)\n')
+    assert proc.returncode == 2
+    assert 'source.md:3' in proc.stderr and '--allow-missing-images' in proc.stderr
+    assert 'Traceback' not in proc.stderr
+
+
+def test_allow_missing_images_keeps_marker_and_flags_entry(tmp_path):
+    source = tmp_path / 'source.md'
+    source.write_text('# Rules\n\n![missing](missing.png)\n', encoding='utf-8')
+    out = tmp_path / 'result.json'
+    proc = subprocess.run([sys.executable, str(ROOT / 'scripts/md2jsonml.py'), str(source), str(out), '--allow-missing-images'], capture_output=True, text=True, encoding='utf-8')
+    assert proc.returncode == 0, proc.stderr
+    assert 'missing.png' in proc.stderr
+    images = json.loads(out.with_suffix('.images.json').read_text(encoding='utf-8'))
+    assert images[0]['missing'] is True and images[0]['marker'] == '〚IMG-0〛'
+
+
+@pytest.mark.parametrize('text', [
+    '<color=#0ea728><b>规则</b></color>\n1.第一条\n2.第二条\n',
+    '<color=#0ea728><b>规则</b></color>\n1、第一条\n2）第二条\n',
+    '首行  \n第一条\\\n第二条\n',
+])
+def test_preview_lines_without_markdown_spacing_stay_separate(tmp_path, text):
+    proc, out = convert(tmp_path, text)
+    assert proc.returncode == 0, proc.stderr
+    blocks = json.loads(out.read_text(encoding='utf-8'))[2:]
+    assert len(blocks) == 3
+    assert '第一条' in json.dumps(blocks[1], ensure_ascii=False)
+    assert '第二条' not in json.dumps(blocks[1], ensure_ascii=False)
+    assert '\\\\' not in json.dumps(blocks, ensure_ascii=False)
+
+
+def test_long_horizontal_rule_is_not_body_text(tmp_path):
+    proc, out = convert(tmp_path, 'Above\n\n-----\n\nBelow\n')
+    assert proc.returncode == 0, proc.stderr
+    blocks = json.loads(out.read_text(encoding='utf-8'))[2:]
+    assert '-----' not in json.dumps(blocks)
+    assert len(blocks) == 2

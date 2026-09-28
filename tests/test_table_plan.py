@@ -48,3 +48,22 @@ def test_cli_mismatch_returns_error_and_does_not_write_plan(tmp_path):
 
 def test_empty_document_needs_no_operations():
     assert module.build_plan([], [], '〚TBL-', 'node') == []
+
+
+def test_partial_resume_plans_only_remaining_placeholders():
+    entries = [(5, 3, 'x', 'paragraph', '〚TBL-5〛'), (7, 9, 'y', 'paragraph', '〚TBL-7〛')]
+    tables = [f't{i}' for i in range(8)]
+    with pytest.raises(ValueError):
+        module.build_plan(entries, tables, '〚TBL-', 'node')
+    plan = module.build_plan(entries, tables, '〚TBL-', 'node', allow_partial=True)
+    assert [op['table_idx'] for op in plan if op['op'] == 'append_table'] == [7, 5]
+    assert [op['markdown'] for op in plan if op['op'] == 'append_table'] == ['t7', 't5']
+
+
+@pytest.mark.parametrize('entries', [
+    [(8, 0, 'a', 'paragraph', '〚TBL-8〛')],
+    [(1, 0, 'a', 'paragraph', '〚TBL-1〛'), (1, 2, 'b', 'paragraph', '〚TBL-1〛')],
+])
+def test_partial_resume_still_rejects_unknown_or_duplicate_markers(entries):
+    with pytest.raises(ValueError):
+        module.build_plan(entries, [f't{i}' for i in range(8)], '〚TBL-', 'node', allow_partial=True)

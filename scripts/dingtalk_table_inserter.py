@@ -6,6 +6,7 @@
   --node-id  目标钉钉节点 ID（仅用于在计划里打印，不真正调 API）
   --marker   占位字符前缀，默认 〚TBL-（旧版兼容用 TABLE_）
   --out      执行计划输出路径（默认 stdout）
+  --allow-partial  续传：只为文档里实际剩下的占位出计划（需先回读文档）
 
 输出：一份 JSON 计划，按 anchor blk_idx **倒序**排列，每个 anchor 内多张表按
 table_idx **DESC** 排列；每条记录包含一次 append（插表）和一次 update_block 或
@@ -18,6 +19,9 @@ delete_block（清占位）。本脚本只生成计划，**不调用 MCP**——
    （第一张落在最远处，最后一张紧贴 anchor，文档里最终是升序）。
 3. anchor 占位文本只剩 marker 时整段删除；含正文时改写去除 marker。
 4. 占位字符默认是新版 〚TBL-N〛；旧文档 TABLE_N 兼容传 --marker TABLE_。
+5. 默认要求占位恰好覆盖 sidecar 全部表格。同步中断后，先 list_document_blocks
+   回读现场，再加 --allow-partial：剩余占位编号必须各出现一次且都在 sidecar 范围内，
+   计划只含这些编号，已插入的表不会重复。
 
 用法示例
 --------
@@ -103,13 +107,25 @@ def build_plan(
     tables_md: list[str],
     marker_prefix: str,
     node_id: str,
+    allow_partial: bool = False,
 ) -> list[dict]:
-    """Validate a complete snapshot, then emit a strictly serial plan."""
+    """Validate a snapshot, then emit a strictly serial plan.
+
+    allow_partial=False: placeholders must cover every sidecar table exactly once.
+    allow_partial=True: resume mode; remaining placeholders must be unique and
+    within the sidecar range.
+    """
     if not isinstance(tables_md, list) or any(not isinstance(t, str) or not t.strip() for t in tables_md):
         raise ValueError("tables sidecar must be an array of nonempty strings")
     indices = [entry[0] for entry in placeholders]
-    if sorted(indices) != list(range(len(tables_md))):
-        raise ValueError("placeholder indices must cover every sidecar table exactly once")
+    if allow_partial:
+        if len(set(indices)) != len(indices) or any(not 0 <= ti < len(tables_md) for ti in indices):
+            raise ValueError("remaining placeholders must be unique and within the sidecar range")
+    elif sorted(indices) != list(range(len(tables_md))):
+        raise ValueError(
+            "placeholder indices must cover every sidecar table exactly once"
+            "（中断续传请回读文档后加 --allow-partial）"
+        )
     anchors = {}
     positions = {}
     for ti, bi, bid, bt, txt in placeholders:
@@ -195,13 +211,14 @@ def main() -> int:
     p.add_argument("--node-id", required=True, help="dingtalk node id (informational)")
     p.add_argument("--marker", default="〚TBL-", help="placeholder prefix (default 〚TBL-, legacy TABLE_)")
     p.add_argument("--out", type=Path, help="output plan JSON path (default stdout)")
+    p.add_argument("--allow-partial", action="store_true", help="resume: plan only placeholders still present in the document")
     args = p.parse_args()
 
     try:
         blocks = parse_blocks(args.blocks)
         tables_md = json.loads(args.tables.read_text(encoding="utf-8"))
         placeholders = find_placeholders(blocks, args.marker)
-        plan = build_plan(placeholders, tables_md, args.marker, args.node_id)
+        plan = build_plan(placeholders, tables_md, args.marker, args.node_id, args.allow_partial)
     except (ValueError, TypeError, KeyError, OSError) as exc:
         print(f"[error] no executable plan: {exc}", file=sys.stderr)
         return 2
@@ -211,6 +228,8 @@ def main() -> int:
         "execution": "serial",
         "cleanup_requires": "all tables for the anchor inserted and verified",
         "marker_prefix": args.marker,
+        "partial": args.allow_partial,
+        "table_indices": sorted(p["table_idx"] for p in plan if p["op"] == "append_table"),
         "total_placeholders": len(placeholders),
         "total_tables_in_sidecar": len(tables_md),
         "anchors": len({p["anchor_blk_id"] if p["op"] == "append_table" else p.get("blk_id") for p in plan if p.get("op") in {"append_table", "delete_block", "update_block"}}),

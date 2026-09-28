@@ -1424,7 +1424,7 @@ def write_page(
       }}).join("");
       const aiCandidates = visibleOutputs.map((candidate, index) => {{
         const path = aiOutputPath(candidate);
-        const candidateId = candidate.candidate_id || `ai:${{escapeHtml(path)}}`;
+        const candidateId = candidate.candidate_id || `ai:${{path}}`;
         const cd = s.candidate_decisions[candidateId] || "";
         const cn = s.candidate_notes?.[candidateId] || "";
         const selectedClass = cd === "best" ? "best" : cd === "direct_use" ? "selected" : cd === "modify_use" ? "modify" : cd === "reject" ? "reject" : "";

@@ -44,3 +44,26 @@ def test_reference_links_are_checked(tmp_path):
 def test_frozen_fixture_meets_current_format():
     proc = subprocess.run([sys.executable, str(ROOT / 'scripts/check_doc_quality.py'), str(ROOT / 'tests/fixtures/small-requirement.md')], capture_output=True)
     assert proc.returncode == 0
+
+
+def test_inline_code_is_not_checked_as_prose(tmp_path):
+    proc, issues = quality(tmp_path, '# Rules\n\n- 字段 `a；b` 与 `TODO` 原样保留，示例 `[x](missing.md)`\n')
+    assert proc.returncode == 0, issues
+    assert issues == []
+
+
+def test_baseline_reports_only_newly_introduced_issues(tmp_path):
+    git = lambda *a: subprocess.run(['git', '-C', str(tmp_path), *a], check=True, capture_output=True)
+    git('init', '-q')
+    doc = tmp_path / 'doc.md'
+    doc.write_text('# Rules\n\n- 旧规则；已有\n', encoding='utf-8')
+    git('add', 'doc.md')
+    git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base')
+    doc.write_text('# Rules\n\n- 新增在前；问题\n\n- 旧规则；已有\n', encoding='utf-8')
+    cmd = [sys.executable, str(ROOT / 'scripts/check_doc_quality.py'), str(doc), '--json']
+    full = json.loads(subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8').stdout)
+    proc = subprocess.run(cmd + ['--baseline', 'HEAD'], capture_output=True, text=True, encoding='utf-8')
+    fresh = json.loads(proc.stdout)
+    assert len(full) == 2
+    assert proc.returncode == 1
+    assert [i['line'] for i in fresh] == [3]
