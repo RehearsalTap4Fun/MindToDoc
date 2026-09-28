@@ -1,15 +1,16 @@
 # 能力依赖与 vendor 维护
 
-Python 最低版本为 3.10。本轮测试环境为 Python 3.10.6、pytest 9.0.3。
+- Python 最低版本为 3.9。
+- 已验证环境：Windows Python 3.10.6 + pytest 9.0.3，macOS Python 3.9.6 + pytest 8.4.2。
 `requirements*.txt` 声明兼容范围，不是精确环境锁定；升级后须重跑测试。
 
 默认写作与转换只安装 `requirements.txt`。图像标注另装 `requirements-image.txt`，开发另装 `requirements-dev.txt`。
 
-```powershell
+```bash
 python scripts/doctor.py
 python scripts/doctor.py --capability image --capability test
-python scripts/doctor.py --capability bi-code --skill-root "$env:USERPROFILE/.skills"
-python scripts/doctor.py --capability dingtalk-cli --skill-root "$env:USERPROFILE/.skills"
+python scripts/doctor.py --capability bi-code --skill-root ~/.skills        # Windows: "$env:USERPROFILE/.skills"
+python scripts/doctor.py --capability dingtalk-cli --skill-root ~/.skills
 ```
 
 可检查能力以根目录 `dependencies.json` 为准。Doctor 只检查指定能力，不以缺少可选能力阻断纯文档任务。

@@ -21,9 +21,10 @@
 把 md 转成 `["root", {}, block1, block2, ...]` 整篇 jsonml。用法：
 
 ```bash
-# 真实 Python（Windows 上 WindowsApps 的 python 是空壳，会 exit 49，要用真解释器）
-PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
-"$PY" scripts/md2jsonml.py <系统名>.md <out>.jsonml.json <listId如 balloon-h>
+# macOS / Linux：PY=python3
+# Windows：WindowsApps 的 python 是空壳（exit 49），要用真解释器
+#   PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
+"$PY" scripts/md2jsonml.py <系统名>.md <out>.jsonml.json <listId如 balloon-h> [--allow-missing-images]
 # 产出：<out>.jsonml.json（主体 root） + <out>.jsonml.tables.json（表格 sidecar） + <out>.jsonml.images.json（图片 sidecar） + <out>.jsonml.body.md（大文档 markdown 主体）
 ```
 
@@ -36,8 +37,8 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
 - **行内格式**：仅支持 `**加粗**` 与 `{{red:红字}}`；红字转为 leaf 的 `"color":"#FE0300"`。
 - **表格不输出 jsonml table**（会炸 columns）：改输出占位段（文本 `〚TBL-N〛`、ind 跟随当前标题），并把表格 markdown 顺序存进 tables sidecar。
 - **图片占位输出可回读锚点**：`<!-- IMG: 界面名 | image_id -->` 转成占位段 `〚IMG-N〛`，并把 `{marker,name,id}` 存进 images sidecar。普通注释仍跳过。
-- **段落边界**：保留源 Markdown 的空行；软换行段落只生成一个 JSONML 段落。列表后独立正文必须有空行，验收同时核对规则归属。
-- **普通效果图**：独立行 `![说明](相对路径)` 或 `![说明](<含空格路径>)` 转为图片锚点，sidecar 保存 `kind=image`、源路径与解析后的绝对路径。缺少本地图立即失败，不输出转换结果；代码块内图片语法保持原文。HTML 图文表仍走专用界面流程，不由本转换器重建。
+- **段落边界**：保留源 Markdown 的空行。软换行段落只生成一个 JSONML 段落。以下情况另起段落：行尾两个空格或 `\` 的硬换行、`<` 开头的 HTML 行、`1.xxx`/`1、xxx`/`1）xxx` 这类无空格编号行、`---`/`-----` 分隔线。列表后独立正文必须有空行，验收同时核对规则归属。
+- **普通效果图**：独立行 `![说明](相对路径)` 或 `![说明](<含空格路径>)` 转为图片锚点，sidecar 保存 `kind=image`、源路径与解析后的绝对路径。缺少本地图时报出行号并退出 2，不输出转换结果。需要先同步文字时加 `--allow-missing-images`，缺图条目在 sidecar 标 `missing=true`，占位留在文档里，补图前不能算已交付。代码块内图片语法保持原文。HTML 图文表仍走专用界面流程，不由本转换器重建。
 - **大文档主体**：额外输出 `<out>.body.md`，用于大文档 markdown overwrite；该文件保留 `〚TBL-N〛` / `〚IMG-N〛` 占位，不能用手工"去掉注释与表格"的正文替代。
 
 标题块 jsonml 模板（H1，供手改参考）：
@@ -94,7 +95,14 @@ python scripts/dingtalk_table_inserter.py \
 #    同一 anchor 的多张表必须串行（钉钉服务端按到达顺序应用），不同 anchor 也必须串行，绝对 index 依赖严格倒序
 # 旧文档（占位是 TABLE_）传 --marker TABLE_
 ```
-脚本只生成计划、不调 MCP。占位缺失、重复、越界或 anchor 元数据不合法时非零退出，不生成可执行计划；失败时不得继续使用同名旧计划。`execution=serial` 表示同一文档的全部操作严格顺次执行，不能按不同 anchor 并行。每个 anchor 的表格插入并回读验证后，才执行其清理操作。恢复中断同步时先回读现场，不能把剩余占位与完整旧 sidecar 直接当作新计划。
+- 脚本只生成计划、不调 MCP。
+- 占位缺失、重复、越界或 anchor 元数据不合法时非零退出，不生成可执行计划。失败时不得继续使用同名旧计划。
+- `execution=serial` 表示同一文档的全部操作严格顺次执行，不能按不同 anchor 并行。
+- 每个 anchor 的表格插入并回读验证后，才执行其清理操作。
+- **中断续传**：
+  - 先 `list_document_blocks` 回读现场，确认已插入的表。
+  - 再用回读结果加 `--allow-partial` 重新出计划，计划只包含文档里仍存在的占位。
+  - 编号重复或超出 sidecar 时仍然拒绝。
 
 **markdown 管道表格一定渲染成真 table**（变更记录表、KEY 表均如此）。但有以下大表症状需注意：
 

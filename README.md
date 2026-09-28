@@ -29,8 +29,6 @@ MindToDoc 把脑图、框架文档、参考游戏或既有开发文档，整理�
 
 ## 产物与边界
 
-当前批次仅维护冷库服与秘宝业务文档，其他已完成开发的文档保留历史状态；详见[本次维护范围](deliveries/README.md)。
-
 | 产物 | 默认路径 | 职责 |
 |---|---|---|
 | 主功能案 | `output/<功能名>.md` | 变更记录、简介、关键决策、详细规则、边界情况与数据兼容 |
@@ -102,31 +100,36 @@ MindToDoc 把脑图、框架文档、参考游戏或既有开发文档，整理�
 
 ## 依赖与辅助工具
 
-Python 3.10+。依赖按能力区分，见[能力依赖说明](references/dependencies.md)；vendor 中包含专用流程，但部分查询和在线能力仍需要外部 Skill、工具或鉴权。
+- Python 3.9+，依赖按能力区分，见[能力依赖说明](references/dependencies.md)。
+- vendor 中包含专用流程，但部分查询和在线能力仍需要外部 Skill、工具或鉴权。
+- 下文命令写作 `python`：macOS / Linux 换成 `python3`，Windows 避开 WindowsApps 的 `python` shim。
 
-辅助脚本使用 Python。安装运行依赖：
+安装运行依赖：
 
-```powershell
+```bash
 python -m pip install -r requirements.txt
 ```
 
 需要运行仓库测试或开发校验时，再安装可选依赖：
 
-```powershell
+```bash
 python -m pip install -r requirements-dev.txt
 ```
 
 交付前按[质量与登记规范](references/delivery-quality.md)核验。以下命令只检查，不改写稿件：
 
-```powershell
+```bash
 python scripts/doctor.py
 python scripts/check_doc_quality.py tests/fixtures/small-requirement.md
+python scripts/check_doc_quality.py --baseline main output/<功能>.md   # 局部修订：只看新增问题
 python scripts/check_delivery.py deliveries/example-small.json
 python -B -m pytest -q -p no:cacheprovider
 ```
 
-实际交付时把示例路径替换为本次文件及登记。通过格式和指纹检查不能替代规则审核。
-图片标注另装 `requirements-image.txt`。浏览器安全回归需 Node、Playwright 和 Chromium；设置 `AUDIO_REVIEW_NODE` 为 Node 可执行路径，`PLAYWRIGHT_MODULE` 为 Playwright 模块路径后运行 pytest，未配置时该项明确跳过。
+- 实际交付时把示例路径替换为本次文件及登记。通过格式和指纹检查不能替代规则审核。
+- `pytest.ini` 已收录根目录与 vendor 测试，上面一条命令即全套回归。
+- 浏览器安全回归需 Node、Playwright 和 Chromium。设置 `AUDIO_REVIEW_NODE`（Node 可执行路径）与 `PLAYWRIGHT_MODULE`（Playwright 模块路径）后运行。未配置时这两项显示为 skipped，不算通过。
+- 图片标注另装 `requirements-image.txt`。
 
 | 工具 | 用途 |
 |---|---|
@@ -135,13 +138,14 @@ python -B -m pytest -q -p no:cacheprovider
 | [dingtalk_table_inserter.py](scripts/dingtalk_table_inserter.py) | 根据文档块和表格 sidecar 生成补表执行计划，不直接调用钉钉 API |
 | [list_tbd.py](scripts/list_tbd.py) | 扫描 Markdown 中的 TBD，输出数量、位置和阈值告警 |
 | [check_doc_quality.py](scripts/check_doc_quality.py) | 显式文件的格式、占位符与本地资源检查 |
-| [check_delivery.py](scripts/check_delivery.py) | 交付范围、审核状态和内容指纹检查 |
+| [check_delivery.py](scripts/check_delivery.py) | 交付范围、审核状态和内容指纹检查；`--record` 逐个登记已复核文件 |
 | [doctor.py](scripts/doctor.py) | 按能力检查本地依赖 |
 | [check_plan_signatures.py](scripts/check_plan_signatures.py) | 检查实施计划内 Python 代码块语法和关键符号一致性 |
 
 ## 维护与协作
 
-- 开展新工作前检查 Git 状态；仅在工作区干净且需要同步时运行 `git pull --ff-only`。提交时只包含本次改动，保留未提交的其他工作。
+- 开展新工作前运行 `git pull --ff-only`。工作区有未提交改动时先提交或另开分支，再拉取。提交时只包含本次改动，保留未提交的其他工作。
+- 工具与工作流整改、业务产物修改分开提交。业务规则变更在主案变更记录写明拍板人与日期。
 - 修改工作流时更新 [SKILL.md](SKILL.md) 或对应 reference；README 只同步入口信息和导航，不复制长规则。
 - 审核、检验或复核类任务先按[审核三档纪律](references/audit-three-tier-discipline.md)确定断言层级，再修改产物。
 - 项目专属工具和材料随项目一起归档到 `examples/<项目名>/`；可复用规则和工具才保留在根目录。

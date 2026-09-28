@@ -44,3 +44,34 @@
 ## 使用入口
 
 见 [质量与交付登记](../../references/delivery-quality.md)、[能力依赖](../../references/dependencies.md)及 [实施计划](../superpowers/plans/2026-09-28-mindtodoc-stability.md)。
+
+## 复审后整改 · 2026-09-28
+
+来源：对 de6a370 的工作流复审。只改工具与规则，不动业务产物。
+
+- **门禁可用**：`check_doc_quality.py` 增加 `--baseline <git-ref>`，局部修订只报新增问题。行内代码不再参与检查。
+- **登记可维护**：`check_delivery.py --record` 逐个文件写指纹。`review_note` 为 null、`known_issues` 为字符串时逐项报错，不再整份中止。
+- **同步可续传**：`dingtalk_table_inserter.py --allow-partial` 按回读后剩余的占位出计划，仍拒绝重复和越界编号。
+- **转换兼容**：
+  - `md2jsonml.py` 缺图报行号并退出 2。`--allow-missing-images` 保留占位并标 `missing`。
+  - 无空格中文编号、`<` 开头行、硬换行、长分隔线不再并段。
+  - 除《转移规则说明文案》恢复逐行分段外，其余 `output/*.md` 输出与 de6a370 一致。
+- **规则补回**：WORKFLOW 精简时丢失的四条标注规则补进 `ui-annotation-reference.md`。
+- **环境**：
+  - 最低 Python 降为 3.9，命令改为跨平台写法。
+  - `pytest.ini` 收录 vendor 测试。
+  - `.gitattributes` 固定文本产物为 LF，避免 autocrlf 让指纹失配。
+  - `.gitignore` 的 `tmp/` 收窄为根目录。
+- **范围说明**：本批次"仅维护冷库服与秘宝"只保留在本记录，已从 README 与 `deliveries/README.md` 移除。
+- **追溯**：`vendor/provenance.json` 记录每个被改 vendor 文件的修改前哈希。
+- **音频试听页**：AI 候选状态键不再二次转义。
+- **协作规则**：工具整改与业务产物分开提交。拍板的规则变更在变更记录写明拍板人与日期。
+
+验证：
+
+- macOS Python 3.9.6 + pytest 8.4.2，含 Chromium 浏览器回归共 65 passed。
+- `git diff --check` 通过。
+
+未处理：
+- de6a370 已推送，没有改写历史来拆分提交，拆分留到合入 main 时处理。
+- `validate_cases.py` 比上游更严的校验保持不变。
