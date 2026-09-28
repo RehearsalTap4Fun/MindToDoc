@@ -1,0 +1,68 @@
+{
+  "recorded_on": "2026-09-28",
+  "note": "Hashes identify the local pre-remediation entry, not an upstream release or a full tree lock.",
+  "skills": [
+    {
+      "name": "audio-production-pipeline",
+      "path": "vendor/skills/audio-production-pipeline",
+      "upstream_revision": "unknown",
+      "source": "existing repository vendor snapshot; original import revision not recorded",
+      "entry": "vendor/skills/audio-production-pipeline/SKILL.md",
+      "pre_remediation_entry_sha256": "6af986ab26d87cff80ee94c7b89b13e3322c3ac9576b2b32af6e00920a577811",
+      "local_patches_20260928": [
+        "scoped downloads and redirects",
+        "local review server origin/session/static boundaries",
+        "HTML data escaping and same-origin client"
+      ]
+    },
+    {
+      "name": "bi-log-requirements",
+      "path": "vendor/skills/bi-log-requirements",
+      "upstream_revision": "unknown",
+      "source": "existing repository vendor snapshot; original import revision not recorded",
+      "entry": "vendor/skills/bi-log-requirements/SKILL.md",
+      "pre_remediation_entry_sha256": "fc4e0e2b5eb09750756c09e4d0f8642151bbdfa5cf5f53b20c91f0f5bccd29c7",
+      "local_patches_20260928": [
+        "explicit external Skill discovery"
+      ]
+    },
+    {
+      "name": "dev-checklist-generator",
+      "path": "vendor/skills/dev-checklist-generator",
+      "upstream_revision": "unknown",
+      "source": "existing repository vendor snapshot; original import revision not recorded",
+      "entry": "vendor/skills/dev-checklist-generator/SKILL.md",
+      "pre_remediation_entry_sha256": "f51a097a3226750088ae66c6a7bdf06ec7aca4ccb6f807d3f4b56bd3af640062",
+      "local_patches_20260928": []
+    },
+    {
+      "name": "diagram-design",
+      "path": "vendor/skills/diagram-design",
+      "upstream_revision": "unknown",
+      "source": "existing repository vendor snapshot; original import revision not recorded",
+      "entry": "vendor/skills/diagram-design/skills/diagram-design/SKILL.md",
+      "pre_remediation_entry_sha256": "1a9d1e07f63ecf8fe062ad4936e1ccf98aadc8d06bf5c7f0676ee67686a140c0",
+      "local_patches_20260928": []
+    },
+    {
+      "name": "guizang-ppt-skill",
+      "path": "vendor/skills/guizang-ppt-skill",
+      "upstream_revision": "unknown",
+      "source": "existing repository vendor snapshot; original import revision not recorded",
+      "entry": "vendor/skills/guizang-ppt-skill/SKILL.md",
+      "pre_remediation_entry_sha256": "3a4345f34d38b90dc0f9902d9f1d4b47e82fd6853ed24934e645c0180830c114",
+      "local_patches_20260928": []
+    },
+    {
+      "name": "slg-testcase-generator",
+      "path": "vendor/skills/slg-testcase-generator",
+      "upstream_revision": "unknown",
+      "source": "existing repository vendor snapshot; original import revision not recorded",
+      "entry": "vendor/skills/slg-testcase-generator/SKILL.md",
+      "pre_remediation_entry_sha256": "d239477f5d744075ed64e62f3a89528459cce0c5982ab8d353bbcd73dcc44c94",
+      "local_patches_20260928": [
+        "required fields, unique IDs, step inheritance and literal probability validation"
+      ]
+    }
+  ]
+}

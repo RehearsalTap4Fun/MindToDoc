@@ -104,7 +104,26 @@ def build_plan(
     marker_prefix: str,
     node_id: str,
 ) -> list[dict]:
-    """Group by anchor blk_id; emit ordered ops."""
+    """Validate a complete snapshot, then emit a strictly serial plan."""
+    if not isinstance(tables_md, list) or any(not isinstance(t, str) or not t.strip() for t in tables_md):
+        raise ValueError("tables sidecar must be an array of nonempty strings")
+    indices = [entry[0] for entry in placeholders]
+    if sorted(indices) != list(range(len(tables_md))):
+        raise ValueError("placeholder indices must cover every sidecar table exactly once")
+    anchors = {}
+    positions = {}
+    for ti, bi, bid, bt, txt in placeholders:
+        if type(bi) is not int or bi < 0 or not isinstance(bid, str) or not bid.strip():
+            raise ValueError("every anchor needs a nonnegative index and a nonempty block id")
+        if bt not in {"paragraph", "unorderedList", "heading"} or not isinstance(txt, str):
+            raise ValueError(f"unsupported anchor block type: {bt}")
+        identity = (bi, bt, txt)
+        if bid in anchors and anchors[bid] != identity:
+            raise ValueError("conflicting metadata for the same anchor")
+        if bi in positions and positions[bi] != bid:
+            raise ValueError("multiple block ids share an index")
+        anchors[bid] = identity
+        positions[bi] = bid
     if marker_prefix == "〚TBL-":
         token_re = re.compile(r"〚TBL-\d+〛")
     elif marker_prefix == "TABLE_":
@@ -133,11 +152,6 @@ def build_plan(
         grp["tables"].sort(reverse=True)
         anchor_idx = grp["blk_idx"]
         for ti in grp["tables"]:
-            if ti >= len(tables_md):
-                ops.append(
-                    {"op": "warn", "reason": f"table_idx {ti} out of range; sidecar has {len(tables_md)} tables"}
-                )
-                continue
             ops.append(
                 {
                     "op": "append_table",
@@ -183,15 +197,19 @@ def main() -> int:
     p.add_argument("--out", type=Path, help="output plan JSON path (default stdout)")
     args = p.parse_args()
 
-    blocks = parse_blocks(args.blocks)
-    tables_md = json.loads(args.tables.read_text(encoding="utf-8"))
-    placeholders = find_placeholders(blocks, args.marker)
-    if not placeholders:
-        print(f"[warn] no placeholders found with marker prefix {args.marker!r}", file=sys.stderr)
-    plan = build_plan(placeholders, tables_md, args.marker, args.node_id)
+    try:
+        blocks = parse_blocks(args.blocks)
+        tables_md = json.loads(args.tables.read_text(encoding="utf-8"))
+        placeholders = find_placeholders(blocks, args.marker)
+        plan = build_plan(placeholders, tables_md, args.marker, args.node_id)
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        print(f"[error] no executable plan: {exc}", file=sys.stderr)
+        return 2
 
     summary = {
         "node_id": args.node_id,
+        "execution": "serial",
+        "cleanup_requires": "all tables for the anchor inserted and verified",
         "marker_prefix": args.marker,
         "total_placeholders": len(placeholders),
         "total_tables_in_sidecar": len(tables_md),

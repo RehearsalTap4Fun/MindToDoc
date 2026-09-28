@@ -1,0 +1,9 @@
+{
+  "core": {"files": ["SKILL.md", "templates/small-requirement.md", "references/derived-documents-workflow.md", "scripts/md2jsonml.py"], "modules": ["openpyxl"]},
+  "test": {"modules": ["pytest"]},
+  "image": {"modules": ["PIL"]},
+  "bi-code": {"files": ["vendor/skills/bi-log-requirements/SKILL.md"], "skills": ["k1-bi-tracking"]},
+  "dingtalk-cli": {"skills": ["dws"], "commands": ["dws"]},
+  "audio-demand": {"files": ["vendor/skills/audio-production-pipeline/SKILL.md"], "modules": ["openpyxl"]},
+  "audio-production": {"files": ["vendor/skills/audio-production-pipeline/scripts/serve_review.py"], "modules": ["openpyxl"], "commands": ["ffmpeg"]}
+}

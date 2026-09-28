@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "feature": "小型需求格式样例",
+  "mode": "small",
+  "source": {
+    "path": "../tests/fixtures/small-requirement.md",
+    "sha256": "f513803821f0ca5f3de7237e62ebf33c77afcb30f9af99fa2ecfbfed351f0c9d"
+  },
+  "artifacts": []
+}

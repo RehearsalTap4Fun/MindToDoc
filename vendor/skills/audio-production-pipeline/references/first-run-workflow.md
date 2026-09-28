@@ -154,7 +154,7 @@ python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/validate_p
 启动本地服务:
 
 ```bash
-python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/serve_review.py --port 8791
+python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/serve_review.py --sheet-name "<sheetName>" --port 8791
 ```
 
 打开评审页后,策划逐条选择直接用、改后用或不合适。页面里的“提交判断并生成交付包”会保存决策并尝试整理交付。
@@ -209,3 +209,6 @@ audio/<音效资源名>.ogg
 | dry-run 规划了 WAV 但 handoff 缺 OGG | dry-run 不会生成真实音频。 |
 | 初始 `company_library_review.html` 不能试听 | prepared 占位页,需要正式重建。 |
 | 系统 Python 缺 `openpyxl` | 使用 bundled Python 或安装依赖。 |
+
+
+本地安全边界：服务仅监听回环地址，只提供指定 production 页签目录的静态文件；浏览器从该服务打开页面后取得会话令牌，写操作校验同源 Origin 和令牌。不支持 file:// 页面直接调用 API。升级后须重新生成旧试听 HTML，避免旧页面缺少令牌或仍指向固定端口。下载凭据只发送到配置的 API/资源源站，跨源重定向不携带凭据。

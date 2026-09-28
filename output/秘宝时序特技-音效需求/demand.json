@@ -3,7 +3,7 @@
   "sheets": [
     {
       "name": "秘宝时序特技",
-      "note": "来源：主案《秘宝时序特技》v1.8 的「时序特技」「特技等级与合成」「产出与投放」「装备与部队预览」「战报与提示」各节，以及界面清单中的 treasure_main / treasure_select / treasure_bag / treasure_merge / treasure_detail / battle_report_stunt。复用核对依据 references/k1-audio-library.md（源自 AudioListCfg.tsv + AudioConst.cs 注释），逐条命中后填真实 AudioList ID。本功能对玩家呈现的战斗是结算战报而非实时战斗画面，因此战斗内新机制（限时免疫、伤兵回战、一次性伤害）不拆实时战斗音，只拆战报条目展示音；该边界需战斗程序确认，见 note 末与主案待确认项。尚未提供界面效果图，界面类触发点按现有界面增量处理，收图后复核。",
+      "note": "依据主案 v2.4 修订。同节点不同特技可共同生效，升级逐级计价；复用现有背包与单个分解弹窗。沿用既有音效资源及新增战报声音需求，未进入音频制作。",
       "rows": [
         {
           "type": "module",
@@ -43,7 +43,7 @@
           "event": "ui_treasure_equip_success",
           "tag": "复用",
           "asset": "190000003",
-          "trigger": "装备秘宝到英雄部位、服务器校验通过并刷新部队预览时",
+          "trigger": "装备秘宝到英雄部位、服务器校验通过并刷新穿戴信息时",
           "priority": "P0",
           "loop": "FALSE",
           "stop_event_needed": "FALSE",
@@ -63,11 +63,11 @@
           "event": "ui_treasure_action_fail",
           "tag": "复用",
           "asset": "15220036",
-          "trigger": "合成或更换被拒绝时：已达特技等级上限、无可用材料、材料处于装备中、目标所属部队出征中",
+          "trigger": "合成、升级、更换或分解被拒绝时：碎片不足、等级上限、目标出征、已装备或秘宝状态变化",
           "priority": "P1",
           "loop": "FALSE",
           "stop_event_needed": "FALSE",
-          "notes": "k1-audio-library.md「错误/不可点击反馈」：15220036 = UI_negative.wav；主案「合成操作」的四类失败分支共用一条否定反馈，不按分支细分"
+          "notes": "k1-audio-library.md「错误/不可点击反馈」：15220036 = UI_negative.wav，各类操作失败共用否定反馈"
         },
         {
           "type": "module",
@@ -87,7 +87,7 @@
           "event": "ui_treasure_stunt_levelup",
           "tag": "复用",
           "asset": "190000004",
-          "trigger": "同名件合成完成、目标秘宝特技等级提升并刷新显示时",
+          "trigger": "扣除秘宝碎片成功、目标秘宝特技等级提升并刷新显示时",
           "priority": "P0",
           "loop": "FALSE",
           "stop_event_needed": "FALSE",
@@ -97,7 +97,7 @@
           "event": "ui_treasure_shard_get",
           "tag": "复用",
           "asset": "15220028",
-          "trigger": "秘宝碎片入账提示出现时（每日任务领取、商店购买、通行证发放、真实交战掉落结算后）",
+          "trigger": "配置的任务、商店或奖励发放后，秘宝碎片入账提示出现时",
           "priority": "P1",
           "loop": "FALSE",
           "stop_event_needed": "FALSE",
@@ -125,8 +125,52 @@
           "priority": "P1",
           "loop": "FALSE",
           "stop_event_needed": "FALSE",
-          "desc": "短促、有金属质感的单点提示音，用于标记「一条特技在这一场生效了」；长度控制在 0.3 秒内以便四条连播不糊，音色需与战报中现有羁绊契约触发条目的提示区分开，但音量层级保持一致，不抢兵损数字的注意力。四个节点（开战/战中/追击/战后）建议用同一音色的四档音高区分，不做四条独立素材",
+          "desc": "短促、有金属质感的单点提示音，用于标记「一条特技在这一场生效了」；长度控制在 0.3 秒内以便多条特技连续展示时不糊，音色需与战报中现有羁绊契约触发条目的提示区分开，但音量层级保持一致，不抢兵损数字的注意力。四个节点（开战/战中/追击/战后）建议用同一音色的四档音高区分，不做四条独立素材",
           "notes": "现有库中「通用按钮点击」「升级/解锁」两类语义均不贴合——战报条目不是玩家操作也不是成长反馈，而是战斗结果回放的节拍标记，故判定新增；若音频评估后认为可用 15220087 一类轻点击音替代，可退回复用"
+        },
+        {
+          "type": "module",
+          "name": "秘宝背包与分解"
+        },
+        {
+          "event": "ui_treasure_warehouse_open",
+          "tag": "复用",
+          "asset": "15220071",
+          "trigger": "打开现有秘宝背包或单个分解弹窗时",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md 普通弹窗打开：Sound_UI_window_open.wav，已按库 JSON 核验 ID"
+        },
+        {
+          "event": "ui_treasure_warehouse_close",
+          "tag": "复用",
+          "asset": "15220070",
+          "trigger": "关闭秘宝背包、取消或关闭分解弹窗时",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md 关闭/返回：Sound_UI_window_close.wav，已按库 JSON 核验 ID"
+        },
+        {
+          "event": "ui_treasure_warehouse_select",
+          "tag": "复用",
+          "asset": "15220087",
+          "trigger": "切换品质筛选、勾选或取消选择可分解秘宝时",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md 页签/选中：UI_click_label.ogg，已按库 JSON 核验 ID"
+        },
+        {
+          "event": "ui_treasure_decompose_success",
+          "tag": "复用",
+          "asset": "15220028",
+          "trigger": "整批分解成功、碎片与破碎大陆金币入账反馈出现时，一批播放一次",
+          "priority": "P1",
+          "loop": "FALSE",
+          "stop_event_needed": "FALSE",
+          "notes": "k1-audio-library.md 领取/获得奖励：UI_claim.ogg，已按库 JSON 核验 ID"
         }
       ]
     }

@@ -350,7 +350,7 @@ python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/validate_r
 服务评审页:
 
 ```powershell
-python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/serve_review.py --port 8791
+python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/serve_review.py --sheet-name "<sheetName>" --port 8791
 ```
 
 `serve_review.py` 同时提供 `POST /api/ai-gap/generate`、`GET /api/ai-gap/status/<jobId>` 和 `POST /api/production-package/build`。一键 AI 生成和一键交付都调用这个服务; 不要用普通 `http.server`, 否则只能试听而无法提交或生成。
@@ -512,3 +512,6 @@ python .gdconfig_tmp/.agents/skills/audio-production-pipeline/scripts/audio_shee
 | `scripts/validate_production_package.py` | prepared/review-ready/handoff-ready 内容级验证 |
 | `scripts/serve_review.py` | 本地评审服务,支持 AI 生成状态和一键交付 |
 | `scripts/convert_wav_to_ogg.py` | 按 audio_sheet 指定 sheet 把 WAV 转成 audio 仓 OGG |
+
+
+本地安全边界：服务仅监听回环地址，只提供指定 production 页签目录的静态文件；浏览器从该服务打开页面后取得会话令牌，写操作校验同源 Origin 和令牌。不支持 file:// 页面直接调用 API。升级后须重新生成旧试听 HTML，避免旧页面缺少令牌或仍指向固定端口。下载凭据只发送到配置的 API/资源源站，跨源重定向不携带凭据。

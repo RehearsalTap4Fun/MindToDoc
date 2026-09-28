@@ -1,0 +1,80 @@
+{
+  "screen": "秘宝分解弹窗",
+  "source": "C:/Project/MindToDoc/output/ui-design/秘宝系统扩展-现有背包分解版-20260922/02-秘宝分解确认弹窗-v2-图标数量.png",
+  "coordinate_system": "0-1000，视觉估计，非UI布局坐标",
+  "elements": [
+    {
+      "id": 1,
+      "cx": 339,
+      "cy": 186,
+      "name": "标题与关闭",
+      "notes": [
+        "关闭取消未提交的选择，返回秘宝背包，不改变资产。分解入口不直接针对背包当前选中件扣除。"
+      ],
+      "keys": [
+        "TreasureStunt_decomposeTitle"
+      ]
+    },
+    {
+      "id": 2,
+      "cx": 74,
+      "cy": 247,
+      "name": "品质筛选",
+      "notes": [
+        "用现有品质名称与品质色，不以纯颜色代替品质文案。品质选择筛选可分解实例，切换后重新校验有效选择与预览。"
+      ],
+      "keys": [
+        "Hero_Text_7",
+        "Hero_Text_6",
+        "Hero_Text_5",
+        "Hero_Text_4"
+      ]
+    },
+    {
+      "id": 3,
+      "cx": 45,
+      "cy": 448,
+      "name": "秘宝列表与勾选",
+      "notes": [
+        "仅未装备且已入库的实例可选，逐实例展示，不能只按同名配置合并成一个选择项。",
+        "每行显示道具、名称和资源图标×该件返还数量。新特技秘宝带实际等级，存量秘宝不补造等级。",
+        "橙色行展示包含培养投入的返还总量，低品质行展示金币数量。数值都从当前结果读取。"
+      ],
+      "keys": [
+        "TreasureStunt_level",
+        "TreasureStunt_count",
+        "TreasureStunt_changed"
+      ]
+    },
+    {
+      "id": 4,
+      "cx": 101,
+      "cy": 695,
+      "name": "返还汇总",
+      "notes": [
+        "选中变化时分别汇总碎片与破碎大陆金币。数量为0的资源不显示。",
+        "使用小道具卡、数量和名称展示总结果。全额返还口径放在规则说明，不另叠解释段或另开小确认窗。"
+      ],
+      "keys": [
+        "TreasureStunt_returns",
+        "TreasureStunt_shard",
+        "item_name_3500001"
+      ]
+    },
+    {
+      "id": 5,
+      "cx": 724,
+      "cy": 864,
+      "name": "确认分解",
+      "notes": [
+        "按钮括号中显示有效选择件数，零选择置灰。确认只提交当前批次，处理中防重复提交。",
+        "成功移除已分解项，刷新列表、背包与资源反馈。校验失败不展示成功入账，刷新后重新确认。"
+      ],
+      "keys": [
+        "TreasureStunt_decompose",
+        "TreasureStunt_emptyDecompose",
+        "TreasureStunt_changed"
+      ]
+    }
+  ]
+}

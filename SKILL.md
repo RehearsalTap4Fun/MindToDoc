@@ -30,10 +30,12 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 - `references/ui-annotation-reference.md`：UI 识图、归类、标注、上传、左图右文、界面下方 key 录入表。
 - `references/dingtalk-sync-reference.md`：钉钉 MCP、`md2jsonml.py`、payload 限制、jsonml/markdown 双路径、补 ind、补表、补图、无 spreadsheet MCP 时导入本地表格生成钉钉表格（axls）。
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
+- `references/delivery-quality.md`：交付前的格式检查、规则复核、范围登记和内容指纹；主派生联动时必读。
+- `references/dependencies.md`：本地依赖、外部 Skill 发现和 vendor 更新；调用专项能力前检查。
 
 > **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑：`C:\Project\K1Game\game` 是服务器仓库。 `C:\Project\K1Client\k1_client` 是客户端仓库。
 > **维护说明**：主案规范与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动核对，保留本项目生成条件。
-> **专用派生 Skill（已 vendor 到本项目）**：BI 日志需求、音效需求、开发 Checklist、测试用例这四类派生所依赖的专用 Skill 已整体拷贝至 `vendor/skills/<skill-name>/`，随本仓库分发，clone 后即可直接调用，不依赖本机全局 skill 安装。清单见 `references/derived-documents-workflow.md`。`vendor/skills/slg-testcase-generator/` 下的 `scripts/config.json`、`scripts/token.json`、`K1-testcase-config/config.json`（含 Google OAuth 凭据与 Sheet/Drive 资源 ID）未随仓库分发，只保留同目录 `.example`/`.template` 版本；新设备使用前需参照 example 自行创建并填入真实凭据，且已在 `.gitignore` 中排除防止误提交。上游 skill 更新时需人工比对差异后决定是否同步覆盖 vendor 副本。
+> **专用派生 Skill（已 vendor 到本项目）**：BI 日志需求、音效需求、开发 Checklist、测试用例这四类派生所依赖的专用 Skill 已整体拷贝至 `vendor/skills/<skill-name>/`，随本仓库分发；本地生成可直接使用，BI 查重、钉钉读取及音频生产仍有外部能力依赖，见 `references/dependencies.md`。清单见 `references/derived-documents-workflow.md`。`vendor/skills/slg-testcase-generator/` 下的 `scripts/config.json`、`scripts/token.json`、`K1-testcase-config/config.json`（含 Google OAuth 凭据与 Sheet/Drive 资源 ID）未随仓库分发，只保留同目录 `.example`/`.template` 版本；新设备使用前需参照 example 自行创建并填入真实凭据，且已在 `.gitignore` 中排除防止误提交。上游 skill 更新时需人工比对差异后决定是否同步覆盖 vendor 副本。
 > **宣讲 / 演示 Skill（已 vendor 到本项目）**：主案定稿后如需向其他职能（策划/程序/测试/运营等）做方案宣讲，可调用 `vendor/skills/guizang-ppt-skill/`（单文件 HTML 横向翻页 PPT，杂志风/瑞士风两套视觉体系，中文排版规则内置）生成宣讲网页；页面内的流程图、对比图等图表元素可参考 `vendor/skills/diagram-design/`（40 种图表类型的编辑器级设计规范）提升视觉质量。这两个 Skill 不是派生文档生成链路的固定环节，按需触发，不影响完整功能案四类固定派生的生成判定。许可证：`guizang-ppt-skill` 为 AGPL-3.0（本项目私有内部使用，未对外分发或作为网络服务提供，不触发开源回馈义务），`diagram-design` 为 MIT（无使用限制）。`guizang-ppt-skill` 原生的"启动前检查上游更新"逻辑（`git fetch`）已在 vendor 副本的 SKILL.md 中标注跳过，因 vendor 后不是独立 git 仓库；如需同步上游更新需人工比对 diff。
 > **多语言 key**：本技能**不绑定**任何项目的 localization 文件。新建 key 时按所在项目的多语言规范命名与查重——K1 用**功能名前缀**（如 `ActvSoccer_`），X1/X15 用 `LC_<页签>_`；项目未提供查重源时在 key 表备注「未查重」，不假装已查。
 
@@ -51,7 +53,7 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 | **其他派生** | 见 `references/derived-documents-workflow.md` | 完整功能案固定的 BI、美术、音效；经确认的 Checklist、测试用例 |
 | **旧版（只读素材）** | `output/<游戏名>-开发文档.md` | 迁移源，新稿不覆盖 |
 
-模板：`templates/doc-structure.md`（主案）、`templates/feature-module.md`（模块章）、`templates/derived-config-tables.md`、`templates/derived-ui-annotation.md`。
+模板：先按派生流程选模式。小型需求使用 `templates/small-requirement.md`；完整功能案使用 `templates/doc-structure.md` 与 `templates/feature-module.md`，按需读取 `templates/derived-config-tables.md`、`templates/derived-ui-annotation.md`。不要把完整功能案模板的固定派生条款套到小型需求。
 
 ---
 
@@ -267,6 +269,7 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 
 - [ ] `-配置表结构.md` 含文档边界与概览；无运行时/存档/协议
 - [ ] 已按派生流程判定交付模式；小型需求主案自包含且没有为凑类型生成派生，完整功能案四类固定派生均已生成或核验复用
+- [ ] 已按 references/delivery-quality.md 执行本次文件的格式、资源和交付登记检查，待处理事项没有被描述为已通过
 - [ ] 简单界面效果图已在小型需求主案中对应规则；独立界面标注仅在复杂界面或完整功能案需要且用户供图后生成；Checklist、测试用例已有用户确认；未生成技术交接
 - [ ] 按专用 Skill 完成各类校验；主案与派生规则、引用和版本一致
 - [ ] 实际存在派生时，`# 派生文档说明` 链接齐全；无派生时不创建空章节

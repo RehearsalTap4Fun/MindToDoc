@@ -34,9 +34,11 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
 - **标题编号**：所有正文标题都补 `list`（全文同一 `listId`、`isOrdered:true`、`autoLevel:true`、`listStyleType:"DEC_DEC_DEC_P"`、`listStyle.text` 按层级 `%1`/`%1.%2`/`%1.%2.%3`、`symbolStyle.sz` H1=21/H2=18/H3=16）。H1 从 `1.` 开始自动编号且 `ind.left=0`，不要把文档名作为首个 H1 写进正文。
 - **两级列表**：`- 项` / 两空格 `- 子项` → `p`+`list`（bullet `●`/`○`、level 0/1）+ ind。
 - **行内格式**：仅支持 `**加粗**` 与 `{{red:红字}}`；红字转为 leaf 的 `"color":"#FE0300"`。
-- **表格不输出 jsonml table**（会炸 columns）：改输出占位段（文本 `__TABLE_n__`、ind 跟随当前标题），并把表格 markdown 顺序存进 tables sidecar。
-- **图片占位输出可回读锚点**：`<!-- IMG: 界面名 | image_id -->` 转成占位段 `__IMG_n__`，并把 `{marker,name,id}` 存进 images sidecar。普通注释仍跳过。
-- **大文档主体**：额外输出 `<out>.body.md`，用于大文档 markdown overwrite；该文件保留 `__TABLE_n__` / `__IMG_n__` 占位，不能用手工"去掉注释与表格"的正文替代。
+- **表格不输出 jsonml table**（会炸 columns）：改输出占位段（文本 `〚TBL-N〛`、ind 跟随当前标题），并把表格 markdown 顺序存进 tables sidecar。
+- **图片占位输出可回读锚点**：`<!-- IMG: 界面名 | image_id -->` 转成占位段 `〚IMG-N〛`，并把 `{marker,name,id}` 存进 images sidecar。普通注释仍跳过。
+- **段落边界**：保留源 Markdown 的空行；软换行段落只生成一个 JSONML 段落。列表后独立正文必须有空行，验收同时核对规则归属。
+- **普通效果图**：独立行 `![说明](相对路径)` 或 `![说明](<含空格路径>)` 转为图片锚点，sidecar 保存 `kind=image`、源路径与解析后的绝对路径。缺少本地图立即失败，不输出转换结果；代码块内图片语法保持原文。HTML 图文表仍走专用界面流程，不由本转换器重建。
+- **大文档主体**：额外输出 `<out>.body.md`，用于大文档 markdown overwrite；该文件保留 `〚TBL-N〛` / `〚IMG-N〛` 占位，不能用手工"去掉注释与表格"的正文替代。
 
 标题块 jsonml 模板（H1，供手改参考）：
 ```json
@@ -52,7 +54,7 @@ PY="/c/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe"
   update_document(nodeId, format="jsonml", jsonml=<root字符串>, mode="overwrite")
   ```
 - **大文档（≥ ~50KB，如 150+ 块）**：不要硬传整篇，改走"markdown 主体 + 分批补 ind/编号"：
-  1. `update_document(nodeId, markdown=<out>.body.md 的内容, mode="overwrite")` —— markdown 体积小不会断；`__TABLE_n__` / `__IMG_n__` 占位必须保留，供后续补表/补图定位；两级列表自带相对层级；
+  1. `update_document(nodeId, markdown=<out>.body.md 的内容, mode="overwrite")` —— markdown 体积小不会断；`〚TBL-N〛` / `〚IMG-N〛` 占位必须保留，供后续补表/补图定位；两级列表自带相对层级；
      - **markdown 主体也有 payload 上限（血泪教训）**：实测 ~40KB 的 body.md 一次 overwrite 仍会 `API Error`。超限时按 **H1 边界把 body.md 切成多段**（每段 ≤ ~16KB，切点落在 `# 标题` 行上、不切断 mermaid/表格）：**第 1 段用 `mode="overwrite"` 打底，其余段用 `mode="append"` 顺序续写**。切分用脚本按 `grep -n "^# "` 的行号做，逐段 `Read` 后写入，每段成功即落档，便于中断续传。
   2. `list_document_blocks(format="jsonml")` 取全部块，拿到各块 blockId 与文本；
   3. 按 `scripts/md2jsonml.py` 算好的目标块顺序与写入后的钉钉块顺序一一映射，拿到每个目标块对应的 blockId；文本只做错位校验，不做主定位。
@@ -89,10 +91,10 @@ python scripts/dingtalk_table_inserter.py \
   --node-id <node_id> \
   --out plan.json
 # 3) 按 plan.ops 顺序执行 append_table → update_block/delete_block；
-#    同一 anchor 的多张表必须串行（钉钉服务端按到达顺序应用），不同 anchor 可 ~8 并行
+#    同一 anchor 的多张表必须串行（钉钉服务端按到达顺序应用），不同 anchor 也必须串行，绝对 index 依赖严格倒序
 # 旧文档（占位是 TABLE_）传 --marker TABLE_
 ```
-脚本只生成计划、不调 MCP；agent 按计划顺次执行，避免人工算 index。
+脚本只生成计划、不调 MCP。占位缺失、重复、越界或 anchor 元数据不合法时非零退出，不生成可执行计划；失败时不得继续使用同名旧计划。`execution=serial` 表示同一文档的全部操作严格顺次执行，不能按不同 anchor 并行。每个 anchor 的表格插入并回读验证后，才执行其清理操作。恢复中断同步时先回读现场，不能把剩余占位与完整旧 sidecar 直接当作新计划。
 
 **markdown 管道表格一定渲染成真 table**（变更记录表、KEY 表均如此）。但有以下大表症状需注意：
 
@@ -114,10 +116,10 @@ python scripts/dingtalk_table_inserter.py \
 
 **本地化参数保护**：已实测钉钉会吞掉表格单元格末尾的 `{0}`，反斜杠转义也不能保护。`md2jsonml.py` 在 tables sidecar 内用行内代码保护数字参数（已有行内代码不重复包装），远端仍显示原始 `{0}`；本地正式 md 不改。回读须逐个比较参数，不能只验证行列数。
 
-按 images sidecar 中的 `__IMG_n__` 占位段插图：
+按 images sidecar 的 `marker` 字段（当前为 `〚IMG-N〛`）插图：
 1. `list_document_blocks` 找到占位段 blockId；
-2. 用 `insert_document_block`（jsonml）在占位段后插左图右文表（左 `tc` `fill:#E8F2FE` 放 `img`、右 `tc` `fill:#FFFAE5` 放编号说明）；
-3. 删除占位段。
+2. `kind=image` 是主案的普通效果图：本地 `path` 先按三步上传取得 `resourceUrl`，再插入单图，不额外制造左图右文标注。外部 `url` 是否可直接引用须回读验证，未经验证不能算已交付。旧 IMG 注释条目按 `id` 关联已审核的标注数据，插入左图右文表（左 `tc` 放图、右 `tc` 放编号说明）；
+3. 回读确认图已插入且可加载后，再删除占位段。
 
 图带 `resourceUrl`，所以是 table、不炸 columns。图表块结构与上传链路见 [`ui-annotation-reference.md`](ui-annotation-reference.md)。
 

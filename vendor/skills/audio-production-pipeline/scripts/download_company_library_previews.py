@@ -12,11 +12,10 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-from company_audio_api import DEFAULT_BASE_URL, load_token, missing_token_message
+from company_audio_api import DEFAULT_BASE_URL, download_bytes, load_token, missing_token_message
 from workspace_paths import find_workspace_root
 
 
-ROOT = find_workspace_root()
 
 
 def safe_name(value: str) -> str:
@@ -44,24 +43,21 @@ def resolve_url(url: str, base_url: str) -> str:
     return url
 
 
-def download(url: str, token: str, timeout: float) -> bytes:
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read()
+def download(url: str, token: str, timeout: float, trusted_origins=()) -> bytes:
+    return download_bytes(url, token, timeout=timeout, trusted_origins=trusted_origins)
 
 
 def download_candidate(row: dict[str, str], base_url: str, assets_base_url: str, token: str, timeout: float) -> bytes:
     url = resolve_url(row["download_url"], base_url)
     try:
-        return download(url, token, timeout)
+        return download(url, token, timeout, [base_url, assets_base_url])
     except Exception as first_error:
         candidate_id = row.get("candidate_id", "").strip()
         if not candidate_id:
             raise first_error
         fallback_url = f"{assets_base_url.rstrip('/')}/api/library/assets/{candidate_id}/download"
         try:
-            return download(fallback_url, token, timeout)
+            return download(fallback_url, token, timeout, [base_url, assets_base_url])
         except Exception:
             raise first_error
 
@@ -79,6 +75,7 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
+    root = find_workspace_root()
     if not args.output_dir.is_absolute():
         args.output_dir = (Path.cwd() / args.output_dir).resolve()
     if not args.manifest.is_absolute():
@@ -132,7 +129,7 @@ def main() -> int:
                 }
                 continue
         ok += 1
-        rel = target.relative_to(ROOT).as_posix()
+        rel = target.relative_to(root).as_posix()
         preview_map[candidate_id] = {
             "status": status,
             "error": "",

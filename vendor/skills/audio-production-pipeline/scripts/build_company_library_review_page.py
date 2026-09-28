@@ -398,6 +398,10 @@ def write_page(
 ) -> None:
     data_json = json.dumps(manifest, ensure_ascii=False, indent=2)
     state_key_json = json.dumps(state_key, ensure_ascii=False)
+    # Escape raw-text script delimiters without changing the sidecar JSON.
+    script_json = data_json.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    state_key_json = state_key_json.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    security_js = Path(__file__).with_name("review_browser_security.js").read_text(encoding="utf-8")
     page_title = escape(title)
     page_subtitle = escape(subtitle)
     contract_version = REVIEW_PAGE_CONTRACT_VERSION
@@ -941,7 +945,8 @@ def write_page(
     <textarea id="exportContent" readonly></textarea>
   </section>
   <script>
-    const manifest = {data_json};
+    {security_js}
+    const manifest = {script_json};
     const stateKey = {state_key_json};
     const enableAiApi = {enable_ai_api_json};
     const state = JSON.parse(localStorage.getItem(stateKey) || "{{}}");
@@ -1269,22 +1274,22 @@ def write_page(
       const ai = manifest.filter(item => ["ai_needed", "auto_ai"].includes(eventState(item.request_id).event_decision)).length;
       const pct = total ? Math.round((decided / total) * 100) : 0;
       document.getElementById("stats").innerHTML = [
-        `进度 ${{pct}}%`,
-        `事件 ${{total}}`,
-        `复用 ${{reuse}}`,
-        `已判断 ${{decided}}`,
-        `最佳 ${{best}}`,
-        `直接用 ${{direct}}`,
-        `改后用 ${{modify}}`,
-        `AI生成 ${{ai}}`
-      ].map((v, index) => `<span class="pill ${{index === 0 ? "strong" : ""}}">${{v}}</span>`).join("") + `<div class="progress" style="--progress:${{pct}}%"><span></span></div>`;
+        `进度 ${{escapeHtml(pct)}}%`,
+        `事件 ${{escapeHtml(total)}}`,
+        `复用 ${{escapeHtml(reuse)}}`,
+        `已判断 ${{escapeHtml(decided)}}`,
+        `最佳 ${{escapeHtml(best)}}`,
+        `直接用 ${{escapeHtml(direct)}}`,
+        `改后用 ${{escapeHtml(modify)}}`,
+        `AI生成 ${{escapeHtml(ai)}}`
+      ].map((v, index) => `<span class="pill ${{escapeHtml(index === 0 ? "strong" : "")}}">${{escapeHtml(v)}}</span>`).join("") + `<div class="progress" style="--progress:${{escapeHtml(pct)}}%"><span></span></div>`;
     }}
 
     function renderFilters() {{
       const bankSelect = document.getElementById("bank");
       const previous = bankSelect.value;
       const banks = [...new Set(manifest.map(item => item.resource_bank).filter(Boolean))].sort();
-      bankSelect.innerHTML = `<option value="">全部资源包</option>` + banks.map(bank => `<option value="${{bank}}">${{bank}}</option>`).join("");
+      bankSelect.innerHTML = `<option value="">全部资源包</option>` + banks.map(bank => `<option value="${{escapeHtml(bank)}}">${{escapeHtml(bank)}}</option>`).join("");
       bankSelect.value = previous;
     }}
 
@@ -1299,25 +1304,25 @@ def write_page(
         const s = eventState(item.request_id);
         const d = s.event_decision || "undecided";
         const badgeClass = d === "direct_use" ? "good" : d === "modify_use" ? "good" : ["ai_needed", "auto_ai"].includes(d) ? "warn" : d === "reject" ? "bad" : "";
-        const reuseBadge = isReuseItem(item) ? `<span class="badge good">复用：${{item.asset_name}}</span>` : "";
-        const aiBadge = s.ai_generation_status ? `<span class="badge warn">AI ${{s.ai_generation_status}}</span>` : "";
+        const reuseBadge = isReuseItem(item) ? `<span class="badge good">复用：${{escapeHtml(item.asset_name)}}</span>` : "";
+        const aiBadge = s.ai_generation_status ? `<span class="badge warn">AI ${{escapeHtml(s.ai_generation_status)}}</span>` : "";
         const visibleCandidateCount = visibleCompanyCandidates(item).length;
         const bestShort = bestShortCandidate(item);
         const quickLine = bestShort
-          ? `最佳短候选：${{bestShort.filename}} · ${{Number(bestShort.match_score || 0)}}分 · ${{Number(bestShort.duration_sec || 0).toFixed(2)}}s`
+          ? `最佳短候选：${{escapeHtml(bestShort.filename)}} · ${{escapeHtml(Number(bestShort.match_score || 0))}}分 · ${{escapeHtml(Number(bestShort.duration_sec || 0).toFixed(2))}}s`
           : item.candidate_count
             ? (isReuseItem(item) ? "复用项：优先确认目标资源是否可直接用" : (item.qualified_candidate_count <= 0 ? "公司库分低：已进入AI补位队列" : "无短候选：建议只听高分/合格项"))
             : "公司库无候选：已进入AI补位队列";
-        return `<button class="event-item ${{item.request_id === activeId ? "active" : ""}}" data-id="${{item.request_id}}">
-          <div class="event-title">${{item.event_name}}</div>
-          <div class="event-sub">${{item.description_cn || item.asset_name}}</div>
+        return `<button class="event-item ${{escapeHtml(item.request_id === activeId ? "active" : "")}}" data-id="${{escapeHtml(item.request_id)}}">
+          <div class="event-title">${{escapeHtml(item.event_name)}}</div>
+          <div class="event-sub">${{escapeHtml(item.description_cn || item.asset_name)}}</div>
           <div class="quick-line">${{quickLine}}</div>
-          <span class="badge ${{badgeClass}}">${{decisionLabel(d)}}</span>
+          <span class="badge ${{escapeHtml(badgeClass)}}">${{escapeHtml(decisionLabel(d))}}</span>
           ${{reuseBadge}}
           ${{aiBadge}}
-          <span class="badge">${{item.resource_bank}}</span>
-          <span class="badge blue">短 ${{item.short_candidate_count || 0}}</span>
-          <span class="badge ${{item.qualified_candidate_count > 0 ? "good" : visibleCandidateCount ? "warn" : "bad"}}">合格 ${{item.qualified_candidate_count || 0}} / 展示 ${{visibleCandidateCount}}</span>
+          <span class="badge">${{escapeHtml(item.resource_bank)}}</span>
+          <span class="badge blue">短 ${{escapeHtml(item.short_candidate_count || 0)}}</span>
+          <span class="badge ${{escapeHtml(item.qualified_candidate_count > 0 ? "good" : visibleCandidateCount ? "warn" : "bad")}}">合格 ${{escapeHtml(item.qualified_candidate_count || 0)}} / 展示 ${{escapeHtml(visibleCandidateCount)}}</span>
         </button>`;
       }}).join("") || `<div class="empty">没有符合筛选条件的事件。</div>`;
       list.querySelectorAll(".event-item").forEach(button => {{
@@ -1340,39 +1345,39 @@ def write_page(
       }}
       const s = eventState(item.request_id);
       const eventButtons = ["direct_use", "modify_use", "reject"].map(d =>
-        `<button class="${{s.event_decision === d ? "on" : ""}}" data-event-decision="${{d}}">${{decisionLabel(d)}}</button>`
+        `<button class="${{escapeHtml(s.event_decision === d ? "on" : "")}}" data-event-decision="${{escapeHtml(d)}}">${{escapeHtml(decisionLabel(d))}}</button>`
       ).join("");
       const visibleOutputs = visibleAiOutputs(s.ai_generation_outputs, item);
       const aiActionLabel = visibleOutputs.length ? "再生成一版AI" : "AI生成候选";
       const aiGenerateButton = isReuseItem(item)
         ? `<button class="ai-generate" disabled title="复用项默认不生成AI">复用项不生成AI</button>`
         : item.prompt_en
-        ? `<button class="ai-generate ${{s.event_decision === "ai_needed" || s.event_decision === "auto_ai" ? "on" : ""}}" data-event-decision="ai_needed">${{aiActionLabel}}</button>`
+        ? `<button class="ai-generate ${{escapeHtml(s.event_decision === "ai_needed" || s.event_decision === "auto_ai" ? "on" : "")}}" data-event-decision="ai_needed">${{escapeHtml(aiActionLabel)}}</button>`
         : `<button class="ai-generate" disabled title="这条需求缺少AI prompt">暂无AI prompt</button>`;
       const reusePanel = isReuseItem(item) ? `
         <div class="desc">
-          <strong>复用策略：</strong>${{item.demand_tag || "复用"}} / ${{item.reuse_strategy || "reuse_existing_or_company_library_asset"}}<br>
-          <span class="label">目标复用资源名</span>${{item.asset_name}}<br>
+          <strong>复用策略：</strong>${{escapeHtml(item.demand_tag || "复用")}} / ${{escapeHtml(item.reuse_strategy || "reuse_existing_or_company_library_asset")}}<br>
+          <span class="label">目标复用资源名</span>${{escapeHtml(item.asset_name)}}<br>
           这条需求表标记为复用，默认不进入 AI 生成；请优先在公司库候选里确认可直接用或改后用。
         </div>
       ` : "";
       const generationPanel = s.ai_generation_status ? `
         <div class="desc">
-          <strong>AI生成状态：</strong>${{s.ai_generation_status || "未开始"}}
-          ${{s.ai_generation_job_id ? `<br><span class="label">Job</span>${{s.ai_generation_job_id}}` : ""}}
-          ${{s.ai_generation_job_id ? `<br><button data-sync-ai-status="${{item.request_id}}">同步AI状态</button>` : ""}}
-          ${{visibleOutputs.length ? `<br><span class="label">输出</span>${{visibleOutputs.map(aiOutputPath).join("<br>")}}` : ""}}
+          <strong>AI生成状态：</strong>${{escapeHtml(s.ai_generation_status || "未开始")}}
+          ${{s.ai_generation_job_id ? `<br><span class="label">Job</span>${{escapeHtml(s.ai_generation_job_id)}}` : ""}}
+          ${{s.ai_generation_job_id ? `<br><button data-sync-ai-status="${{escapeHtml(item.request_id)}}">同步AI状态</button>` : ""}}
+          ${{visibleOutputs.length ? `<br><span class="label">输出</span>${{visibleOutputs.map(aiOutputPath).map(escapeHtml).join("<br>")}}` : ""}}
         </div>
       ` : "";
       const visibleCompany = visibleCompanyCandidates(item);
       const hiddenLowScoreCount = (item.candidates || []).length - visibleCompany.length;
-      const hiddenLowScoreHint = hiddenLowScoreCount > 0 ? `<div class="empty">已隐藏 ${{hiddenLowScoreCount}} 条低分公司库候选（当前阈值：匹配分 &gt;= ${{candidateThreshold()}}）。可在顶部切到“显示全部分数”。</div>` : "";
+      const hiddenLowScoreHint = hiddenLowScoreCount > 0 ? `<div class="empty">已隐藏 ${{escapeHtml(hiddenLowScoreCount)}} 条低分公司库候选（当前阈值：匹配分 &gt;= ${{escapeHtml(candidateThreshold())}}）。可在顶部切到“显示全部分数”。</div>` : "";
       const topShort = bestShortCandidate(item);
       const summaryBadges = [
-        `<span class="badge">公司库候选 ${{item.candidate_count || 0}}</span>`,
-        `<span class="badge blue">短候选 ${{item.short_candidate_count || 0}}</span>`,
-        `<span class="badge ${{item.qualified_candidate_count > 0 ? "good" : "warn"}}">合格候选 ${{item.qualified_candidate_count || 0}}</span>`,
-        topShort ? `<span class="badge blue">先听：${{topShort.filename}} · ${{Number(topShort.match_score || 0)}}分</span>` : `<span class="badge warn">无短候选可优先听</span>`
+        `<span class="badge">公司库候选 ${{escapeHtml(item.candidate_count || 0)}}</span>`,
+        `<span class="badge blue">短候选 ${{escapeHtml(item.short_candidate_count || 0)}}</span>`,
+        `<span class="badge ${{escapeHtml(item.qualified_candidate_count > 0 ? "good" : "warn")}}">合格候选 ${{escapeHtml(item.qualified_candidate_count || 0)}}</span>`,
+        topShort ? `<span class="badge blue">先听：${{escapeHtml(topShort.filename)}} · ${{escapeHtml(Number(topShort.match_score || 0))}}分</span>` : `<span class="badge warn">无短候选可优先听</span>`
       ].join("");
       const candidates = visibleCompany.map(c => {{
         const cd = s.candidate_decisions[c.candidate_id] || "";
@@ -1382,97 +1387,97 @@ def write_page(
         const scoreBadge = c.match_score >= 70 ? "good" : c.match_score >= 45 ? "warn" : "bad";
         const listenBadge = c.candidate_id === topShort?.candidate_id ? `<span class="badge blue">建议先听</span>` : "";
         const finalScoreBlock = c.final_score
-          ? `<div><span class="badge good">综合分 ${{c.final_score}}</span><span class="badge">语义 ${{c.semantic_score || "-"}}</span><span class="badge">质量 ${{c.quality_score || "-"}}</span><span class="badge">偏好 ${{c.feedback_score || "-"}}</span></div>`
+          ? `<div><span class="badge good">综合分 ${{escapeHtml(c.final_score)}}</span><span class="badge">语义 ${{escapeHtml(c.semantic_score || "-")}}</span><span class="badge">质量 ${{escapeHtml(c.quality_score || "-")}}</span><span class="badge">偏好 ${{escapeHtml(c.feedback_score || "-")}}</span></div>`
           : "";
         const audioBlock = c.local_preview_url
-          ? `<audio controls preload="none" src="${{c.local_preview_url}}"></audio><div class="file-meta">本地缓存试听</div>`
+          ? `<audio controls preload="none" src="${{escapeHtml(safeUrl(c.local_preview_url))}}"></audio><div class="file-meta">本地缓存试听</div>`
           : `<div class="empty">未缓存，暂不可在本页播放</div><div class="file-meta">可稍后重跑缓存下载，或用下方公司库链接定位原素材。</div>`;
-        return `<article class="candidate ${{selectedClass}} ${{scoreClass}}">
+        return `<article class="candidate ${{escapeHtml(selectedClass)}} ${{escapeHtml(scoreClass)}}">
           <div>
-            <div class="file">${{c.filename}}</div>
-            <div class="file-meta">ID ${{c.candidate_id}} · ${{c.duration_sec ? c.duration_sec.toFixed(2) + "s" : "时长未知"}} · ${{c.length_label}} · ${{c.project_code || ""}}</div>
-            <div><span class="badge ${{scoreBadge}}">匹配分 ${{c.match_score}} / ${{c.match_tier}}</span>${{listenBadge}}</div>
+            <div class="file">${{escapeHtml(c.filename)}}</div>
+            <div class="file-meta">ID ${{escapeHtml(c.candidate_id)}} · ${{escapeHtml(c.duration_sec ? c.duration_sec.toFixed(2) + "s" : "时长未知")}} · ${{escapeHtml(c.length_label)}} · ${{escapeHtml(c.project_code || "")}}</div>
+            <div><span class="badge ${{escapeHtml(scoreBadge)}}">匹配分 ${{escapeHtml(c.match_score)}} / ${{escapeHtml(c.match_tier)}}</span>${{listenBadge}}</div>
             ${{finalScoreBlock}}
-            <div class="file-meta">${{c.match_reasons || ""}}</div>
-            <div class="file-meta">${{c.mismatch_reasons || ""}}</div>
-            <div class="file-meta">${{c.category_path || "无分类路径"}}</div>
-            <div class="file-meta">Query: ${{c.library_query}}</div>
+            <div class="file-meta">${{escapeHtml(c.match_reasons || "")}}</div>
+            <div class="file-meta">${{escapeHtml(c.mismatch_reasons || "")}}</div>
+            <div class="file-meta">${{escapeHtml(c.category_path || "无分类路径")}}</div>
+            <div class="file-meta">Query: ${{escapeHtml(c.library_query)}}</div>
           </div>
           <div>
             ${{audioBlock}}
-            <div class="file-meta"><a href="${{c.download_url}}" target="_blank" rel="noreferrer">打开公司库下载链接</a></div>
-            <div class="file-meta">${{c.tags_clean || "无标签"}}</div>
+            <div class="file-meta"><a href="${{escapeHtml(safeUrl(c.download_url))}}" target="_blank" rel="noreferrer">打开公司库下载链接</a></div>
+            <div class="file-meta">${{escapeHtml(c.tags_clean || "无标签")}}</div>
           </div>
           <div>
             <div class="actions">
-              <button class="best ${{cd === "best" ? "on" : ""}}" data-candidate="${{c.candidate_id}}" data-decision="best" title="本条需求最终交付只取最佳；最佳单选">最佳</button>
-              <button class="${{cd === "direct_use" ? "on" : ""}}" data-candidate="${{c.candidate_id}}" data-decision="direct_use" title="可直接使用的备选，可多选；最终交付仍优先取最佳">直接用</button>
-              <button class="modify ${{cd === "modify_use" ? "on" : ""}}" data-candidate="${{c.candidate_id}}" data-decision="modify_use">改后用</button>
-              <button class="reject ${{cd === "reject" ? "on" : ""}}" data-candidate="${{c.candidate_id}}" data-decision="reject">不合适</button>
+              <button class="best ${{escapeHtml(cd === "best" ? "on" : "")}}" data-candidate="${{escapeHtml(c.candidate_id)}}" data-decision="best" title="本条需求最终交付只取最佳；最佳单选">最佳</button>
+              <button class="${{escapeHtml(cd === "direct_use" ? "on" : "")}}" data-candidate="${{escapeHtml(c.candidate_id)}}" data-decision="direct_use" title="可直接使用的备选，可多选；最终交付仍优先取最佳">直接用</button>
+              <button class="modify ${{escapeHtml(cd === "modify_use" ? "on" : "")}}" data-candidate="${{escapeHtml(c.candidate_id)}}" data-decision="modify_use">改后用</button>
+              <button class="reject ${{escapeHtml(cd === "reject" ? "on" : "")}}" data-candidate="${{escapeHtml(c.candidate_id)}}" data-decision="reject">不合适</button>
             </div>
-            <textarea class="candidate-note" data-candidate-note="${{c.candidate_id}}" placeholder="这条候选哪里不对？如果改后用，需要怎么改？">${{cn}}</textarea>
+            <textarea class="candidate-note" data-candidate-note="${{escapeHtml(c.candidate_id)}}" placeholder="这条候选哪里不对？如果改后用，需要怎么改？">${{escapeHtml(cn)}}</textarea>
             ${{isReuseItem(item)
               ? `<button class="candidate-ai-retry" disabled title="复用项默认不生成AI">复用项不生成AI</button>`
-              : `<button class="candidate-ai-retry" data-regenerate-candidate="${{c.candidate_id}}">按这条反馈再生成AI</button>`}}
+              : `<button class="candidate-ai-retry" data-regenerate-candidate="${{escapeHtml(c.candidate_id)}}">按这条反馈再生成AI</button>`}}
           </div>
         </article>`;
       }}).join("");
       const aiCandidates = visibleOutputs.map((candidate, index) => {{
         const path = aiOutputPath(candidate);
-        const candidateId = candidate.candidate_id || `ai:${{path}}`;
+        const candidateId = candidate.candidate_id || `ai:${{escapeHtml(path)}}`;
         const cd = s.candidate_decisions[candidateId] || "";
         const cn = s.candidate_notes?.[candidateId] || "";
         const selectedClass = cd === "best" ? "best" : cd === "direct_use" ? "selected" : cd === "modify_use" ? "modify" : cd === "reject" ? "reject" : "";
         const scoreBlock = candidate.quality_score || candidate.feedback_score || candidate.semantic_score
-          ? `<div><span class="badge good">综合分 ${{candidate.final_score || "-"}}</span><span class="badge">语义 ${{candidate.semantic_score || "-"}}</span><span class="badge">质量 ${{candidate.quality_score || "-"}}</span><span class="badge">偏好 ${{candidate.feedback_score || "-"}}</span></div>`
+          ? `<div><span class="badge good">综合分 ${{escapeHtml(candidate.final_score || "-")}}</span><span class="badge">语义 ${{escapeHtml(candidate.semantic_score || "-")}}</span><span class="badge">质量 ${{escapeHtml(candidate.quality_score || "-")}}</span><span class="badge">偏好 ${{escapeHtml(candidate.feedback_score || "-")}}</span></div>`
           : `<div><span class="badge ai-score">AI待试听评分</span></div>`;
-        const durationText = candidate.duration_sec ? ` · ${{Number(candidate.duration_sec).toFixed(2)}}s` : "";
-        return `<article class="candidate ${{selectedClass}}">
+        const durationText = candidate.duration_sec ? ` · ${{escapeHtml(Number(candidate.duration_sec).toFixed(2))}}s` : "";
+        return `<article class="candidate ${{escapeHtml(selectedClass)}}">
           <div>
-            <div class="file">AI候选 ${{index + 1}} · ${{candidate.filename || path.split("/").pop()}}</div>
+            <div class="file">AI候选 ${{escapeHtml(index + 1)}} · ${{escapeHtml(candidate.filename || path.split("/").pop())}}</div>
             <div class="file-meta">来源：公司API生成 · 已纳入正式候选评分${{durationText}}</div>
             ${{scoreBlock}}
-            <div class="file-meta">${{candidate.match_reasons || ""}}</div>
-            <div class="file-meta">${{path}}</div>
+            <div class="file-meta">${{escapeHtml(candidate.match_reasons || "")}}</div>
+            <div class="file-meta">${{escapeHtml(path)}}</div>
           </div>
           <div>
-            <audio controls preload="none" src="${{outputUrl(path)}}"></audio>
+            <audio controls preload="none" src="${{escapeHtml(safeUrl(outputUrl(path)))}}"></audio>
             <div class="file-meta">本地AI生成试听</div>
           </div>
           <div>
             <div class="actions">
-              <button class="best ${{cd === "best" ? "on" : ""}}" data-candidate="${{candidateId}}" data-decision="best" title="本条需求最终交付只取最佳；最佳单选">最佳</button>
-              <button class="${{cd === "direct_use" ? "on" : ""}}" data-candidate="${{candidateId}}" data-decision="direct_use" title="可直接使用的备选，可多选；最终交付仍优先取最佳">直接用</button>
-              <button class="modify ${{cd === "modify_use" ? "on" : ""}}" data-candidate="${{candidateId}}" data-decision="modify_use">改后用</button>
-              <button class="reject ${{cd === "reject" ? "on" : ""}}" data-candidate="${{candidateId}}" data-decision="reject">不合适</button>
+              <button class="best ${{escapeHtml(cd === "best" ? "on" : "")}}" data-candidate="${{escapeHtml(candidateId)}}" data-decision="best" title="本条需求最终交付只取最佳；最佳单选">最佳</button>
+              <button class="${{escapeHtml(cd === "direct_use" ? "on" : "")}}" data-candidate="${{escapeHtml(candidateId)}}" data-decision="direct_use" title="可直接使用的备选，可多选；最终交付仍优先取最佳">直接用</button>
+              <button class="modify ${{escapeHtml(cd === "modify_use" ? "on" : "")}}" data-candidate="${{escapeHtml(candidateId)}}" data-decision="modify_use">改后用</button>
+              <button class="reject ${{escapeHtml(cd === "reject" ? "on" : "")}}" data-candidate="${{escapeHtml(candidateId)}}" data-decision="reject">不合适</button>
             </div>
-            <textarea class="candidate-note" data-candidate-note="${{candidateId}}" placeholder="这条AI候选哪里不对？下一版需要怎么改？">${{cn}}</textarea>
+            <textarea class="candidate-note" data-candidate-note="${{escapeHtml(candidateId)}}" placeholder="这条AI候选哪里不对？下一版需要怎么改？">${{escapeHtml(cn)}}</textarea>
             ${{isReuseItem(item)
               ? `<button class="candidate-ai-retry" disabled title="复用项默认不生成AI">复用项不生成AI</button>`
-              : `<button class="candidate-ai-retry" data-regenerate-candidate="${{candidateId}}">按这条反馈再生成AI</button>`}}
+              : `<button class="candidate-ai-retry" data-regenerate-candidate="${{escapeHtml(candidateId)}}">按这条反馈再生成AI</button>`}}
           </div>
         </article>`;
       }}).join("");
       const candidateContent = hiddenLowScoreHint + candidates + aiCandidates || `<div class="empty">公司库没有可展示候选。需要 AI 补位时，请点击上方“AI生成候选”。</div>`;
       detail.innerHTML = `
-        <h2>${{item.event_name}}</h2>
+        <h2>${{escapeHtml(item.event_name)}}</h2>
         <div class="meta">
-          <div><span class="label">资源名</span>${{item.asset_name}}</div>
-          <div><span class="label">资源包</span>${{item.resource_bank}}</div>
-          <div><span class="label">优先级</span>${{item.priority}}</div>
-          <div><span class="label">Loop / Stop</span>${{item.loop}} / ${{item.stop_event_needed}}</div>
+          <div><span class="label">资源名</span>${{escapeHtml(item.asset_name)}}</div>
+          <div><span class="label">资源包</span>${{escapeHtml(item.resource_bank)}}</div>
+          <div><span class="label">优先级</span>${{escapeHtml(item.priority)}}</div>
+          <div><span class="label">Loop / Stop</span>${{escapeHtml(item.loop)}} / ${{escapeHtml(item.stop_event_needed)}}</div>
         </div>
-        <div class="desc"><strong>${{item.description_cn || item.asset_name}}</strong><br>${{item.trigger_timing}}<br><span class="label">Section</span>${{item.section}}</div>
+        <div class="desc"><strong>${{escapeHtml(item.description_cn || item.asset_name)}}</strong><br>${{escapeHtml(item.trigger_timing)}}<br><span class="label">Section</span>${{escapeHtml(item.section)}}</div>
         ${{reusePanel}}
         <div class="candidate-summary">${{summaryBadges}}</div>
         <div class="event-actions">
           ${{eventButtons}}
           ${{aiGenerateButton}}
-          <span class="file-meta">事件级判断：${{decisionLabel(s.event_decision || "undecided")}}</span>
+          <span class="file-meta">事件级判断：${{escapeHtml(decisionLabel(s.event_decision || "undecided"))}}</span>
         </div>
         ${{generationPanel}}
         <div class="candidates">${{candidateContent}}</div>
-        <textarea id="notes" placeholder="策划备注：为什么选它、需要怎么改、AI要补什么">${{s.notes || ""}}</textarea>
+        <textarea id="notes" placeholder="策划备注：为什么选它、需要怎么改、AI要补什么">${{escapeHtml(s.notes || "")}}</textarea>
       `;
       detail.querySelectorAll("[data-event-decision]").forEach(button => {{
         button.addEventListener("click", () => setEventDecision(item.request_id, button.dataset.eventDecision));
@@ -1687,7 +1692,7 @@ def write_page(
 
     async function backupReviewState() {{
       try {{
-        const response = await fetch("http://127.0.0.1:8791/api/review-state/backup", {{
+        const response = await reviewFetch("/api/review-state/backup", {{
           method: "POST",
           headers: {{ "Content-Type": "application/json" }},
           body: JSON.stringify({{
@@ -1714,7 +1719,7 @@ def write_page(
 
     async function restoreReviewState() {{
       try {{
-        const response = await fetch("http://127.0.0.1:8791/api/review-state/backup");
+        const response = await reviewFetch("/api/review-state/backup");
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || `HTTP ${{response.status}}`);
         if (!data.state || typeof data.state !== "object") throw new Error("备份文件里没有 state。");
@@ -1753,7 +1758,7 @@ def write_page(
       if (location.protocol.startsWith("http") && !hasMeaningfulState()) {{
         window.setTimeout(async () => {{
           try {{
-            const response = await fetch("http://127.0.0.1:8791/api/review-state/backup");
+            const response = await reviewFetch("/api/review-state/backup");
             if (!response.ok) return;
             const data = await response.json();
             if (data.state && hasMeaningfulState(data.state)) {{
@@ -1822,7 +1827,7 @@ def write_page(
         }}));
     }}
 
-    const aiGenerationEndpoint = "http://127.0.0.1:8791/api/ai-gap/generate";
+    const aiGenerationEndpoint = "/api/ai-gap/generate";
 
     function rowForAiGeneration(item) {{
       const s = eventState(item.request_id);
@@ -1878,7 +1883,7 @@ def write_page(
     }}
 
     function aiStatusUrl(jobId) {{
-      return `http://127.0.0.1:8791/api/ai-gap/status/${{jobId}}`;
+      return `/api/ai-gap/status/${{jobId}}`;
     }}
 
     function isPendingAiStatus(status) {{
@@ -1887,7 +1892,7 @@ def write_page(
     }}
 
     async function applyAiGenerationStatus(id, jobId, statusUrl) {{
-        const response = await fetch(statusUrl);
+        const response = await reviewFetch(statusUrl);
         const data = await response.json();
         if (data.status === "missing") {{
           updateAiStatus(id, {{
@@ -1995,7 +2000,7 @@ def write_page(
       if (["请求生成服务中", "请求新增AI候选中"].includes(current.ai_generation_status) || (current.ai_generation_status || "").startsWith("生成中")) return;
       updateAiStatus(id, {{ ai_generation_status: options.append ? "请求新增AI候选中" : "请求生成服务中", ai_generation_outputs: current.ai_generation_outputs || [], ai_generation_error: "", event_decision: current.event_decision || "auto_ai" }});
       try {{
-        const response = await fetch(aiGenerationEndpoint, {{
+        const response = await reviewFetch(aiGenerationEndpoint, {{
           method: "POST",
           headers: {{ "Content-Type": "application/json" }},
           body: JSON.stringify(rowForAiGeneration(item))
@@ -2037,7 +2042,7 @@ def write_page(
       button.disabled = true;
       button.textContent = "正在生成交付包...";
       try {{
-        const response = await fetch("/api/production-package/build", {{
+        const response = await reviewFetch("/api/production-package/build", {{
           method: "POST",
           headers: {{ "Content-Type": "application/json" }},
           body: JSON.stringify({{
@@ -2101,7 +2106,7 @@ def write_page(
 
     async function buildProgramPackage() {{
       try {{
-        const response = await fetch("http://127.0.0.1:8791/api/program-package/build", {{
+        const response = await reviewFetch("/api/program-package/build", {{
           method: "POST",
           headers: {{ "Content-Type": "application/json" }},
           body: JSON.stringify({{
@@ -2112,7 +2117,7 @@ def write_page(
         }});
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || `HTTP ${{response.status}}`);
-        const manifestResponse = await fetch(`/${{data.manifest}}`);
+        const manifestResponse = await reviewFetch(`/${{data.manifest}}`);
         const manifestCsv = await manifestResponse.text();
         showExport(
           "Program_Integration_Manifest.csv",

@@ -28,6 +28,27 @@ DEFAULT_BASE_URL = os.environ.get("TAPPER_AUDIO_BASE_URL", "http://172.20.90.54:
 API_KEY_LOGIN_URL = "https://voiceclone.tap4fun.com/auth/apikey-login"
 
 
+def http_origin(url: str) -> tuple[str, str, int]:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+        raise ValueError("Only HTTP(S) URLs without embedded credentials are supported")
+    return parsed.scheme, parsed.hostname.lower(), parsed.port or (443 if parsed.scheme == "https" else 80)
+
+
+class ScopedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new_origin = http_origin(newurl)
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None and new_origin != http_origin(req.full_url):
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+def safe_open(req: urllib.request.Request, timeout: float = 120):
+    http_origin(req.full_url)
+    return urllib.request.build_opener(ScopedRedirectHandler()).open(req, timeout=timeout)
+
+
 def missing_token_message() -> str:
     return (
         "Missing company audio token. OpenClaw injects TAPPER_AUTH_TOKEN automatically. "
@@ -75,17 +96,18 @@ def request_json(base_url: str, path: str, token: str, body: dict[str, Any]) -> 
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with safe_open(req) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
         raise RuntimeError(f"{path} failed HTTP {exc.code}: {detail}") from exc
 
 
-def download_bytes(url: str, token: str = "") -> bytes:
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+def download_bytes(url: str, token: str = "", *, trusted_origins=(), timeout: float = 120) -> bytes:
+    trusted = http_origin(url) in {http_origin(origin) for origin in trusted_origins}
+    headers = {"Authorization": f"Bearer {token}"} if token and trusted else {}
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with safe_open(req, timeout=timeout) as resp:
         return resp.read()
 
 
@@ -138,7 +160,7 @@ def generate_sound(
         raise RuntimeError(f"/api/sound did not return audio_url: {result}")
     audio_url = resolve_api_url(audio_url, base_url)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_bytes(download_bytes(audio_url, token))
+    output_path.write_bytes(download_bytes(audio_url, token, trusted_origins=[base_url]))
     return result
 
 

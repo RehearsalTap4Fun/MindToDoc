@@ -7,7 +7,7 @@ r"""md → 完整 jsonml 转换器（A 方案）。
 - 注释 <!-- --> ：跳过（md 给人看的元数据，不进钉钉）
 - 图片占位 <!-- IMG: 界面名 | image_id --> ：转成 〚IMG-N〛 占位段，并写入 images sidecar
 - # / ## / ### 标题：转 h1/h2/h3，全部带 list 编号 + ind.left（H1=0,H2=32,H3=64）
-- 两级无序列表（- 项 / 两空格缩进 - 子项）：转 p+list bullet，ind = 所属标题正文档(标题+32)，二级再+? 这里列表本身有 level，ind 用所属标题的正文档值
+- 两级无序列表（- / * / +）：转 p+list bullet；有序列表保留每项的编号文本和段落边界
 - 普通段落：转 p，ind = 所属标题正文档值
 - 表格 | a | b |：转 〚TBL-N〛 占位段（前后留空行），并写入 tables sidecar；
   sidecar 中的空方括号 `[]` 编码为 `\[\]`，避免钉钉误解析成待办项
@@ -23,6 +23,7 @@ ind 规则（正文比标题多缩一档，每级 32）：
 """
 import sys, json, re
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 SRC = sys.argv[1]
 OUT = sys.argv[2]
@@ -189,6 +190,34 @@ while i < n:
         i += 1
         continue
     if s == "" or s == "---":
+        if body_lines and body_lines[-1] != "":
+            body_lines.append("")
+        i += 1
+        continue
+
+    # 主案普通效果图与旧 IMG 标注占位共用一条图片交付链。
+    m_image = re.fullmatch(r"!\[([^\]]*)\]\((.+)\)", s)
+    if m_image:
+        source = re.sub(r'\s+"[^"]*"$', '', m_image.group(2)).strip().strip('<>')
+        item = {"marker": f"〚IMG-{len(images_md)}〛", "name": m_image.group(1),
+                "id": "", "kind": "image", "source": source}
+        parsed = urlsplit(source)
+        if parsed.scheme in {"http", "https"}:
+            item["url"] = source
+        else:
+            if parsed.scheme and not re.match(r"^[A-Za-z]:[/\\]", source):
+                raise ValueError(f"Unsupported image URL: {source}")
+            local_path = Path(unquote(source))
+            if not local_path.is_absolute():
+                local_path = Path(SRC).resolve().parent / local_path
+            if not local_path.is_file():
+                raise ValueError(f"Missing image: {local_path}")
+            item["path"] = str(local_path.resolve())
+        images_md.append(item)
+        blocks.append(para_block(item["marker"], cur_heading_level))
+        if body_lines and body_lines[-1].strip():
+            body_lines.append("")
+        body_lines.extend([item["marker"], ""])
         i += 1
         continue
 
@@ -222,14 +251,14 @@ while i < n:
         body_lines.append("")
         continue
 
-    # 列表（- 或 两空格+-）
-    m_li = re.match(r"^(\s*)-\s+(.*)$", raw)
+    # 两级无序列表，支持 Markdown 的三种项目符号。
+    m_li = re.match(r"^(\s*)[-*+]\s+(.*)$", raw)
     if m_li:
         indent = len(m_li.group(1))
         # 收集连续列表块，共享 listId
         listid = new_list_id()
         while i < n:
-            ml = re.match(r"^(\s*)-\s+(.*)$", lines[i].rstrip("\n"))
+            ml = re.match(r"^(\s*)[-*+]\s+(.*)$", lines[i].rstrip("\n"))
             if not ml:
                 break
             ind_sp = len(ml.group(1))
@@ -239,10 +268,18 @@ while i < n:
             i += 1
         continue
 
-    # 普通段落
-    blocks.append(para_block(strip_inline(s), cur_heading_level))
-    body_lines.append(s)
+    # 普通段落按 Markdown 空行分段；源文件软换行不能产生多余 JSONML 块。
+    paragraph = [s]
+    body_lines.append(raw)
     i += 1
+    while i < n:
+        next_line = lines[i].strip()
+        if not next_line or next_line == "---" or re.match(r"^(#{1,4}\s|```|<!--|\||[-*+]\s|!\[|\d+[.)]\s|>)", next_line):
+            break
+        paragraph.append(next_line)
+        body_lines.append(lines[i])
+        i += 1
+    blocks.append(para_block(strip_inline(" ".join(paragraph)), cur_heading_level))
 
 root = ["root", {}] + blocks
 Path(OUT).write_text(json.dumps(root, ensure_ascii=False), encoding="utf-8")

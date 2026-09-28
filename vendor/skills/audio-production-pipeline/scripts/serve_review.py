@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import secrets
 import shutil
 import subprocess
 import sys
@@ -30,15 +31,38 @@ class ReviewHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def end_headers(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         super().end_headers()
 
     def do_OPTIONS(self) -> None:
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+        self.send_error(403, "Cross-origin access is disabled")
+
+    def allowed_request(self, *, mutation: bool = False) -> bool:
+        host = self.headers.get("Host", "")
+        allowed_hosts = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
+        origin = self.headers.get("Origin")
+        allowed = host in allowed_hosts and (origin is None or origin == f"http://{host}")
+        allowed &= self.headers.get("Sec-Fetch-Site", "same-origin") != "cross-site"
+        if mutation:
+            allowed &= origin == f"http://{host}"
+            allowed &= secrets.compare_digest(self.headers.get("X-Review-Token", ""), self.server.session_token)
+            allowed &= self.headers.get_content_type() == "application/json"
+        if not allowed:
+            self.send_error(403, "Open the review page on this local server")
+        return bool(allowed)
+
+    def send_head(self):
+        if not self.allowed_request():
+            return None
+        root = (self.workspace / ".gdconfig_tmp/output/audio/production" / self.server.args.sheet_name).resolve()
+        path = Path(self.translate_path(self.path)).resolve()
+        allowed_extensions = {".html", ".json", ".wav", ".mp3", ".ogg", ".m4a", ".png", ".jpg", ".jpeg", ".css", ".js"}
+        if not path.is_relative_to(root) or not path.is_file() or path.suffix.lower() not in allowed_extensions or path.name.lower() in {"config.json", "token.json"}:
+            self.send_error(403, "Only files in the selected production directory are served")
+            return None
+        return super().send_head()
 
     def send_json(self, status: int, payload: dict[str, object]) -> None:
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
@@ -55,6 +79,8 @@ class ReviewHandler(SimpleHTTPRequestHandler):
         payload = json.loads(self.rfile.read(length).decode("utf-8"))
         if not isinstance(payload, dict):
             raise ValueError("request body must be a JSON object")
+        if payload.get("sheet_name") != self.server.args.sheet_name:
+            raise ValueError("sheet_name must match the selected review directory")
         return payload
 
     def run_script(self, script: str, *arguments: str) -> dict[str, object]:
@@ -79,7 +105,7 @@ class ReviewHandler(SimpleHTTPRequestHandler):
         return "".join(ch if ch.isalnum() or ch in {"_", "-", "."} else "_" for ch in text)[:120]
 
     def ai_status_url(self, job_id: str) -> str:
-        return f"http://127.0.0.1:{self.server.server_port}/api/ai-gap/status/{job_id}"
+        return f"/api/ai-gap/status/{job_id}"
 
     def generate_ai_job(self, job_id: str, row: dict[str, object]) -> None:
         jobs = self.server.ai_jobs
@@ -278,6 +304,8 @@ class ReviewHandler(SimpleHTTPRequestHandler):
         })
 
     def do_POST(self) -> None:
+        if not self.allowed_request(mutation=True):
+            return
         if self.path == "/api/ai-gap/generate":
             try:
                 self.start_ai_generation(self.read_json())
@@ -293,6 +321,11 @@ class ReviewHandler(SimpleHTTPRequestHandler):
             self.send_json(400, {"ok": False, "status": "request_error", "error": str(exc)})
 
     def do_GET(self) -> None:
+        if not self.allowed_request():
+            return
+        if self.path == "/api/session":
+            self.send_json(200, {"token": self.server.session_token})
+            return
         if self.path == "/api/ai-gap/generate":
             self.send_json(405, {
                 "ok": False,
@@ -314,6 +347,7 @@ class ReviewHandler(SimpleHTTPRequestHandler):
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workspace-root", type=Path)
+    parser.add_argument("--sheet-name", required=True, help="Serve only this existing production directory")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8791)
     parser.add_argument("--config-dir", type=Path, default=Path(__file__).resolve().parent)
@@ -322,12 +356,19 @@ def main() -> int:
     parser.add_argument("--ffmpeg", default="ffmpeg")
     parser.add_argument("--delay", type=float, default=0.5)
     args = parser.parse_args()
+    if args.host not in {"127.0.0.1", "localhost"}:
+        parser.error("--host must be 127.0.0.1 or localhost")
+    args.sheet_name = validate_sheet_name(args.sheet_name)
     workspace = args.workspace_root.resolve() if args.workspace_root else find_workspace_root()
+    review_root = workspace / ".gdconfig_tmp/output/audio/production" / args.sheet_name
+    if not review_root.is_dir():
+        parser.error(f"production directory not found: {review_root}")
     handler = partial(ReviewHandler, directory=str(workspace), workspace=workspace)
     server = ThreadingHTTPServer((args.host, args.port), handler)
     server.args = args
     server.ai_jobs = {}
-    print(f"Serving {workspace} at http://{args.host}:{args.port}")
+    server.session_token = secrets.token_urlsafe(32)
+    print(f"Serving {review_root} at http://{args.host}:{args.port}")
     print(f"AI API: http://{args.host}:{args.port}/api/ai-gap/generate")
     try:
         server.serve_forever()

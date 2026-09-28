@@ -46,6 +46,8 @@ class CaseValidator:
         self.warnings = []
 
     def validate_file(self, filepath: str) -> bool:
+        self.errors.clear()
+        self.warnings.clear()
         path = Path(filepath)
         if not path.exists():
             self.errors.append(f"文件不存在: {filepath}")
@@ -61,8 +63,13 @@ class CaseValidator:
         if not isinstance(data, list):
             self.errors.append("数据格式错误：顶层必须是数组")
             return False
+        if not data:
+            self.errors.append("用例列表不能为空")
+            return False
 
         self._check_structure(data)
+        if self.errors:
+            return False
         self._check_checkpoint_granularity(data)
         self._check_merge_markers(data)
         self._check_hardcoded_values(data)
@@ -70,6 +77,7 @@ class CaseValidator:
         return len(self.errors) == 0
 
     def _check_structure(self, data: list):
+        seen_ids = set()
         for i, row in enumerate(data):
             row_num = i + 1
             if not isinstance(row, list):
@@ -78,10 +86,17 @@ class CaseValidator:
             if len(row) != 6:
                 self.errors.append(f"第{row_num}行：列数为{len(row)}，应为6列")
                 continue
-            if not row[0]:
+            if any(not isinstance(cell, str) for cell in row):
+                self.errors.append(f"第{row_num}行：所有单元格必须是字符串")
+                continue
+            case_id = row[0].strip()
+            if not case_id:
                 self.errors.append(f"第{row_num}行：编号（A列）不能为空")
-            if not row[4] and row[4] != "":
-                self.warnings.append(f"第{row_num}行：预期结果（E列）为空，请确认")
+            elif case_id in seen_ids:
+                self.errors.append(f"第{row_num}行：重复编号 {case_id}")
+            seen_ids.add(case_id)
+            if not row[4].strip():
+                self.errors.append(f"第{row_num}行：预期结果（E列）不能为空")
             for j, cell in enumerate(row):
                 if cell is None:
                     self.errors.append(
@@ -157,8 +172,9 @@ class CaseValidator:
                 prev_step = None
 
             # D列
-            if row[3] == "":
-                pass
+            if not row[3].strip():
+                if prev_step is None:
+                    self.errors.append(f"第{row_num}行：操作步骤为空且没有同检查点内可继承的步骤")
             else:
                 prev_step = row[3]
 
@@ -171,8 +187,7 @@ class CaseValidator:
             remark = str(row[5]) if len(row) > 5 and row[5] else ""
             text = expected + " " + remark
 
-            if any(re.search(p, text) for p in self.SAFE_PATTERNS):
-                continue
+            # 来源备注与其他安全表述不能豁免当前预期里的确定数值。
 
             for pattern, desc in self.HARDCODE_PATTERNS:
                 match = re.search(pattern, expected)

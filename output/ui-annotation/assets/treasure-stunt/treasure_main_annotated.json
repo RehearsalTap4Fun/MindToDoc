@@ -1,0 +1,78 @@
+{
+  "screen": "英雄界面·秘宝页",
+  "source": "C:/Project/MindToDoc/output/ui-design/秘宝系统扩展-仓库分解版-20260922/01-秘宝主界面.png",
+  "coordinate_system": "0-1000，视觉估计，非UI布局坐标",
+  "elements": [
+    {
+      "id": 1,
+      "cx": 270,
+      "cy": 101,
+      "name": "页面与战力",
+      "notes": [
+        "保留角色、战力、返回和规则入口。战力显示沿用现有口径，界面不重复铺陈基础战力不变等规则。"
+      ],
+      "keys": [
+        "Treasure_System_Treasure",
+        "Treasure_System_Power",
+        "TreasureStunt_ruleTitle",
+        "TreasureStunt_rule"
+      ]
+    },
+    {
+      "id": 2,
+      "cx": 276,
+      "cy": 442,
+      "name": "穿戴槽位与辅助入口",
+      "notes": [
+        "同类四槽合并标注。新特技秘宝显示实例等级，选中框只对应一件秘宝。存量秘宝保留原词条且不补造等级。",
+        "秘宝背包入口打开已有秘宝页签，回到本页保留当前英雄。"
+      ],
+      "keys": [
+        "TreasureStunt_level",
+        "TreasureStunt_bag"
+      ]
+    },
+    {
+      "id": 3,
+      "cx": 963,
+      "cy": 713,
+      "name": "选中秘宝标题",
+      "notes": [
+        "显示配置对应的包装名。示例名称采用已确认用语，分类或功能定位不代替道具名。信息与分享沿用原控件。"
+      ],
+      "keys": [
+        "TreasureStunt_ring"
+      ]
+    },
+    {
+      "id": 4,
+      "cx": 951,
+      "cy": 839,
+      "name": "等级、战力与完整效果",
+      "notes": [
+        "显示当前特技等级、基础战力加成与该件固定效果。技能名采用有色底标签，描述中的数值与正文分色。",
+        "单件详情只显示该件技能，不展开部队四节点。新特技和存量词条按对象类型显示，具体口径见主案。"
+      ],
+      "keys": [
+        "TreasureStunt_skill",
+        "TreasureStunt_level",
+        "TreasureStunt_effectFirstStrike"
+      ]
+    },
+    {
+      "id": 5,
+      "cx": 951,
+      "cy": 895,
+      "name": "操作按钮",
+      "notes": [
+        "已穿戴实例显示卸下、替换、秘宝升级。点击升级直接打开升级弹窗。",
+        "卸下和替换沿用驻防限制。升级可用性与红点见升级弹窗及共用状态。"
+      ],
+      "keys": [
+        "Treasure_System_Remove",
+        "Treasure_System_Replace",
+        "TreasureStunt_upgrade"
+      ]
+    }
+  ]
+}

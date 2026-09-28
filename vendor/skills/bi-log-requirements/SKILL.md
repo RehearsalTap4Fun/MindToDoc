@@ -9,13 +9,15 @@ description: >-
 # 根据文档生成 BI 日志需求（X1 / K1 / X15）
 
 从**功能策划文档**产出**字段级 BI 需求**（四列表），供数据、服务器、客户端对齐。  
-查**代码里已有打点**用 [k1-bi-tracking](../k1-bi-tracking/SKILL.md)；本 skill 负责**新功能需求撰写**。
+外部 Skill `k1-bi-tracking`、`dws` 未随本 vendor 分发；从当前会话的 Skill 清单读取真实路径，缺失时按项目 `references/dependencies.md` 记录未核验项，不假定相邻目录存在。
+
+查**代码里已有打点**用 `k1-bi-tracking`；本 skill 负责**新功能需求撰写**。
 
 ## 前置条件
 
 - **钉钉表格 MCP**（`user-钉钉表格`，已配置于 Cursor MCP）读取 **axls** 电子表格为**首选**；**钉钉文档 MCP**（`user-钉钉文档` / `user-dingtalk-doc`）读取 **adoc** 文档
 - **MCP 不可用、鉴权失败或工具报错时**，回退到 **`dws` CLI**（Windows 常见路径：`%USERPROFILE%\.local\bin\dws.exe`），所有 `dws` 命令加 **`--format json`**
-- 读钉钉内容**禁止** curl/浏览器替代（见 [sources.md](sources.md)、[dws](../dws/SKILL.md) 禁止项）
+- 读钉钉内容**禁止** curl/浏览器替代（见 [sources.md](sources.md)、`dws` 禁止项）
 
 ## 项目区分（影响 bi.xml 相关动作）
 
@@ -62,7 +64,7 @@ description: >-
 
 ### 1. 已有 reason_id / event_name → 核验覆盖后省略或保留增量
 
-生成前用 [k1-bi-tracking](../k1-bi-tracking/SKILL.md) 或 `game/bi/def/const.go` 查重。  
+生成前用 `k1-bi-tracking` 或 `game/bi/def/const.go` 查重。
 枚举存在只证明名字已登记。须读取实际打点调用及载荷，对照本次分析目标核验触发分支、字段、取值语义和关联 ID；全部覆盖才省略，不在需求表重复列纯复用项。同名事件需要新增字段、取值或触发条件时，保留差异并标「扩展已有」，引用原实现作为基线。未查到调用或无法验证时保留待核查状态，不能据枚举名判定零新增。
 
 > **K1 枚举命名查重看 `const.go`，行为覆盖还须查实际调用代码**，不要查 / 提及 `bi.xml`。X1/X15 的枚举登记另外核对 `bi.xml`。
