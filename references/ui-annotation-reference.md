@@ -82,7 +82,7 @@ assert urllib.request.urlopen(req,timeout=120).status==200
 - **先样张后批量**：先用说明最多的一屏生成图文表，回读同一 `tr` 内两个 `tc`、左右内容和顶部对齐，再打开钉钉实际页面确认左右并排、图片加载、说明未溢出。通过后再按同一结构批量生成，其余屏仍逐屏验收。
 - **图和右栏共用一份编号数据**：本地左右栏与钉钉图文表从同一份分组说明生成；不能把图片和说明分别拼接。`md2jsonml.py` 的 images sidecar 仅提供占位索引，不负责自动组装两栏。纯“编号／说明”表不算左图右文交付。
 - **写入兼容**：当前接口可能拒绝 `update_document(format=jsonml, mode=append)`；此时先写正文和锚点，再用 `insert_document_block(format=jsonml)` 插入每屏图文表。每次写入检查 `success`，失败后先回读，不继续同样的批量请求。
-- **验收范围**：每屏核对图片、编号顺序、全部说明和 key；本地化表逐行比较原文与参数，不能只数表格。不可观察实际页面时标记视觉验收未完成。本项目冷库服可复用 `scripts/build_cold_server_annotations.py` 与 `scripts/verify_cold_server_annotation_layout.py`，其他功能需使用自身数据，不复用该功能素材。
+- **验收范围**：每屏核对图片、编号顺序、全部说明和 key；本地化表逐行比较原文与参数，不能只数表格。不可观察实际页面时标记视觉验收未完成。各功能使用自身数据生成与核验标注，不复用其他功能的素材。
 - 先 `list_document_blocks(format=jsonml)` 抄一个现成块照搬样式。
 - 两列 table：`colsWidth:[250,400]`，左 `tc` `fill:#E8F2FE` 放 `img`，右 `tc` `fill:#FFFAE5` 放编号说明。
 - 编号说明：主项 `list.isOrdered:true`（`%1.`）= 要素名；子说明 `level:1` + `○` bullet = 该要素的文本key/状态/交互。与正文两级列表规则一致。
