@@ -1,0 +1,464 @@
+{
+ "out": "layers",
+ "scale": 0.5,
+ "layers": [
+  {
+   "name": "msgbox_two",
+   "title": "通用确认弹窗·蓝+金",
+   "note": "UIMsgBox 双按钮，ButtonColorGroup.BlueGlod：左蓝右金。正文约三行以内。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Other/Ui_MessageBox.prefab",
+   "root": "CentreOther/Board/Content",
+   "pad": 12,
+   "hide": [
+    "CentreOther/Board/Content/WarningBG",
+    "CentreOther/Board/Content/Toggle",
+    "CentreOther/Board/Content/SwitchRolesBtn",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1"
+   ],
+   "text": {
+    "CentreOther/Board/Content/BG/TitleBar/Title/TitleText": "提示",
+    "CentreOther/Board/Content/TxtInfo": "正文占位，最多约三行。\n第二行",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt1": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt2": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt3": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt1": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt2": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt3": "确定"
+   },
+   "slots": {
+    "title": "CentreOther/Board/Content/BG/TitleBar/Title/TitleText",
+    "body": "CentreOther/Board/Content/TxtInfo",
+    "left": {
+     "node": "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt1",
+     "blank": [
+      "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt2",
+      "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt3"
+     ]
+    },
+    "right": {
+     "node": "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt1",
+     "blank": [
+      "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt2",
+      "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt3"
+     ]
+    }
+   },
+   "hotspots": {
+    "close": "CentreOther/Board/Content/BG/TitleBar/Title/CloseBtn",
+    "left": "CentreOther/Board/Content/ButtonGroup/BtnBlueM1",
+    "right": "CentreOther/Board/Content/ButtonGroup/BtnGoldM1"
+   }
+  },
+  {
+   "name": "msgbox_two_red_green",
+   "title": "通用确认弹窗·红+绿",
+   "note": "UIMsgBox 双按钮，ButtonColorGroup.RedGreen：左红右绿。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Other/Ui_MessageBox.prefab",
+   "root": "CentreOther/Board/Content",
+   "pad": 12,
+   "hide": [
+    "CentreOther/Board/Content/WarningBG",
+    "CentreOther/Board/Content/Toggle",
+    "CentreOther/Board/Content/SwitchRolesBtn",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1"
+   ],
+   "text": {
+    "CentreOther/Board/Content/BG/TitleBar/Title/TitleText": "提示",
+    "CentreOther/Board/Content/TxtInfo": "正文占位，最多约三行。\n第二行",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1/UniformText/txt1": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1/UniformText/txt2": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1/UniformText/txt3": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1/UniformText/txt1": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1/UniformText/txt2": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1/UniformText/txt3": "确定"
+   },
+   "slots": {
+    "title": "CentreOther/Board/Content/BG/TitleBar/Title/TitleText",
+    "body": "CentreOther/Board/Content/TxtInfo",
+    "left": {
+     "node": "CentreOther/Board/Content/ButtonGroup/BtnRedM1/UniformText/txt1",
+     "blank": [
+      "CentreOther/Board/Content/ButtonGroup/BtnRedM1/UniformText/txt2",
+      "CentreOther/Board/Content/ButtonGroup/BtnRedM1/UniformText/txt3"
+     ]
+    },
+    "right": {
+     "node": "CentreOther/Board/Content/ButtonGroup/BtnGreenM1/UniformText/txt1",
+     "blank": [
+      "CentreOther/Board/Content/ButtonGroup/BtnGreenM1/UniformText/txt2",
+      "CentreOther/Board/Content/ButtonGroup/BtnGreenM1/UniformText/txt3"
+     ]
+    }
+   },
+   "hotspots": {
+    "close": "CentreOther/Board/Content/BG/TitleBar/Title/CloseBtn",
+    "left": "CentreOther/Board/Content/ButtonGroup/BtnRedM1",
+    "right": "CentreOther/Board/Content/ButtonGroup/BtnGreenM1"
+   }
+  },
+  {
+   "name": "msgbox_one",
+   "title": "通用确认弹窗·单按钮",
+   "note": "UIMsgBox 单按钮，ButtonColorGroup.Golden。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Other/Ui_MessageBox.prefab",
+   "root": "CentreOther/Board/Content",
+   "pad": 12,
+   "hide": [
+    "CentreOther/Board/Content/WarningBG",
+    "CentreOther/Board/Content/Toggle",
+    "CentreOther/Board/Content/SwitchRolesBtn",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1"
+   ],
+   "text": {
+    "CentreOther/Board/Content/BG/TitleBar/Title/TitleText": "提示",
+    "CentreOther/Board/Content/TxtInfo": "正文占位，最多约三行。\n第二行",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt1": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt2": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt3": "确定"
+   },
+   "slots": {
+    "title": "CentreOther/Board/Content/BG/TitleBar/Title/TitleText",
+    "body": "CentreOther/Board/Content/TxtInfo",
+    "ok": {
+     "node": "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt1",
+     "blank": [
+      "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt2",
+      "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt3"
+     ]
+    }
+   },
+   "hotspots": {
+    "close": "CentreOther/Board/Content/BG/TitleBar/Title/CloseBtn",
+    "ok": "CentreOther/Board/Content/ButtonGroup/BtnGoldM1"
+   }
+  },
+  {
+   "name": "text_pop",
+   "title": "通用文字弹窗",
+   "note": "UITextPop：标题加正文，无按钮。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UITextPop.prefab",
+   "root": "Root",
+   "pad": 0,
+   "text": {
+    "Root/Title/TitleText": "说明",
+    "Root/Text": "正文占位"
+   },
+   "slots": {
+    "title": "Root/Title/TitleText",
+    "body": "Root/Text"
+   },
+   "hotspots": {
+    "close": "Root/Title/CloseBtn"
+   }
+  },
+  {
+   "name": "scroll_text_pop",
+   "title": "通用长文弹窗",
+   "note": "UIScrollTextPop：标题、可滚动正文、底部单按钮。网页里正文不滚动。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UIScrollTextPop.prefab",
+   "root": "Root",
+   "pad": 0,
+   "text": {
+    "Root/Title/TitleText": "说明",
+    "Root/bottom/Btn2/Text": "确定",
+    "Root/ScrollView/Viewport/Content/Text": "正文占位"
+   },
+   "slots": {
+    "title": "Root/Title/TitleText",
+    "body": "Root/ScrollView/Viewport/Content/Text",
+    "btn": "Root/bottom/Btn2/Text"
+   },
+   "hotspots": {
+    "close": "Root/Title/CloseBtn",
+    "ok": "Root/bottom/Btn2"
+   }
+  },
+  {
+   "name": "cost_confirm",
+   "title": "消耗确认弹窗",
+   "note": "UIMsgPop（Public/UIMessagePop）：正文加带钻石消耗的金色按钮。消耗图标固定为钻石。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UIMessagePop.prefab",
+   "root": "CentreOther",
+   "full": true,
+   "hide": [
+    "CentreOther/BtnBlueM1"
+   ],
+   "text": {
+    "CentreOther/Board/Title/TitleText": "提示",
+    "CentreOther/Board/Content/TxtInfo": "正文占位",
+    "CentreOther/DiamondBtn/Text": "确定"
+   },
+   "slots": {
+    "title": "CentreOther/Board/Title/TitleText",
+    "body": "CentreOther/Board/Content/TxtInfo",
+    "btn": "CentreOther/DiamondBtn/Text",
+    "cost": "CentreOther/DiamondBtn/CostRoot/Cost"
+   },
+   "hotspots": {
+    "close": "CentreOther/Board/Title/CloseBtn",
+    "ok": "CentreOther/DiamondBtn"
+   }
+  },
+  {
+   "name": "reward_get",
+   "title": "恭喜获得",
+   "note": "UIGetRewardList（Public/UIWinRewardGrid）：代码里打开次数最多的界面。奖励格留空，rewards 热区是奖励区域的位置，网页在这里摆示意内容。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UIWinRewardGrid.prefab",
+   "root": "Root",
+   "full": true,
+   "invisible": [
+    "Root/Grid/KingdomTreasureItem",
+    "Root/KingdomTreasureWear"
+   ],
+   "hotspots": {
+    "ok": "Root/Button/Btn",
+    "rewards": "Root/Grid"
+   }
+  },
+  {
+   "name": "reward_pop",
+   "title": "奖励列表弹窗",
+   "note": "UIRewardPop：标题加列表框。条目留空，list 热区是列表区域的位置。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UIRewardPop.prefab",
+   "root": "Root",
+   "full": true,
+   "invisible": [
+    "Root/ScrollView/ViewPort/Content"
+   ],
+   "text": {
+    "Root/Title/TitleText": "奖励预览"
+   },
+   "slots": {
+    "title": "Root/Title/TitleText"
+   },
+   "hotspots": {
+    "close": "Root/Title/CloseBtn",
+    "list": "Root/ScrollView"
+   }
+  },
+  {
+   "name": "use_item",
+   "title": "道具使用弹窗",
+   "note": "UIUseItemPop：数量选择加蓝色按钮。道具图标是 prefab 占位图，滑条不可拖动。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UIUseItemPop.prefab",
+   "root": "Root",
+   "full": true,
+   "text": {
+    "Root/Title/TitleText": "使用道具",
+    "Root/Name": "道具名",
+    "Root/Desc": "道具说明占位",
+    "Root/BuyBtn/Text": "使用"
+   },
+   "slots": {
+    "title": "Root/Title/TitleText",
+    "name": "Root/Name",
+    "desc": "Root/Desc",
+    "num": "Root/NumberPickerSlider/Input/Num/InputTxt",
+    "btn": "Root/BuyBtn/Text"
+   },
+   "hotspots": {
+    "close": "Root/Title/CloseBtn",
+    "minus": "Root/NumberPickerSlider/BtnMinus",
+    "plus": "Root/NumberPickerSlider/BtnPlus",
+    "ok": "Root/BuyBtn"
+   }
+  },
+  {
+   "name": "buy_item",
+   "title": "道具购买弹窗",
+   "note": "UIBuyItemPop：数量选择加带消耗的绿色按钮。道具图标与消耗图标是 prefab 占位图。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Public/UIBuyItemPop.prefab",
+   "root": "Root",
+   "full": true,
+   "hide": [
+    "Root/BuyBtn/Num"
+   ],
+   "text": {
+    "Root/Title/TitleText": "购买道具",
+    "Root/Name": "道具名",
+    "Root/Desc": "道具说明占位",
+    "Root/BuyBtn/Text": "购买"
+   },
+   "slots": {
+    "title": "Root/Title/TitleText",
+    "name": "Root/Name",
+    "desc": "Root/Desc",
+    "num": "Root/Slider/Input/Num/InputTxt",
+    "btn": "Root/BuyBtn/Text",
+    "cost": "Root/BuyBtn/CostRoot/Cost"
+   },
+   "hotspots": {
+    "close": "Root/Title/CloseBtn",
+    "minus": "Root/Slider/BtnMinus",
+    "plus": "Root/Slider/BtnPlus",
+    "max": "Root/Slider/BtnMax",
+    "ok": "Root/BuyBtn"
+   }
+  },
+  {
+   "name": "troop",
+   "title": "出征面板",
+   "note": "主界面 UIMain 里的出征面板，黄色“出发”按钮状态。time 是按钮上方的行军时间。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/MainCity/New/UIMain.prefab",
+   "root": "content/worldLineUp/LineUp/Operation_New",
+   "place": [
+    188,
+    420
+   ],
+   "pad": 20,
+   "hide": [
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Chance",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Collection",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/MultiKillCostTip",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Slider2",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/ExpendTxt",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Load",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Load1Pos",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Load2Pos",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/BrightItem",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Treasure",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ResistanceShow",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Troop/kvkSlider",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_red",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_gr",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/des_red",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/des_gr",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye/CostRoot",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye/ButtomBG"
+   ],
+   "text": {
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye/Text": "出发"
+   },
+   "slots": {
+    "time": "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/TimeText"
+   },
+   "hotspots": {
+    "depart": "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye"
+   }
+  },
+  {
+   "name": "hud_menu",
+   "title": "主界面底部导航",
+   "note": "UIMain 的底部五个入口。主界面其余部分随运行时状态变化，未收录。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/MainCity/New/UIMain.prefab",
+   "root": "content/MenuRoot",
+   "full": true,
+   "hotspots": {
+    "skill": "content/MenuRoot/Menu/Skill",
+    "hero": "content/MenuRoot/Menu/Hero",
+    "train": "content/MenuRoot/Menu/Train",
+    "alliance": "content/MenuRoot/Menu/Alliance",
+    "world": "content/MenuRoot/Menu/World"
+   }
+  },
+  {
+   "name": "screen_task",
+   "title": "任务界面",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/DailyTask/UITask.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "Root/BtnClose",
+    "tab1": "Root/Tab/tab1",
+    "tab2": "Root/Tab/tab2",
+    "tab3": "Root/Tab/tab3",
+    "tab4": "Root/Tab/tab4"
+   }
+  },
+  {
+   "name": "screen_rank",
+   "title": "排行榜",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/RankingList/UIRank_New1.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "Root/CloseBtn",
+    "tip": "Root/NormalRank/fogBanner/RankBanner/TipBtn",
+    "tab1": "Root/NormalRank/Tab/tabs/tab1",
+    "tab2": "Root/NormalRank/Tab/tabs/tab2",
+    "tab3": "Root/NormalRank/Tab/tabs/tab3",
+    "tab4": "Root/NormalRank/Tab/tabs/tab4"
+   }
+  },
+  {
+   "name": "screen_mail",
+   "title": "邮件列表",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/Res/UI/Prefab/NewMail/ui1301MailNew.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "content/centre_other/btn_back",
+    "btn1": "content/centre_other/content/grid_btn1/btn1",
+    "btn2": "content/centre_other/content/grid_btn1/btn2"
+   }
+  },
+  {
+   "name": "screen_chat",
+   "title": "聊天",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/Res/UI/Prefab/Chat/Ui2502Chat_New.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "animation/btn_close",
+    "send": "animation/middle/UIChatInputComp/cont_input/btn_send",
+    "tab1": "animation/left/tfw_tab_group/tabs/tab1",
+    "tab2": "animation/left/tfw_tab_group/tabs/tab2",
+    "tab3": "animation/left/tfw_tab_group/tabs/tab3",
+    "tab4": "animation/left/tfw_tab_group/tabs/tab4"
+   }
+  },
+  {
+   "name": "screen_alliance",
+   "title": "联盟主界面",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Alliance/New/UIAllianceMain.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "Root/BtnClose",
+    "tab1": "Root/Tab/tab1",
+    "tab2": "Root/Tab/tab2",
+    "tab3": "Root/Tab/tab3",
+    "war": "Root/AlliancePage/Btns/War",
+    "gift": "Root/AlliancePage/Btns/Gift",
+    "rank": "Root/AlliancePage/Btns/Rank",
+    "tech": "Root/AlliancePage/Btns/Tech",
+    "area": "Root/AlliancePage/Btns/Area",
+    "store": "Root/AlliancePage/Btns/Store",
+    "challenge": "Root/AlliancePage/Btns/Challenge",
+    "goal": "Root/AlliancePage/Btns/Goal"
+   }
+  },
+  {
+   "name": "screen_player",
+   "title": "领主信息",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Player/UiPlayerMain.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "Content/ReturnBtn",
+    "set": "Content/SetBtn",
+    "mail": "Content/Content/Buttom/MailBtn",
+    "rank": "Content/Content/Buttom/RankBtn",
+    "friend": "Content/Content/Buttom/FriendBtn",
+    "bag": "Content/Content/Buttom/BagBtn",
+    "skin": "Content/Content/Buttom/SkinBtn"
+   }
+  },
+  {
+   "name": "screen_hero_list",
+   "title": "英雄列表",
+   "note": "整屏界面，内容是 prefab 自带的占位数据，不代表真实运行状态。",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Hero/UIHeroListNew.prefab",
+   "transparent": false,
+   "hotspots": {
+    "back": "Root/TopBar/Close",
+    "lineup": "Lineup",
+    "go": "Go"
+   }
+  }
+ ]
+}

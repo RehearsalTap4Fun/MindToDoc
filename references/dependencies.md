@@ -23,6 +23,7 @@ python scripts/doctor.py --capability dingtalk-cli --skill-root ~/.skills
 - 缺少对应 Skill 或权限时，记录未核验的数据，先完成本地可验证部分；不能把猜测的埋点或在线表结构视为查证结果。
 - 在线同步需要会话提供的钉钉 MCP 或按专用 Skill 配置的 dws。Doctor 不列举远端权限。
 - 音效需求表无需生产 API。试听、生成与转码另外依赖本地 ffmpeg 和公司服务凭据。
+- 交互预演还原现有界面依赖本机客户端工程、已打开的 Unity 编辑器和会话提供的 UnityMCP。Doctor 只检查脚本文件，不检查编辑器是否在线。常用界面库 `ui-library/` 的图层只放本机，每台设备首次获取需要 Unity，获取后使用不需要。
 - 可选服务的凭据按各 Skill 的 example 配置，禁止写入交付登记或版本库。
 
 ## Vendor 更新

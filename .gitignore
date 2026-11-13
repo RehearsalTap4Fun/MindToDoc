@@ -43,3 +43,9 @@ vendor/skills/*/K1-testcase-config/config.json
 vendor/skills/*/**/token.json
 vendor/skills/*/**/*.token.json
 vendor/skills/*/.pytest_cache/
+
+# 本地虚拟环境
+.venv/
+# 从客户端导出的界面图层是项目美术资源，只放本机；获取方法见 scripts/ui_library.py
+ui-library/*/layers/
+output/ui-preview/*/layers/

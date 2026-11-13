@@ -11,7 +11,7 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 
 - **职责**：从素材到成稿的工作流 —— `input/` 扫描、逐模块澄清、产出路径、迁移旧稿。
 - **格式来源**：主案、配置结构、美术及界面规范随附于本项目；BI、音效、Checklist、测试用例按派生流程调用对应专用 Skill。
-- **默认产出**：先按 `references/derived-documents-workflow.md` 判定交付模式。小型需求可只交付一份主案；完整功能案交付一份主案与 BI 日志需求、美术需求、音效需求、配置结构四类固定派生，界面标注、Checklist 与测试用例按条件生成。交付前完成联合检查，可选同步钉钉。
+- **默认产出**：先按 `references/derived-documents-workflow.md` 判定交付模式。小型需求可只交付一份主案；完整功能案交付一份主案与 BI 日志需求、美术需求、音效需求、配置结构四类固定派生，界面标注、交互预演、Checklist 与测试用例按条件生成。交付前完成联合检查，可选同步钉钉。
 
 ---
 
@@ -28,10 +28,16 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 - `references/mobile-system-rules-reference.md`：逐系统交付物判定、红点规则、线上数据兼容、配置表边界。
 - `references/k1-common-configs.md`：K1 项目公共配置表清单（活动框架 / 通行证 / 排行 / 礼包 / 邮件 / 联盟 / KVK 等），写派生 `-配置表结构.md` 的「公共 / 外部依赖」时直接挑用。
 - `references/ui-annotation-reference.md`：UI 识图、归类、标注、上传、左图右文、界面下方 key 录入表。
+- `references/interactive-preview-reference.md`：交互预演网页的定位、制作步骤、还原现有界面（Unity 导出图层）、待定细节回流、模板字段与校验；生成或更新预演时必读。
 - `references/dingtalk-sync-reference.md`：钉钉 MCP、`md2jsonml.py`、payload 限制、jsonml/markdown 双路径、补 ind、补表、补图、无 spreadsheet MCP 时导入本地表格生成钉钉表格（axls）。
 - `scripts/md2jsonml.py`：转换行为的可执行真相源。
 - `references/delivery-quality.md`：交付前的格式检查、规则复核、范围登记和内容指纹；主派生联动时必读。
 - `references/dependencies.md`：本地依赖、外部 Skill 发现和 vendor 更新；调用专项能力前检查。
+- `references/audit-three-tier-discipline.md`：审核、检验、复核类任务的硬范围 / 软分布 / 设计意图三档断言；报“合规”前必读。
+- `references/reviewer-spec-grounding.md`：派发 reviewer subagent 时须 inline 的先读 spec 再评判段落。
+- `templates/config-tool-spec.md`：配置生成器 / 批量配置工具类需求的澄清链路与 spec 模板；不属于策划案派生。
+- `scripts/list_tbd.py`：扫描 Markdown 中的 TBD 数量、位置和阈值告警。
+- `scripts/check_plan_signatures.py`：检查实施计划内 Python 代码块语法和符号一致性；配合 `templates/config-tool-spec.md` 使用。
 
 > **关联仓库**：如有必要可查对应开发仓库印证现有业务逻辑。服务器仓库 `game`，客户端仓库 `k1_client`，本机路径以用户环境为准（macOS 常见 `~/game`、`~/k1_client`；Windows 常见 `C:\Project\K1Game\game`、`C:\Project\K1Client\k1_client`）。
 > **维护说明**：主案规范与 `scripts/md2jsonml.py` 自 system-design-doc 技能 vendor 而来；上游更新时手动核对，保留本项目生成条件。
@@ -50,6 +56,9 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 | **界面标注**（条件派生） | `output/<功能名>-界面标注.md` | 复杂界面按需采用左图右文 + 红圈 + key SSOT |
 | **界面素材** | `output/ui-annotation/assets/{功能标识}/` | `{界面ID}.png`、`*_annotated.png/json`，按功能隔离 |
 | **小型需求效果图** | `output/ui-design/{功能标识}/` | 简单界面效果图直接嵌入主案 |
+| **交互预演**（条件派生） | `output/<功能名>-交互预演.html` | 可点击的流程网页；现有界面按客户端原样还原，新界面用示意框；每步显示命中的主案规则，列出主案未定义的交互细节 |
+| **预演界面图层** | `output/ui-preview/<功能名>/` | 导出规格 `spec.json` 与从客户端导出的图层，供重新生成预演 |
+| **常用界面库** | `ui-library/<项目>/` | 多个功能共用的界面（通用弹窗、常见整屏界面）。仓库只存导出规格，图层只放本机，每台设备先用 `scripts/ui_library.py` 获取 |
 | **其他派生** | 见 `references/derived-documents-workflow.md` | 完整功能案固定的 BI、美术、音效；经确认的 Checklist、测试用例 |
 | **旧版（只读素材）** | `output/<游戏名>-开发文档.md` | 迁移源，新稿不覆盖 |
 
@@ -93,6 +102,7 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 | F BI / G 待确认 | 按需；真待定才写 |
 | 配置表 | 主案表名/用途；Excel 字段 + 文档边界 → 配置表派生 |
 | 界面标注 | **不用 HTML 原型**；供图 → 标准流程 |
+| 交互预演 | 现有界面直接采用客户端的布局与交互；新界面只做示意，不定义控件布局；规则仍以主案为准 |
 | 钉钉 | 本地 md SSOT；按需 `references/dingtalk-sync-reference.md` |
 
 起草前必读：`references/feature-spec-boundaries.md`、`references/feature-spec-writing.md`、`references/spec-minimalism-ladder.md`；手游/红点/兼容/配表 → `references/mobile-system-rules-reference.md`。
@@ -150,10 +160,11 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 
 ### 阶段 3 · 派生文档与成稿检查
 
-**交付分流**：读取 `references/derived-documents-workflow.md`。小型需求完成主案并直接嵌入简单界面效果与配置说明，不生成独立派生；完整功能案生成或更新四类固定交付，并按条件处理界面标注、Checklist 和测试用例。已有同用途文档须核验内容与版本后复用；精简不能取消完整功能案的固定交付。
+**交付分流**：读取 `references/derived-documents-workflow.md`。小型需求完成主案并直接嵌入简单界面效果与配置说明，不生成独立派生；完整功能案生成或更新四类固定交付，并按条件处理界面标注、交互预演、Checklist 和测试用例。已有同用途文档须核验内容与版本后复用；精简不能取消完整功能案的固定交付。
 **界面 E 节**：小型需求直接承载简单界面规则和效果图；复杂界面或完整功能案保留有依据的子界面清单，并按阶段 4 判断是否生成标注。
 **派生引用**：只有实际生成派生时，主案才增加 `# 派生文档说明`，且只列真实完成、内容匹配的文件。
 按需补主案尚未覆盖的 **边界情况处理**。
+**交互预演**：主案规则确认后询问一次是否生成；用户确认或已明确要求时，按 `references/interactive-preview-reference.md` 制作。制作中发现主案没有定义结果的交互，列为待定细节交用户拍板，结论先回写主案再更新预演，不在预演里自行补规则。流程涉及项目已有界面时，先执行 `python scripts/ui_library.py status ui-library/<项目>` 确认常用界面库已在本机获取，未获取或过期时按该 reference「常用界面库」先获取再做预演；库里有的界面直接取用，库里没有的按该 reference「还原现有界面」从客户端导出真实界面，不用灰盒重画；Unity 不可用时退回灰盒并说明。生成或更新后带 `--open` 运行 `scripts/check_preview.py`，检查通过即用默认浏览器打开。
 
 **成稿门禁（生成／重整必做）**：全文与本次派生齐备后，按派生流程完成联合检查及 `references/spec-minimalism-ladder.md` 的自动精简门禁。阶段 4 属于本次交付时，在其完成后再做最终检查；无图时可先交付其余已完成文档。阶段 1 的范围筛选、逐模块确认和排版验收不能替代本步；后补派生或修改规则后重新核查受影响内容。
 
@@ -185,6 +196,8 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 |------|------|------|
 | 流程图 | mermaid 技能；可用 `mmdc` 校验语法 | 手写 Mermaid + 注明「未校验」 |
 | 界面 | 用户截图 + 多模态识图 + PIL 红圈标注 → `-界面标注.md` | 主案 E 节仅占位子界面清单 |
+| 交互预演 | 模板 + `scripts/check_preview.py`（Node 回放场景） | 无 Node 时 `--static` 只做静态检查，注明「场景未回放」 |
+| 预演还原现有界面 | UnityMCP 执行 `scripts/unity/export_ui_layers.cs` + `scripts/build_preview_ui.py` | Unity 未打开或无 UnityMCP 时用本机已获取的 `ui-library/` 图层；本机未获取或仍缺的界面用灰盒并注明「界面未还原」 |
 | 钉钉 | 钉钉 MCP + md2jsonml | 仅本地 md |
 
 ---
@@ -271,7 +284,8 @@ description: 把移动游戏想法转化为小型单文档需求或完整功能�
 - [ ] 已按派生流程判定交付模式；小型需求主案自包含且没有为凑类型生成派生，完整功能案四类固定派生均已生成或核验复用
 - [ ] 已按 references/delivery-quality.md 执行本次文件的格式、资源和交付登记检查，待处理事项没有被描述为已通过
 - [ ] 本次改动已拍板的业务规则时，变更记录写明拍板人与日期。未拍板的调整不进正文，列为待确认
-- [ ] 简单界面效果图已在小型需求主案中对应规则；独立界面标注仅在复杂界面或完整功能案需要且用户供图后生成；Checklist、测试用例已有用户确认；未生成技术交接
+- [ ] 简单界面效果图已在小型需求主案中对应规则；独立界面标注仅在复杂界面或完整功能案需要且用户供图后生成；交互预演、Checklist、测试用例已有用户确认；未生成技术交接
+- [ ] 生成了交互预演时：流程涉及的现有界面已从客户端还原，或已说明未还原的原因；`check_preview.py` 通过且已在浏览器逐场景走查；待定细节已列给用户，已拍板的结论先回写主案
 - [ ] 按专用 Skill 完成各类校验；主案与派生规则、引用和版本一致
 - [ ] 实际存在派生时，`# 派生文档说明` 链接齐全；无派生时不创建空章节
 

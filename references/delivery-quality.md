@@ -14,7 +14,7 @@
      - 派生：`python scripts/check_delivery.py deliveries/<功能标识>.json --record <派生路径> --kind bi --status reviewed --note "<核验范围与规则落点>"`
    - `--record` 每次只改一个条目，其余条目的指纹保持不变。
 
-登记路径相对于 JSON 所在目录。完整功能案至少包含 `config`、`bi`、`art`、`audio` 四类；小型需求无需凑齐派生。图片和其他产物可登记为 `image`、`ui` 等。缺失文件仍登记为 pending 并解释，不能删掉缺失项来让检查通过。
+登记路径相对于 JSON 所在目录。完整功能案至少包含 `config`、`bi`、`art`、`audio` 四类；小型需求无需凑齐派生。图片和其他产物可登记为 `image`、`ui` 等，交互预演登记为 `preview`。缺失文件仍登记为 pending 并解释，不能删掉缺失项来让检查通过。
 
 - 指纹通过只表示文件与审核时相同。
 - 不得自动批量刷新指纹，也不得用脚本循环 `--record` 代替逐项复核。

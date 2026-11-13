@@ -1,0 +1,137 @@
+{
+ "out": "layers",
+ "scale": 0.5,
+ "layers": [
+  {
+   "name": "list_bg",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Mass/New/UIMassList_Build.prefab",
+   "transparent": false,
+   "hide": [
+    "Root/MassList1",
+    "Root/NoneTips"
+   ],
+   "hotspots": {
+    "launch": "Root/MassBtn",
+    "auto": "Root/AutomaticBtn",
+    "back": "Root/BtnClose"
+   }
+  },
+  {
+   "name": "item",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Mass/New/UIMassList_Build.prefab",
+   "root": "Root/MassList1/Items/Item",
+   "pad": 12,
+   "hide": [
+    "Root/MassList1/Items/Item/Blue",
+    "Root/MassList1/Items/Item/PlayerInfo/BGRed",
+    "Root/MassList1/Items/Item/Power/BGRed"
+   ],
+   "text": {
+    "Root/MassList1/Items/Item/LeftInfo/Name": "Lv.4 敌方城堡",
+    "Root/MassList1/Items/Item/PlayerInfo/TeamName": "盟友",
+    "Root/MassList1/Items/Item/PlayerInfo/TeamName/State": "集结中"
+   },
+   "slots": {
+    "hint": "Root/MassList1/Items/Item/Power/Text/State"
+   },
+   "hotspots": {
+    "join": "Root/MassList1/Items/Item/Button"
+   }
+  },
+  {
+   "name": "troop",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/MainCity/New/UIMain.prefab",
+   "root": "content/worldLineUp/LineUp/Operation_New",
+   "place": [
+    188,
+    420
+   ],
+   "pad": 20,
+   "hide": [
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Chance",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Collection",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/MultiKillCostTip",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Slider2",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/ExpendTxt",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Load",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Load1Pos",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Grid/Load2Pos",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/BrightItem",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Treasure",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ResistanceShow",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/Troop/kvkSlider",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_red",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_gr",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/des_red",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/des_gr",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye/CostRoot",
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye/ButtomBG"
+   ],
+   "text": {
+    "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye/Text": "出发"
+   },
+   "slots": {
+    "time": "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/TimeText"
+   },
+   "hotspots": {
+    "depart": "content/worldLineUp/LineUp/Operation_New/Animation/BackGround/ButtonParent/Button/btn_ye"
+   }
+  },
+  {
+   "name": "msg_join",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Other/Ui_MessageBox.prefab",
+   "root": "CentreOther/Board/Content",
+   "pad": 12,
+   "hide": [
+    "CentreOther/Board/Content/WarningBG",
+    "CentreOther/Board/Content/Toggle",
+    "CentreOther/Board/Content/SwitchRolesBtn",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1"
+   ],
+   "text": {
+    "CentreOther/Board/Content/BG/TitleBar/Title/TitleText": "提示",
+    "CentreOther/Board/Content/TxtInfo": "预计本次集结行军时间较长，是否确认加入集结？",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt1": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt2": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt3": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt1": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt2": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt3": "确定"
+   },
+   "hotspots": {
+    "cancel": "CentreOther/Board/Content/ButtonGroup/BtnBlueM1",
+    "confirm": "CentreOther/Board/Content/ButtonGroup/BtnGoldM1",
+    "close": "CentreOther/Board/Content/BG/TitleBar/Title/CloseBtn"
+   }
+  },
+  {
+   "name": "msg_launch",
+   "prefab": "Assets/k1/K1D1/Res/UI/Panel/Other/Ui_MessageBox.prefab",
+   "root": "CentreOther/Board/Content",
+   "pad": 12,
+   "hide": [
+    "CentreOther/Board/Content/WarningBG",
+    "CentreOther/Board/Content/Toggle",
+    "CentreOther/Board/Content/SwitchRolesBtn",
+    "CentreOther/Board/Content/ButtonGroup/BtnRedM1",
+    "CentreOther/Board/Content/ButtonGroup/BtnGreenM1"
+   ],
+   "text": {
+    "CentreOther/Board/Content/BG/TitleBar/Title/TitleText": "提示",
+    "CentreOther/Board/Content/TxtInfo": "预计本次集结行军时间较长，是否确认发起集结？",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt1": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt2": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnBlueM1/UniformText/txt3": "取消",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt1": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt2": "确定",
+    "CentreOther/Board/Content/ButtonGroup/BtnGoldM1/UniformText/txt3": "确定"
+   },
+   "hotspots": {
+    "cancel": "CentreOther/Board/Content/ButtonGroup/BtnBlueM1",
+    "confirm": "CentreOther/Board/Content/ButtonGroup/BtnGoldM1",
+    "close": "CentreOther/Board/Content/BG/TitleBar/Title/CloseBtn"
+   }
+  }
+ ]
+}

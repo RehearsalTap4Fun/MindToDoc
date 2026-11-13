@@ -2,6 +2,8 @@
   "core": {"files": ["SKILL.md", "templates/small-requirement.md", "references/derived-documents-workflow.md", "scripts/md2jsonml.py"], "modules": ["openpyxl"]},
   "test": {"modules": ["pytest"]},
   "image": {"modules": ["PIL"]},
+  "preview": {"files": ["templates/interactive-preview.html", "scripts/check_preview.py", "scripts/preview_runner.cjs"], "commands": ["node"]},
+  "preview-ui": {"files": ["scripts/unity/export_ui_layers.cs", "scripts/build_preview_ui.py", "scripts/list_ui_layers.py", "scripts/ui_library.py", "ui-library/k1/spec.json"]},
   "bi-code": {"files": ["vendor/skills/bi-log-requirements/SKILL.md"], "skills": ["k1-bi-tracking"]},
   "dingtalk-cli": {"skills": ["dws"], "commands": ["dws"]},
   "audio-demand": {"files": ["vendor/skills/audio-production-pipeline/SKILL.md"], "modules": ["openpyxl"]},

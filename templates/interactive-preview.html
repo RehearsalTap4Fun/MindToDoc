@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>交互预演</title>
+<!--
+  交互预演模板。规则见 references/interactive-preview-reference.md。
+  只改两处：① #preview-data 的 JSON；② #preview-flow 的界面与操作定义。
+  还原现有界面时，另由 scripts/build_preview_ui.py 写入 #preview-ui（从客户端导出的界面图层）。
+  样式与引擎（#preview-engine）保持原样，校验脚本依赖其接口。
+  本模板自带的示例对应 tests/fixtures/small-requirement.md，可直接通过 scripts/check_preview.py。
+-->
+<style>
+  :root{
+    --bg:#f3f1ec; --panel:#fbfaf7; --line:#dedad0; --ink:#1f2328; --sub:#646a73;
+    --accent:#b4532a; --accent-soft:#f6e6dc; --ok:#2f7d4f; --ok-soft:#e2f1e7;
+    --warn:#a8650a; --warn-soft:#fbefd5; --screen:#262b33; --screen-2:#323944; --screen-ink:#e8eaee;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font:14px/1.55 var(--sans);color:var(--ink);background:var(--bg);display:flex;flex-direction:column}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .top{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .top h1{font-size:16px;margin:0;font-weight:650}
+  .top .src{color:var(--sub);font-size:12px}
+  .top .disclaimer{margin-left:auto;font-size:12px;color:var(--warn);background:var(--warn-soft);padding:3px 10px;border-radius:99px}
+  .top .reset{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 12px}
+
+  .cols{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(380px,1fr) 380px}
+  .col{min-height:0;overflow:auto;padding:16px}
+  .col + .col{border-left:1px solid var(--line)}
+  .col h2{font-size:12px;letter-spacing:.08em;color:var(--sub);margin:0 0 8px;font-weight:600}
+  .col section + section{margin-top:22px}
+
+  .sc{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:6px}
+  .sc:hover{border-color:var(--accent)}
+  .sc.on{border-color:var(--accent);background:var(--accent-soft)}
+  .sc .k{font-size:11px;color:var(--sub);margin-right:6px}
+  .sc .done{float:right;color:var(--ok);font-size:12px}
+
+  .param{margin-bottom:12px}
+  .param label{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+  .param .val{font-family:var(--mono);font-size:12px}
+  .param input[type=range]{width:100%;accent-color:var(--accent)}
+  .param select{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;font:inherit}
+  .demo{font-size:11px;color:var(--warn);background:var(--warn-soft);border-radius:4px;padding:0 5px;margin-left:6px}
+
+  .guide{border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:14px;width:100%;max-width:520px}
+  .guide ol{margin:6px 0 8px;padding-left:20px}
+  .guide li.past{color:var(--sub);text-decoration:line-through}
+  .guide li.now{font-weight:650}
+  .guide .expect{font-size:12px;color:var(--sub);border-top:1px dashed var(--line);padding-top:6px}
+  .guide .ctl{display:flex;gap:8px;margin-bottom:6px}
+  .guide .ctl button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 10px}
+  .guide .ctl button.go{background:var(--accent);border-color:var(--accent);color:#fff}
+  .guide .ctl button:disabled{opacity:.45;cursor:default}
+
+  .stage{display:flex;flex-direction:column;align-items:center}
+  .phone{width:360px;height:640px;flex:none;border-radius:28px;background:var(--screen);color:var(--screen-ink);border:8px solid #14171c;position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .phone .view{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column}
+  .mask{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+  .toast{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:rgba(0,0,0,.82);color:#fff;border-radius:99px;padding:6px 16px;font-size:13px;max-width:86%;text-align:center}
+
+  /* 灰盒组件：供 #preview-flow 的 render 使用 */
+  .gb-bar{padding:12px 14px;background:var(--screen-2);font-weight:650;display:flex;align-items:center;gap:8px}
+  .gb-bar .back{border:0;background:none;color:inherit;font-size:16px;padding:0 6px 0 0}
+  .gb-body{padding:12px 14px;flex:1}
+  .gb-row{border:1px solid #4a5260;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  .gb-row .grow{flex:1;min-width:0}
+  .gb-sub{font-size:12px;color:#aab1bd}
+  .gb-tag{font-size:12px;margin-right:8px}
+  .gb-tag.hot{color:#ff8a5c}
+  .gb-tag.good{color:#7fd39a}
+  .gb-btn{border:1px solid #6b7482;background:#414957;color:#fff;border-radius:8px;padding:8px 16px}
+  .gb-btn.primary{background:#d9a441;border-color:#d9a441;color:#2a2110;font-weight:650}
+  .gb-btn.blue{background:#4c7fd0;border-color:#4c7fd0}
+  .gb-btn:disabled{opacity:.4;cursor:default}
+  .gb-foot{padding:12px 14px;display:flex;gap:10px;justify-content:flex-end;background:var(--screen-2)}
+  .gb-dialog{width:100%;background:#3a414d;border-radius:12px;overflow:hidden}
+  .gb-dialog .hd{padding:10px 14px;background:#4a5260;display:flex;justify-content:space-between;align-items:center;font-weight:650}
+  .gb-dialog .hd button{border:0;background:none;color:#fff;font-size:16px}
+  .gb-dialog .bd{padding:18px 16px;text-align:center}
+  .gb-dialog .ft{padding:0 16px 16px;display:flex;gap:12px;justify-content:center}
+  .gb-note{font-size:12px;color:#aab1bd;border:1px dashed #5b6472;border-radius:6px;padding:6px 8px;margin-top:8px}
+
+  /* 现有界面图层：按设计分辨率摆放，再整体缩放到手机框内 */
+  .phone.ui{height:auto;width:436px}
+  .phone.ui .view{position:relative;overflow:hidden;display:block;flex:none;aspect-ratio:var(--ui-ratio,1080/1920)}
+  .phone.ui .mask{padding:0;display:block}
+  .ui-stage{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;font-family:var(--sans)}
+  .ui-layer{position:absolute}
+  .ui-layer img{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;user-select:none}
+  .ui-hot{position:absolute;border:0;background:transparent;padding:0;border-radius:24px}
+  .ui-hot:hover{box-shadow:inset 0 0 0 6px rgba(255,255,255,.7)}
+  .ui-hot:focus-visible{outline:6px solid #fff;outline-offset:0}
+  .ui-slot{position:absolute;display:flex;align-items:center;white-space:nowrap;line-height:1;font-weight:700;gap:.4em}
+  .ui-slot.wrap{white-space:normal;line-height:1.3;gap:0}
+  .ui-backdrop{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:150px;
+    font-size:40px;color:rgba(255,255,255,.55);background:linear-gradient(160deg,#5d8a55,#3f6b4c 55%,#35584a)}
+  .ui-note{position:absolute;font-size:36px;line-height:1.4;color:#fff;background:rgba(20,24,30,.78);
+    border:3px dashed rgba(255,255,255,.6);border-radius:18px;padding:22px 28px}
+  .ui-note small{display:block;font-size:26px;color:#ffd58a;margin-bottom:6px}
+  button.ui-note{text-align:left;cursor:pointer}
+  button.ui-note:hover{border-color:#fff}
+
+  .tabs{display:flex;gap:4px;margin-bottom:12px}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;font-size:13px}
+  .tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .log{list-style:none;margin:0;padding:0}
+  .log li{padding:6px 0 6px 12px;border-left:2px solid var(--line);margin-left:4px;font-size:13px}
+  .log li.act{border-color:var(--ink);font-weight:650;margin-top:8px}
+  .log li.hit{border-color:var(--ok)}
+  .log li.gap{border-color:var(--warn);background:var(--warn-soft)}
+  .log li.sys{color:var(--sub)}
+  .rid{font-family:var(--mono);font-size:11px;background:var(--ok-soft);color:var(--ok);border-radius:4px;padding:0 5px;margin-right:6px}
+  .gid{font-family:var(--mono);font-size:11px;background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:0 5px;margin-right:6px}
+  .sec{color:var(--sub);font-size:12px}
+  .rule{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:6px}
+  .rule.hitted{border-color:var(--ok);background:var(--ok-soft)}
+  .rule.open{border-color:var(--warn)}
+  .empty{color:var(--sub);font-size:13px}
+  @media (max-width:1100px){.cols{grid-template-columns:1fr}.col + .col{border-left:0;border-top:1px solid var(--line)}body{height:auto}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 id="t-feature"></h1>
+  <span class="src" id="t-src"></span>
+  <span class="disclaimer" id="t-note">灰盒示意 · 只预演流程与规则，不代表最终界面</span>
+  <button class="reset" data-ui="reset">重置</button>
+</header>
+
+<main class="cols">
+  <aside class="col">
+    <section><h2>场景</h2><div id="scenarios"></div></section>
+    <section><h2>前置条件</h2><div id="params"></div></section>
+  </aside>
+  <div class="col stage">
+    <div class="guide" id="guide" hidden></div>
+    <div class="phone" id="phone"><div class="view" id="view"></div><div id="overlay"></div></div>
+  </div>
+  <aside class="col">
+    <div class="tabs" id="tabs"></div>
+    <div id="panel"></div>
+  </aside>
+</main>
+
+<!-- ① 数据：规则、前置条件、场景、待定细节。字段说明见 references/interactive-preview-reference.md -->
+<script type="application/json" id="preview-data">
+{
+  "meta": {
+    "feature": "操作前确认（模板示例）",
+    "source": "../tests/fixtures/small-requirement.md",
+    "source_version": "v1.0"
+  },
+  "rules": [
+    {"id": "R1", "section": "提交确认", "summary": "点击提交后展示当前选择；弹窗打开期间不执行操作"},
+    {"id": "R2", "section": "提交确认", "summary": "确认后重新校验；通过则执行并提示成功"},
+    {"id": "R3", "section": "提交确认", "summary": "校验失败时保留选择，刷新失效项并提示原因"},
+    {"id": "R4", "section": "提交确认", "summary": "取消或关闭：返回原页面，保留有效选择，不提交"}
+  ],
+  "params": [
+    {"id": "valid", "label": "确认时选择仍有效", "type": "toggle", "value": true, "origin": "示意"}
+  ],
+  "scenarios": [
+    {"id": "S1", "kind": "主流程", "name": "确认后提交成功",
+     "params": {"valid": true},
+     "steps": [{"act": "submit", "label": "点击“提交”"}, {"act": "confirm", "label": "点击“确认”"}],
+     "expect": {"screen": "select", "modal": null, "hits": ["R1", "R2"], "result": "弹窗关闭，操作执行，提示成功"}},
+    {"id": "S2", "kind": "分支", "name": "确认时选择已失效",
+     "params": {"valid": false},
+     "steps": [{"act": "submit", "label": "点击“提交”"}, {"act": "confirm", "label": "点击“确认”"}],
+     "expect": {"screen": "select", "modal": null, "hits": ["R1", "R3"], "result": "不执行，保留选择并提示原因"}},
+    {"id": "S3", "kind": "取消", "name": "取消或关闭弹窗",
+     "params": {},
+     "steps": [{"act": "submit", "label": "点击“提交”"}, {"act": "cancel", "label": "点击“取消”或关闭"}],
+     "expect": {"screen": "select", "modal": null, "hits": ["R1", "R4"], "result": "返回原页面，选择保留，未提交"}}
+  ],
+  "gaps": []
+}
+</script>
+
+<!-- 引擎：不随功能修改 -->
+<script id="preview-engine">
+(function (root) {
+  'use strict';
+  var hasDom = typeof document !== 'undefined';
+  var DATA = root.PREVIEW_DATA || JSON.parse(document.getElementById('preview-data').textContent);
+  var byId = function (list) { var m = {}; (list || []).forEach(function (x) { m[x.id] = x; }); return m; };
+  var RULES = byId(DATA.rules), GAPS = byId(DATA.gaps), SCENES = byId(DATA.scenarios);
+  var uiEl = hasDom ? document.getElementById('preview-ui') : null;
+  var UI = root.PREVIEW_UI || (uiEl ? JSON.parse(uiEl.textContent) : null);
+  var phoneW = 344;
+  var flow = null, st = null, tab = 'log', timer = null;
+  var covered = {}, played = {};
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+  }
+
+  function fresh(overrides, scenario) {
+    var p = {};
+    (DATA.params || []).forEach(function (d) { p[d.id] = d.value; });
+    Object.keys(overrides || {}).forEach(function (k) { p[k] = overrides[k]; });
+    st = {p: p, s: flow.state ? flow.state() : {}, screen: (scenario && scenario.start) || flow.initial,
+          modal: null, toast: null, log: [], hits: [], gaps: [], scenario: scenario || null, step: 0};
+  }
+
+  /* 现有界面图层：图片 + 点击热区 + 动态文字。坐标均为设计分辨率。 */
+  function px(n) { return Math.round(n) + 'px'; }
+  function layer(name, o) {
+    o = o || {};
+    var L = UI && UI.layers[name];
+    if (!L) throw new Error('未导出的界面图层：' + name);
+    var x = o.x != null ? o.x : L.x, y = o.y != null ? o.y : L.y;
+    var h = '<div class="ui-layer" style="left:' + px(x) + ';top:' + px(y) + ';width:' + px(L.w) + ';height:' + px(L.h) + '">' +
+      '<img alt="" src="' + esc(L.src) + '">';
+    Object.keys(o.slots || {}).forEach(function (id) {
+      var S = L.slots && L.slots[id];
+      if (!S) throw new Error('图层 ' + name + ' 没有文字槽：' + id);
+      var v = o.slots[id], parts = typeof v === 'string' ? [[v]] : v, pivot = S.pivot == null ? 0.5 : S.pivot;
+      var stroke = S.outline ? '-webkit-text-stroke:' + px(S.fontSize / 6) + ' ' + S.outline + ';paint-order:stroke fill;' : '';
+      var body = parts.map(function (part) {
+        return '<span' + (part[1] ? ' style="color:' + esc(part[1]) + '"' : '') + '>' + esc(part[0]) + '</span>';
+      }).join('');
+      if (S.wrap) { /* 定宽正文：在原矩形内换行，对齐方式取自原文本 */
+        var al = S.align || 'MiddleCenter';
+        h += '<div class="ui-slot wrap" style="left:' + px(S.x - L.x) + ';top:' + px(S.y - L.y) + ';width:' + px(S.w) + ';height:' + px(S.h) +
+          ';font-size:' + px(S.fontSize) + ';color:' + esc(S.color) + ';align-items:' + (/^Upper/.test(al) ? 'flex-start' : /^Lower/.test(al) ? 'flex-end' : 'center') +
+          ';' + stroke + '"><div style="width:100%;text-align:' + (/Left$/.test(al) ? 'left' : /Right$/.test(al) ? 'right' : 'center') + '">' + body + '</div></div>';
+        return;
+      }
+      h += '<div class="ui-slot" style="left:' + px(S.x - L.x + S.w * pivot) + ';top:' + px(S.y - L.y) + ';height:' + px(S.h) +
+        ';font-size:' + px(S.fontSize) + ';color:' + esc(S.color) + ';transform:translateX(-' + (pivot * 100) + '%);' + stroke + '">' + body + '</div>';
+    });
+    Object.keys(o.acts || {}).forEach(function (id) {
+      var H = L.hotspots && L.hotspots[id];
+      if (!H) throw new Error('图层 ' + name + ' 没有热区：' + id);
+      var a = typeof o.acts[id] === 'string' ? {act: o.acts[id]} : o.acts[id];
+      h += '<button class="ui-hot" data-act="' + esc(a.act) + '"' + (a.arg != null ? ' data-arg="' + esc(a.arg) + '"' : '') +
+        ' data-label="' + esc(a.label || id) + '" aria-label="' + esc(a.label || id) + '" style="left:' + px(H.x - L.x) + ';top:' + px(H.y - L.y) +
+        ';width:' + px(H.w) + ';height:' + px(H.h) + '"></button>';
+    });
+    return h + '</div>';
+  }
+  function stage(html) {
+    var w = UI.design[0], hh = UI.design[1];
+    return '<div class="ui-stage" style="width:' + w + 'px;height:' + hh + 'px;transform:scale(' + (phoneW / w) + ')">' + html + '</div>';
+  }
+
+  var ctx = {
+    get p() { return st.p; },
+    get s() { return st.s; },
+    esc: esc,
+    layer: layer,
+    /* 没有对应 prefab 的背景（如大地图），只做示意 */
+    backdrop: function (label) { return '<div class="ui-backdrop">' + esc(label || '') + '</div>'; },
+    /* 新增或示意内容：虚线框，和现有界面区分 */
+    note: function (x, y, w, text, tag, act) {
+      var style = ' style="left:' + px(x) + ';top:' + px(y) + ';width:' + px(w) + '"', body = '<small>' + esc(tag || '示意') + '</small>' + esc(text);
+      if (!act) return '<div class="ui-note"' + style + '>' + body + '</div>';
+      return '<button class="ui-note" data-act="' + esc(act.act) + '"' + (act.arg != null ? ' data-arg="' + esc(act.arg) + '"' : '') +
+        ' data-label="' + esc(act.label || text) + '"' + style + '>' + body + '</button>';
+    },
+    hit: function (id, note) {
+      if (!RULES[id]) throw new Error('未登记的规则：' + id);
+      st.hits.push(id); covered[id] = true;
+      st.log.push({t: 'hit', id: id, note: note || ''});
+    },
+    gap: function (id, note) {
+      if (!GAPS[id]) throw new Error('未登记的待定细节：' + id);
+      st.gaps.push(id);
+      st.log.push({t: 'gap', id: id, note: note || ''});
+    },
+    go: function (screen) {
+      if (!flow.screens[screen]) throw new Error('未定义的界面：' + screen);
+      st.screen = screen; st.modal = null;
+    },
+    open: function (modal) {
+      if (!flow.modals || !flow.modals[modal]) throw new Error('未定义的弹窗：' + modal);
+      st.modal = modal;
+    },
+    close: function () { st.modal = null; },
+    toast: function (text) { st.toast = text; st.log.push({t: 'sys', text: '提示：' + text}); }
+  };
+
+  function act(name, arg, label) {
+    st.toast = null;
+    st.log.push({t: 'act', text: label || name});
+    var fn = flow.actions[name];
+    if (!fn) { st.log.push({t: 'sys', text: '预演未定义此操作'}); return; }
+    fn(ctx, arg);
+  }
+
+  function snapshot() {
+    return {screen: st.screen, modal: st.modal, hits: st.hits.slice(), gaps: st.gaps.slice(), toast: st.toast};
+  }
+
+  /* 无界面回放：供 scripts/check_preview.py 逐场景核对预期 */
+  function runScenario(id) {
+    var sc = SCENES[id];
+    if (!sc) throw new Error('未定义的场景：' + id);
+    fresh(sc.params, sc);
+    (sc.steps || []).forEach(function (s) { act(s.act, s.arg, s.label); });
+    return snapshot();
+  }
+
+  root.Preview = {
+    data: DATA, esc: esc, runScenario: runScenario,
+    define: function (f) { flow = f; fresh(); if (hasDom) mount(); },
+    /* 默认状态下渲染全部界面与弹窗，返回出错信息；供校验脚本使用 */
+    _renderAll: function () {
+      var errors = [];
+      fresh();
+      ['screens', 'modals'].forEach(function (group) {
+        Object.keys(flow[group] || {}).forEach(function (name) {
+          try {
+            if (typeof flow[group][name].render(ctx) !== 'string') errors.push(group + '.' + name + ' 的 render 未返回字符串');
+          } catch (err) { errors.push(group + '.' + name + ' 渲染失败：' + err.message); }
+        });
+      });
+      return {errors: errors, initial: flow.initial, screens: Object.keys(flow.screens || {}), modals: Object.keys(flow.modals || {})};
+    }
+  };
+  if (!hasDom) return;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function mount() {
+    document.title = DATA.meta.feature + ' · 交互预演';
+    $('t-feature').textContent = DATA.meta.feature + ' · 交互预演';
+    $('t-src').textContent = '依据主案 ' + DATA.meta.source_version;
+    if (UI) {
+      $('phone').classList.add('ui');
+      $('phone').style.setProperty('--ui-ratio', UI.design[0] + '/' + UI.design[1]);
+      $('t-note').textContent = '现有界面取自客户端 prefab · 虚线框与动态文字为示意';
+    }
+    document.body.addEventListener('click', onClick);
+    $('params').addEventListener('input', onParam);
+    render();
+  }
+
+  function onClick(e) {
+    var el = e.target.closest('[data-act],[data-ui]');
+    if (!el || el.disabled) return;
+    if (el.dataset.act) {
+      stopAuto();
+      var label = el.dataset.label || el.textContent.trim();
+      act(el.dataset.act, el.dataset.arg, '点击“' + label + '”');
+      return render();
+    }
+    var ui = el.dataset.ui, v = el.dataset.v;
+    if (ui === 'reset') { stopAuto(); fresh(); }
+    if (ui === 'tab') tab = v;
+    if (ui === 'scenario') { stopAuto(); fresh(SCENES[v].params, SCENES[v]); st.log.push({t: 'sys', text: '进入场景：' + SCENES[v].name}); }
+    if (ui === 'next') nextStep();
+    if (ui === 'auto') { timer = setInterval(function () { if (!nextStep()) stopAuto(); render(); }, 1100); }
+    render();
+  }
+
+  function nextStep() {
+    var sc = st.scenario;
+    if (!sc || st.step >= sc.steps.length) return false;
+    var s = sc.steps[st.step++];
+    act(s.act, s.arg, s.label);
+    if (st.step >= sc.steps.length) played[sc.id] = true;
+    return st.step < sc.steps.length;
+  }
+  function stopAuto() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function onParam(e) {
+    var el = e.target, id = el.dataset.param;
+    if (!id) return;
+    var def = (DATA.params || []).filter(function (d) { return d.id === id; })[0];
+    st.p[id] = def.type === 'toggle' ? el.checked : def.type === 'number' ? Number(el.value) : el.value;
+    st.toast = null;
+    renderStage(); renderPanel();
+    var val = el.closest('.param').querySelector('.val');
+    if (val) val.textContent = fmt(def, st.p[id]);
+  }
+
+  function fmt(def, v) {
+    if (def.type === 'toggle') return v ? '是' : '否';
+    if (def.type === 'select') { var o = (def.options || []).filter(function (x) { return String(x.value) === String(v); })[0]; return o ? o.label : v; }
+    return v + (def.unit || '');
+  }
+
+  function render() { renderScenarios(); renderParams(); renderStage(); renderPanel(); }
+
+  function renderScenarios() {
+    $('scenarios').innerHTML = (DATA.scenarios || []).map(function (sc) {
+      var on = st.scenario && st.scenario.id === sc.id;
+      return '<button class="sc' + (on ? ' on' : '') + '" data-ui="scenario" data-v="' + esc(sc.id) + '">' +
+        (played[sc.id] ? '<span class="done">已演示</span>' : '') +
+        '<span class="k">' + esc(sc.kind || '') + '</span>' + esc(sc.name) + '</button>';
+    }).join('');
+  }
+
+  function renderParams() {
+    var defs = DATA.params || [];
+    $('params').innerHTML = defs.length ? defs.map(function (d) {
+      var v = st.p[d.id], input;
+      if (d.type === 'toggle') input = '<input type="checkbox" data-param="' + esc(d.id) + '"' + (v ? ' checked' : '') + '>';
+      else if (d.type === 'select') input = '<select data-param="' + esc(d.id) + '">' + (d.options || []).map(function (o) {
+        return '<option value="' + esc(o.value) + '"' + (String(o.value) === String(v) ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+      }).join('') + '</select>';
+      else input = '<input type="range" data-param="' + esc(d.id) + '" min="' + esc(d.min) + '" max="' + esc(d.max) + '" step="' + esc(d.step || 1) + '" value="' + esc(v) + '">';
+      return '<div class="param"><label><span>' + esc(d.label) + (d.origin === '示意' ? '<span class="demo">示意值</span>' : '') +
+        '</span><span class="val">' + esc(fmt(d, v)) + '</span></label>' + input + '</div>';
+    }).join('') : '<p class="empty">本功能无可调前置条件。</p>';
+  }
+
+  function renderStage() {
+    var sc = st.scenario, g = $('guide');
+    g.hidden = !sc;
+    if (sc) {
+      var end = st.step >= sc.steps.length;
+      g.innerHTML = '<strong>' + esc(sc.name) + '</strong><ol>' + sc.steps.map(function (s, i) {
+        return '<li class="' + (i < st.step ? 'past' : i === st.step ? 'now' : '') + '">' + esc(s.label || s.act) + '</li>';
+      }).join('') + '</ol><div class="ctl"><button class="go" data-ui="next"' + (end ? ' disabled' : '') + '>下一步</button>' +
+        '<button data-ui="auto"' + (end ? ' disabled' : '') + '>自动演示</button>' +
+        '<button data-ui="scenario" data-v="' + esc(sc.id) + '">重来</button></div>' +
+        '<div class="expect">预期：' + esc(sc.expect && sc.expect.result || '') + '</div>';
+    }
+    if (UI) phoneW = $('view').clientWidth || phoneW;
+    var wrap = UI ? stage : function (html) { return html; };
+    $('view').innerHTML = wrap(flow.screens[st.screen].render(ctx));
+    $('overlay').innerHTML = (st.modal ? '<div class="mask">' + wrap(flow.modals[st.modal].render(ctx)) + '</div>' : '') +
+      (st.toast ? '<div class="toast">' + esc(st.toast) + '</div>' : '');
+  }
+
+  function renderPanel() {
+    var open = (DATA.gaps || []).filter(function (g) { return g.status !== 'resolved'; });
+    var tabs = [['log', '规则追踪'], ['cover', '规则覆盖 ' + Object.keys(covered).length + '/' + DATA.rules.length], ['gaps', '待定细节 ' + open.length]];
+    $('tabs').innerHTML = tabs.map(function (t) {
+      return '<button data-ui="tab" data-v="' + t[0] + '"' + (tab === t[0] ? ' class="on"' : '') + '>' + t[1] + '</button>';
+    }).join('');
+    var html = '';
+    if (tab === 'log') {
+      html = st.log.length ? '<ol class="log">' + st.log.map(function (l) {
+        if (l.t === 'hit') return '<li class="hit"><span class="rid">' + esc(l.id) + '</span>' + esc(l.note || RULES[l.id].summary) +
+          '<div class="sec">主案 · ' + esc(RULES[l.id].section) + '</div></li>';
+        if (l.t === 'gap') return '<li class="gap"><span class="gid">' + esc(l.id) + '</span>主案未定义：' + esc(GAPS[l.id].question) +
+          (l.note ? '<div class="sec">' + esc(l.note) + '</div>' : '') + '</li>';
+        return '<li class="' + l.t + '">' + esc(l.text) + '</li>';
+      }).join('') + '</ol>' : '<p class="empty">选择左侧场景，或直接在中间界面操作。每一步命中的主案规则会显示在这里。</p>';
+    } else if (tab === 'cover') {
+      html = DATA.rules.map(function (r) {
+        return '<div class="rule' + (covered[r.id] ? ' hitted' : '') + '"><span class="rid">' + esc(r.id) + '</span>' + esc(r.summary) +
+          '<div class="sec">主案 · ' + esc(r.section) + (covered[r.id] ? ' · 已演示' : ' · 未演示') + '</div></div>';
+      }).join('');
+    } else {
+      html = open.length ? open.map(function (g) {
+        return '<div class="rule open"><span class="gid">' + esc(g.id) + '</span>' + esc(g.question) +
+          '<div class="sec">出现位置：' + esc(g.where || '') + (g.owner ? ' · 待 ' + esc(g.owner) + ' 拍板' : '') + '</div></div>';
+      }).join('') : '<p class="empty">预演过程中未发现主案没有定义的交互结果。</p>';
+    }
+    $('panel').innerHTML = html;
+    if (tab === 'log') { var c = $('panel').parentElement; c.scrollTop = c.scrollHeight; }
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+
+<!-- ② 流程：界面（render 返回灰盒 HTML）与操作（命中规则、切换界面）。可点击元素用 data-act / data-arg -->
+<script id="preview-flow">
+Preview.define({
+  initial: 'select',
+  state: function () { return {choice: '选项 A', submitted: false}; },
+  screens: {
+    select: {
+      render: function (c) {
+        return '<div class="gb-bar">选择界面</div>' +
+          '<div class="gb-body">' +
+            '<div class="gb-row"><div class="grow">当前选择<div class="gb-sub">' + c.esc(c.s.choice) + '</div></div></div>' +
+            (c.s.submitted ? '<div class="gb-note">本次操作已执行</div>' : '') +
+          '</div>' +
+          '<div class="gb-foot"><button class="gb-btn primary" data-act="submit">提交</button></div>';
+      }
+    }
+  },
+  modals: {
+    confirm: {
+      render: function (c) {
+        return '<div class="gb-dialog"><div class="hd">确认<button data-act="cancel" data-label="关闭">✕</button></div>' +
+          '<div class="bd">当前选择：' + c.esc(c.s.choice) + '</div>' +
+          '<div class="ft"><button class="gb-btn blue" data-act="cancel">取消</button>' +
+          '<button class="gb-btn primary" data-act="confirm">确认</button></div></div>';
+      }
+    }
+  },
+  actions: {
+    submit: function (c) {
+      c.s.submitted = false;
+      c.hit('R1');
+      c.open('confirm');
+    },
+    confirm: function (c) {
+      c.close();
+      if (c.p.valid) { c.s.submitted = true; c.hit('R2'); c.toast('操作成功'); }
+      else { c.hit('R3'); c.toast('〔失败原因：主案未给出文案〕'); }
+    },
+    cancel: function (c) {
+      c.close();
+      c.hit('R4');
+    }
+  }
+});
+</script>
+</body>
+</html>

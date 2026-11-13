@@ -11,6 +11,7 @@ MindToDoc 把脑图、框架文档、参考游戏或既有开发文档，整理�
 - 先判定小型需求或完整功能案，再按唯一的[派生流程](references/derived-documents-workflow.md)确定交付。小型需求默认一份主案；完整功能案核查并交付配置结构、BI、美术、音效，其他派生按条件生成。
 - 在起草和精简时检查范围、归属、重复内容与唯一真相源，避免空章节、空派生物和过度设计。
 - 用户提供截图后完成界面识图、编号、审核和左图右文标注。
+- 主案规则确认后可生成交互预演网页：其他职能点一遍流程，每步看到命中的主案规则，并暴露主案没写清的交互细节。
 - 按需把本地 Markdown 同步到钉钉；本地文件始终是内容 SSOT。
 
 ## 快速开始
@@ -35,6 +36,7 @@ MindToDoc 把脑图、框架文档、参考游戏或既有开发文档，整理�
 | 配置表结构 | `output/<功能名>-配置表结构.md` | 数值策划 Excel 的表、页签和字段，以及公共配置依赖 |
 | 界面标注 | `output/<功能名>-界面标注.md` | 截图编号、控件表现、红点、多语言 key 和左图右文说明 |
 | 界面素材 | `output/ui-annotation/assets/` | 原图、标注图及标注数据 |
+| 交互预演 | `output/<功能名>-交互预演.html` | 可点击的流程（现有界面按客户端原样还原）、规则追踪、规则覆盖和待定细节 |
 | 其他派生 | 见[派生流程](references/derived-documents-workflow.md) | 完整功能案固定的 BI、美术、音效；经确认的 Checklist、测试用例 |
 | 旧版迁移源 | `output/<游戏名>-开发文档.md` | 只读基础材料；新稿不覆盖原文件 |
 
@@ -51,8 +53,9 @@ MindToDoc 把脑图、框架文档、参考游戏或既有开发文档，整理�
 3. **逐模块深入**：补全触发条件、状态分支、不满足提示、结果反馈、边界情况与数据兼容。
 4. **按需生成派生文档**：已有同用途材料优先复用；没有事实依据时不创建空文档。
 5. **界面标注**：仅在用户提供截图后进行识图、红圈编号、审核和左图右文落稿。
-6. **钉钉同步**：需要在线协作时，先更新本地 Markdown，再转换并同步。
-7. **项目归档**：完成后把输入、输出和项目专属工具整理到 `examples/<项目名>/`。
+6. **交互预演**：用户确认后把已定规则做成可点击流程；发现的待定细节拍板后先回写主案。
+7. **钉钉同步**：需要在线协作时，先更新本地 Markdown，再转换并同步。
+8. **项目归档**：完成后把输入、输出和项目专属工具整理到 `examples/<项目名>/`。
 
 ## 目录结构
 
@@ -88,6 +91,7 @@ MindToDoc 把脑图、框架文档、参考游戏或既有开发文档，整理�
 - [手游系统规则](references/mobile-system-rules-reference.md)：流程图、红点、线上兼容、配置边界和 K1 关键常量。
 - [K1 公共配置表](references/k1-common-configs.md)：活动、通行证、排行、礼包、邮件、联盟和 KVK 等公共依赖。
 - [界面标注规范](references/ui-annotation-reference.md)：识图、归类、编号、审核、左图右文和 key 表。
+- [交互预演规范](references/interactive-preview-reference.md)：制作步骤、待定细节回流、模板字段和校验。
 - [钉钉同步规范](references/dingtalk-sync-reference.md)：Markdown/JSONML 转换、表格、图片和转义清洗。
 - [审核三档纪律](references/audit-three-tier-discipline.md)：审核、检验和复核任务的硬范围、软分布与设计意图断言。
 
@@ -123,12 +127,15 @@ python scripts/doctor.py
 python scripts/check_doc_quality.py tests/fixtures/small-requirement.md
 python scripts/check_doc_quality.py --baseline main output/<功能>.md   # 局部修订：只看新增问题
 python scripts/check_delivery.py deliveries/example-small.json
+python scripts/check_preview.py templates/interactive-preview.html   # 交互预演：换成本次的 -交互预演.html；加 --open 通过后用默认浏览器打开
 python -B -m pytest -q -p no:cacheprovider
 ```
 
 - 实际交付时把示例路径替换为本次文件及登记。通过格式和指纹检查不能替代规则审核。
 - `pytest.ini` 已收录根目录与 vendor 测试，上面一条命令即全套回归。
 - 浏览器安全回归需 Node、Playwright 和 Chromium。设置 `AUDIO_REVIEW_NODE`（Node 可执行路径）与 `PLAYWRIGHT_MODULE`（Playwright 模块路径）后运行。未配置时这两项显示为 skipped，不算通过。
+- 交互预演还原现有界面需要本机客户端工程、已打开的 Unity 编辑器和 UnityMCP；[常用界面库](ui-library/k1/README.md) 的图层只放本机，新设备先按该文档获取一次；无法获取的界面退回灰盒。
+- 交互预演的场景回放需要 Node。没有 Node 时只能加 `--static` 做静态检查，不算场景已验证。
 - 图片标注另装 `requirements-image.txt`。
 
 | 工具 | 用途 |
@@ -139,6 +146,11 @@ python -B -m pytest -q -p no:cacheprovider
 | [list_tbd.py](scripts/list_tbd.py) | 扫描 Markdown 中的 TBD，输出数量、位置和阈值告警 |
 | [check_doc_quality.py](scripts/check_doc_quality.py) | 显式文件的格式、占位符与本地资源检查 |
 | [check_delivery.py](scripts/check_delivery.py) | 交付范围、审核状态和内容指纹检查；`--record` 逐个登记已复核文件 |
+| [check_preview.py](scripts/check_preview.py) | 交互预演的离线、规则引用、版本、覆盖检查，并调用 `preview_runner.cjs` 回放场景 |
+| [build_preview_ui.py](scripts/build_preview_ui.py) | 把界面图层内嵌进交互预演网页；来源可以是多个图层目录或单个图层文件 |
+| [ui_library.py](scripts/ui_library.py) | 常用界面库的获取流程：查看本机状态、生成导出代码、导出后核对并记录来源 |
+| [list_ui_layers.py](scripts/list_ui_layers.py) | 列出图层目录里的界面、文字槽和热区，或写成常用界面库的清单 |
+| [unity/export_ui_layers.cs](scripts/unity/export_ui_layers.cs) | 在 Unity 编辑器里把现有界面导出为图层、热区和文字槽；只读，不改工程 |
 | [doctor.py](scripts/doctor.py) | 按能力检查本地依赖 |
 | [check_plan_signatures.py](scripts/check_plan_signatures.py) | 检查实施计划内 Python 代码块语法和关键符号一致性 |
 
